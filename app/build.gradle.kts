@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "org.vonderheidt.hips"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "org.vonderheidt.hips"
