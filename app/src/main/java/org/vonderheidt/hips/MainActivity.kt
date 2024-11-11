@@ -21,7 +21,6 @@ class MainActivity : ComponentActivity() {
             HiPSTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     MainScreen(
-                        name = "Android",
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -31,9 +30,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainScreen(name: String, modifier: Modifier = Modifier) {
+fun MainScreen(modifier: Modifier = Modifier) {
     Text(
-        text = "Hello $name!",
+        text = "Hello World!",
         modifier = modifier
     )
 }
@@ -42,6 +41,6 @@ fun MainScreen(name: String, modifier: Modifier = Modifier) {
 @Composable
 fun MainScreenPreview() {
     HiPSTheme {
-        MainScreen("Android")
+        MainScreen()
     }
 }
