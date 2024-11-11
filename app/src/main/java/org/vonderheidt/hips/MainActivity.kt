@@ -13,12 +13,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 
+/**
+ * Class that defines the entry point into the app and calls the main screen.
+ */
 class MainActivity : ComponentActivity() {
+    // Boilerplate code
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Since Android 15, all apps are enforced to go edge-to-edge
         enableEdgeToEdge()
+
+        // Set MainScreen function as content of the main screen
         setContent {
+            // Use HiPS theme for dark and light mode
             HiPSTheme {
+                // Scaffold arranges top bar/bottom bar/floating action buttons/etc. on screen
+                // innerPadding is necessary so that content and top bar/etc. don't overlap
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     MainScreen(
                         modifier = Modifier.padding(innerPadding)
@@ -29,6 +40,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Function that defines contents of the main screen.
+ */
 @Composable
 fun MainScreen(modifier: Modifier = Modifier) {
     Text(
@@ -37,6 +51,9 @@ fun MainScreen(modifier: Modifier = Modifier) {
     )
 }
 
+/**
+ * Function to show preview of the main screen in Android Studio.
+ */
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
