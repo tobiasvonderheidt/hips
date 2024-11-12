@@ -3,7 +3,6 @@ package org.vonderheidt.hips
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -20,9 +19,6 @@ class MainActivity : ComponentActivity() {
     // Boilerplate code
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Since Android 15, all apps are enforced to go edge-to-edge
-        enableEdgeToEdge()
 
         // Set MainScreen function as content of the main screen
         setContent {
