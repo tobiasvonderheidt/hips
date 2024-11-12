@@ -31,9 +31,8 @@ class MainActivity : ComponentActivity() {
                 // Scaffold arranges top bar/bottom bar/floating action buttons/etc. on screen
                 // innerPadding is necessary so that content and top bar/etc. don't overlap
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    MainScreen(
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    val modifier: Modifier = Modifier.padding(innerPadding)
+                    MainScreen(modifier = modifier)
                 }
             }
         }
@@ -44,7 +43,7 @@ class MainActivity : ComponentActivity() {
  * Function that defines contents of the main screen.
  */
 @Composable
-fun MainScreen(modifier: Modifier = Modifier) {
+fun MainScreen(modifier: Modifier) {
     Text(
         text = "Hello World!",
         modifier = modifier
@@ -57,7 +56,9 @@ fun MainScreen(modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
+    // No Scaffold, no innerPadding
     HiPSTheme {
-        MainScreen()
+        val modifier: Modifier = Modifier
+        MainScreen(modifier = modifier)
     }
 }
