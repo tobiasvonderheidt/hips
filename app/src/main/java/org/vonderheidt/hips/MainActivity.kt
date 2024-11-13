@@ -3,6 +3,7 @@ package org.vonderheidt.hips
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
@@ -88,6 +90,15 @@ fun MainScreen(modifier: Modifier) {
                     imageVector = Icons.Outlined.Info,
                     contentDescription = "Context"
                 )
+            },
+            trailingIcon = {
+                if (context != "") {
+                    Icon(
+                        imageVector = Icons.Outlined.Clear,
+                        contentDescription = "Clear context",
+                        modifier = modifier.clickable { context = "" }
+                    )
+                }
             }
         )
 
@@ -105,6 +116,15 @@ fun MainScreen(modifier: Modifier) {
                         imageVector = Icons.Outlined.Lock,
                         contentDescription = "Secret message"
                     )
+                },
+                trailingIcon = {
+                    if (secretMessage != "") {
+                        Icon(
+                            imageVector = Icons.Outlined.Clear,
+                            contentDescription = "Clear secret message",
+                            modifier = modifier.clickable { secretMessage = "" }
+                        )
+                    }
                 }
             )
         }
@@ -119,6 +139,15 @@ fun MainScreen(modifier: Modifier) {
                         imageVector = Icons.Outlined.Email,
                         contentDescription = "Cover text"
                     )
+                },
+                trailingIcon = {
+                    if (coverText != "") {
+                        Icon(
+                            imageVector = Icons.Outlined.Clear,
+                            contentDescription = "Clear cover text",
+                            modifier = modifier.clickable { coverText = "" }
+                        )
+                    }
                 }
             )
         }
