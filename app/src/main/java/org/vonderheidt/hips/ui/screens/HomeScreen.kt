@@ -89,7 +89,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
             horizontalArrangement = Arrangement.End
         ) {
             IconButton(
-                onClick = { }
+                onClick = { navController.navigate("settings") }
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Settings,

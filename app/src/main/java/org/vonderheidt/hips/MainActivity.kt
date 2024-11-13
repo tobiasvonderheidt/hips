@@ -12,6 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import org.vonderheidt.hips.ui.screens.HomeScreen
+import org.vonderheidt.hips.ui.screens.SettingsScreen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 
 /**
@@ -37,6 +38,7 @@ class MainActivity : ComponentActivity() {
                         startDestination = "home"
                     ) {
                         composable("home") { HomeScreen(navController, modifier) }
+                        composable("settings") { SettingsScreen(navController, modifier) }
                     }
                 }
             }
