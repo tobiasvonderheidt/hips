@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -82,6 +83,7 @@ fun MainScreen(modifier: Modifier) {
     val modes = listOf("Encode", "Decode")
     var selectedMode by rememberSaveable { mutableIntStateOf(0) }
     var outputVisible by rememberSaveable { mutableStateOf(false) }
+    var isLoading by rememberSaveable { mutableStateOf(false) }
     var coverText by rememberSaveable { mutableStateOf("") }
 
     // Scrolling
@@ -210,8 +212,9 @@ fun MainScreen(modifier: Modifier) {
             // Start button
             Button(
                 onClick = {
-                    // Hide old output when start button is pressed again
+                    // Hide old output when start button is pressed again, show loading animation
                     outputVisible = false
+                    isLoading = true
 
                     // Call encode or decode function as coroutine, depending on mode selected
                     coroutineScope.launch {
@@ -222,7 +225,8 @@ fun MainScreen(modifier: Modifier) {
                             secretMessage = decode(context, coverText)
                         }
 
-                        // Show new output only when encode or decode is finished
+                        // Hide loading animation, show new output only when encode or decode is finished
+                        isLoading = false
                         outputVisible = true
                     }
                 },
@@ -232,11 +236,18 @@ fun MainScreen(modifier: Modifier) {
             }
         }
 
-        Spacer(modifier = modifier.height(32.dp))
+        // Loading animation to show when start button is pressed
+        if (isLoading) {
+            Spacer (modifier = modifier.height(64.dp))
+
+            CircularProgressIndicator()
+        }
 
         // Output is either cover text or secret message
         // Only show when encode or decode is finished (i.e. also not on app startup)
         if (outputVisible) {
+            Spacer(modifier = modifier.height(32.dp))
+
             if (selectedMode == 0) {
                 Text(
                     text = "Cover text (tap to copy):",
