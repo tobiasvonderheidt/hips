@@ -284,6 +284,8 @@ fun MainScreen(modifier: Modifier) {
                 )
             }
         }
+
+        Spacer(modifier = modifier.height(32.dp))
     }
 }
 
