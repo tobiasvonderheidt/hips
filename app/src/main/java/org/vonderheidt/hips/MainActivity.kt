@@ -46,6 +46,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 
@@ -103,6 +104,18 @@ fun MainScreen(modifier: Modifier) {
             .verticalScroll(state = scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // App name
+        // Doesn't need modifier since horizontalAlignment of Column already centers it
+        Row {
+            Text(
+                text = "HiPS",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        Spacer(modifier = modifier.height(32.dp))
+
         // 1st input is context
         OutlinedTextField(
             value = context,
