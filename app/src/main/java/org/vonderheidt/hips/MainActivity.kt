@@ -81,6 +81,7 @@ fun MainScreen(modifier: Modifier) {
     var secretMessage by rememberSaveable { mutableStateOf("") }
     val modes = listOf("Encode", "Decode")
     var selectedMode by rememberSaveable { mutableIntStateOf(0) }
+    var outputVisible by rememberSaveable { mutableStateOf(false) }
     var coverText by rememberSaveable { mutableStateOf("") }
 
     // Scrolling
@@ -186,8 +187,13 @@ fun MainScreen(modifier: Modifier) {
                     SegmentedButton(
                         selected = index == selectedMode,
                         onClick = {
-                            // Clear both secret message and cover text when mode is changed
+                            // Update the selected mode when a button is tapped on
                             selectedMode = index
+
+                            // Hide old output when mode is changed
+                            outputVisible = false
+
+                            // Clear both secret message and cover text when mode is changed
                             secretMessage = ""
                             coverText = ""
                         },
@@ -204,6 +210,9 @@ fun MainScreen(modifier: Modifier) {
             // Start button
             Button(
                 onClick = {
+                    // Hide old output when start button is pressed again
+                    outputVisible = false
+
                     // Call encode or decode function as coroutine, depending on mode selected
                     coroutineScope.launch {
                         if (selectedMode == 0) {
@@ -212,6 +221,9 @@ fun MainScreen(modifier: Modifier) {
                         else {
                             secretMessage = decode(context, coverText)
                         }
+
+                        // Show new output only when encode or decode is finished
+                        outputVisible = true
                     }
                 },
                 shape = RoundedCornerShape(4.dp)
@@ -223,40 +235,43 @@ fun MainScreen(modifier: Modifier) {
         Spacer(modifier = modifier.height(32.dp))
 
         // Output is either cover text or secret message
-        if (selectedMode == 0) {
-            Text(
-                text = "Cover text (tap to copy):",
-                fontWeight = FontWeight.Bold
-            )
+        // Only show when encode or decode is finished (i.e. also not on app startup)
+        if (outputVisible) {
+            if (selectedMode == 0) {
+                Text(
+                    text = "Cover text (tap to copy):",
+                    fontWeight = FontWeight.Bold
+                )
 
-            Spacer(modifier = modifier.height(16.dp))
+                Spacer(modifier = modifier.height(16.dp))
 
-            Text(
-                text = coverText,
-                modifier = modifier
-                    .fillMaxWidth(0.8f)
-                    .clickable {
-                        // Copy cover text to clipboard
-                        val clip = ClipData.newPlainText("Cover text", coverText)
-                        clipboardManager.setPrimaryClip(clip)
+                Text(
+                    text = coverText,
+                    modifier = modifier
+                        .fillMaxWidth(0.8f)
+                        .clickable {
+                            // Copy cover text to clipboard
+                            val clip = ClipData.newPlainText("Cover text", coverText)
+                            clipboardManager.setPrimaryClip(clip)
 
-                        // Show confirmation via toast message
-                        Toast.makeText(currentLocalContext, "Copied to clipboard", Toast.LENGTH_LONG).show()
-                    }
-            )
-        }
-        else {
-            Text(
-                text = "Secret message:",
-                fontWeight = FontWeight.Bold
-            )
+                            // Show confirmation via toast message
+                            Toast.makeText(currentLocalContext, "Copied to clipboard", Toast.LENGTH_LONG).show()
+                        }
+                )
+            }
+            else {
+                Text(
+                    text = "Secret message:",
+                    fontWeight = FontWeight.Bold
+                )
 
-            Spacer(modifier = modifier.height(16.dp))
+                Spacer(modifier = modifier.height(16.dp))
 
-            Text(
-                text = secretMessage,
-                modifier = modifier.fillMaxWidth(0.8f)
-            )
+                Text(
+                    text = secretMessage,
+                    modifier = modifier.fillMaxWidth(0.8f)
+                )
+            }
         }
     }
 }
