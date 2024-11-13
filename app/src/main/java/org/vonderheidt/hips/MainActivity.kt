@@ -36,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -44,6 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 
 /**
@@ -87,6 +89,9 @@ fun MainScreen(modifier: Modifier) {
     // Clipboard
     val currentLocalContext = LocalContext.current
     val clipboardManager = currentLocalContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+    // Coroutines
+    val coroutineScope = rememberCoroutineScope()
 
     // UI components
     Column(
@@ -199,11 +204,14 @@ fun MainScreen(modifier: Modifier) {
             // Start button
             Button(
                 onClick = {
-                    if (selectedMode == 0) {
-                        coverText = "Encode of $secretMessage using $context"
-                    }
-                    else {
-                        secretMessage = "Decode of $coverText using $context"
+                    // Call encode or decode function as coroutine, depending on mode selected
+                    coroutineScope.launch {
+                        if (selectedMode == 0) {
+                            coverText = encode(context, secretMessage)
+                        }
+                        else {
+                            secretMessage = decode(context, coverText)
+                        }
                     }
                 },
                 shape = RoundedCornerShape(4.dp)
