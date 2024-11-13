@@ -12,7 +12,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
@@ -77,7 +82,13 @@ fun MainScreen(modifier: Modifier) {
             value = context,
             onValueChange = { context = it },
             modifier = modifier.fillMaxWidth(0.8f),
-            label = { Text(text = "Context") }
+            label = { Text(text = "Context") },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Outlined.Info,
+                    contentDescription = "Context"
+                )
+            }
         )
 
         Spacer(modifier = modifier.height(32.dp))
@@ -88,7 +99,13 @@ fun MainScreen(modifier: Modifier) {
                 value = secretMessage,
                 onValueChange = { secretMessage = it },
                 modifier = modifier.fillMaxWidth(0.8f),
-                label = { Text(text = "Secret message") }
+                label = { Text(text = "Secret message") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Outlined.Lock,
+                        contentDescription = "Secret message"
+                    )
+                }
             )
         }
         else {
@@ -96,7 +113,13 @@ fun MainScreen(modifier: Modifier) {
                 value = coverText,
                 onValueChange = { coverText = it },
                 modifier = modifier.fillMaxWidth(0.8f),
-                label = { Text(text = "Cover text") }
+                label = { Text(text = "Cover text") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Outlined.Email,
+                        contentDescription = "Cover text"
+                    )
+                }
             )
         }
 
