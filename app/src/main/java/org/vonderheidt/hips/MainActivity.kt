@@ -1,6 +1,10 @@
 package org.vonderheidt.hips
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
@@ -36,6 +40,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -78,6 +83,10 @@ fun MainScreen(modifier: Modifier) {
 
     // Scrolling
     val scrollState = rememberScrollState()
+
+    // Clipboard
+    val currentLocalContext = LocalContext.current
+    val clipboardManager = currentLocalContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
     // UI components
     Column(
@@ -208,7 +217,7 @@ fun MainScreen(modifier: Modifier) {
         // Output is either cover text or secret message
         if (selectedMode == 0) {
             Text(
-                text = "Cover text:",
+                text = "Cover text (tap to copy):",
                 fontWeight = FontWeight.Bold
             )
 
@@ -216,7 +225,16 @@ fun MainScreen(modifier: Modifier) {
 
             Text(
                 text = coverText,
-                modifier = modifier.fillMaxWidth(0.8f)
+                modifier = modifier
+                    .fillMaxWidth(0.8f)
+                    .clickable {
+                        // Copy cover text to clipboard
+                        val clip = ClipData.newPlainText("Cover text", coverText)
+                        clipboardManager.setPrimaryClip(clip)
+
+                        // Show confirmation via toast message
+                        Toast.makeText(currentLocalContext, "Copied to clipboard", Toast.LENGTH_LONG).show()
+                    }
             )
         }
         else {
