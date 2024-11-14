@@ -11,15 +11,25 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -30,8 +40,11 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
+import org.vonderheidt.hips.utils.downloadLLM
+import org.vonderheidt.hips.utils.llmDownloaded
 
 /**
  * Function that defines the settings screen.
@@ -39,10 +52,16 @@ import org.vonderheidt.hips.ui.theme.HiPSTheme
 @Composable
 fun SettingsScreen(navController: NavController, modifier: Modifier) {
     // State variables
+    var llmDownloaded by rememberSaveable { mutableStateOf(llmDownloaded()) }
+
     // Scrolling
     val scrollState = rememberScrollState()
+
     // Links
     val currentLocalContext = LocalContext.current
+
+    // Coroutines
+    val coroutineScope = rememberCoroutineScope()
 
     // UI components
     Column(
@@ -74,6 +93,67 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                 )
             }
         }
+
+        // LLM download hint
+        Row(
+            modifier = modifier.fillMaxWidth(0.9f)
+        ) {
+            if (llmDownloaded) {
+                Icon(
+                    imageVector = Icons.Outlined.CheckCircle,
+                    contentDescription = "Check mark"
+                )
+            }
+            else {
+                Icon(
+                    imageVector = Icons.Outlined.Warning,
+                    contentDescription = "Warning"
+                )
+            }
+
+            Spacer(modifier = modifier.width(16.dp))
+
+            Column {
+                Text(
+                    text = "Large Language Model",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                if (llmDownloaded) {
+                    Text(text = "The LLM has been downloaded. You can now start using this app.")
+                }
+                else {
+                    Text(text = "Before using this app, you need to download the LLM.")
+                }
+            }
+        }
+
+        Spacer(modifier = modifier.height(16.dp))
+
+        // Download button
+        Row {
+            Button(
+                onClick = {
+                    if(!llmDownloaded) {
+                        coroutineScope.launch {
+                            downloadLLM()
+                            llmDownloaded = true
+                        }
+                    }
+                },
+                enabled = !llmDownloaded,
+                shape = RoundedCornerShape(4.dp)
+            ) {
+                Text(text = "Download")
+            }
+        }
+
+        Spacer(modifier = modifier.height(16.dp))
+
+        HorizontalDivider()
+
+        Spacer(modifier = modifier.height(16.dp))
 
         // Author credits
         // Make the whole row clickable instead of just the text for better accessibility
