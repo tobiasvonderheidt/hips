@@ -48,8 +48,8 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
-import org.vonderheidt.hips.decode
-import org.vonderheidt.hips.encode
+import org.vonderheidt.hips.utils.decode
+import org.vonderheidt.hips.utils.encode
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 

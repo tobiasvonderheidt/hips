@@ -1,4 +1,4 @@
-package org.vonderheidt.hips
+package org.vonderheidt.hips.utils
 
 import kotlinx.coroutines.delay
 
