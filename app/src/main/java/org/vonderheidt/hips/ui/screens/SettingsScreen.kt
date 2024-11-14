@@ -1,19 +1,30 @@
 package org.vonderheidt.hips.ui.screens
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
@@ -28,6 +39,8 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
     // State variables
     // Scrolling
     val scrollState = rememberScrollState()
+    // Links
+    val currentLocalContext = LocalContext.current
 
     // UI components
     Column(
@@ -56,6 +69,39 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = "Go back to home screen"
+                )
+            }
+        }
+
+        // Author credits
+        // Make the whole row clickable instead of just the text for better accessibility
+        Row(
+            modifier = modifier
+                .fillMaxWidth(0.9f)
+                .clickable(
+                    onClick = {
+                        // Open email app and create draft with subject "HiPS"
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("mailto:tobias@vonderheidt.org?subject=HiPS"))
+                        currentLocalContext.startActivity(intent)
+                    }
+                )
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Person,
+                contentDescription = "The author of this app is Tobias Vonderheidt"
+            )
+
+            Spacer(modifier = modifier.width(16.dp))
+
+            Column {
+                Text(
+                    text = "Author",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = "Tobias Vonderheidt <tobias@vonderheidt.org>"
                 )
             }
         }
