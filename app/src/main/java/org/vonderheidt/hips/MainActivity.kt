@@ -3,45 +3,34 @@ package org.vonderheidt.hips
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import org.vonderheidt.hips.navigation.SetupNavGraph
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 
+/**
+ * Class that defines the entry point into the app and calls the main screen.
+ */
 class MainActivity : ComponentActivity() {
+    // Boilerplate code
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        // Set MainScreen function as content of the main screen
         setContent {
+            // Use HiPS theme for dark and light mode
             HiPSTheme {
+                // Scaffold arranges top bar/bottom bar/floating action buttons/etc. on screen
+                // innerPadding is necessary so that content and top bar/etc. don't overlap
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    val modifier: Modifier = Modifier.padding(innerPadding)
+
+                    // Initialize navigation
+                    SetupNavGraph(modifier)
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    HiPSTheme {
-        Greeting("Android")
     }
 }
