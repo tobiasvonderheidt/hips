@@ -17,6 +17,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 
 /**
@@ -43,10 +44,10 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
             IconButton(
                 onClick = {
                     // Navigate back to home screen
-                    navController.navigate("home") {
+                    navController.navigate(Screen.Home.route) {
                         // Empty back stack, including home screen
                         // Otherwise app won't close when user goes back once more via the phone's back button
-                        popUpTo("home") {
+                        popUpTo(Screen.Home.route) {
                             inclusive = true
                         }
                     }

@@ -50,6 +50,7 @@ import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
 import org.vonderheidt.hips.decode
 import org.vonderheidt.hips.encode
+import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 
 /**
@@ -89,7 +90,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
             horizontalArrangement = Arrangement.End
         ) {
             IconButton(
-                onClick = { navController.navigate("settings") }
+                onClick = { navController.navigate(Screen.Settings.route) }
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Settings,
