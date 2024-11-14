@@ -8,12 +8,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -102,6 +104,40 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
                 Text(
                     text = "Tobias Vonderheidt <tobias@vonderheidt.org>"
+                )
+            }
+        }
+
+        Spacer(modifier = modifier.height(16.dp))
+
+        // Link to source code
+        Row(
+            modifier = modifier
+                .fillMaxWidth(0.9f)
+                .clickable(
+                    onClick = {
+                        // Open the repo website
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/tobiasvonderheidt/hips"))
+                        currentLocalContext.startActivity(intent)
+                    }
+                )
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Star,
+                contentDescription = "Link to the source code of this app"
+            )
+
+            Spacer(modifier = modifier.width(16.dp))
+
+            Column {
+                Text(
+                    text = "Source Code",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = "github.com/tobiasvonderheidt/hips"
                 )
             }
         }
