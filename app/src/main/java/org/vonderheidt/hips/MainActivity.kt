@@ -7,12 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import org.vonderheidt.hips.ui.screens.HomeScreen
-import org.vonderheidt.hips.ui.screens.SettingsScreen
+import org.vonderheidt.hips.navigation.SetupNavGraph
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 
 /**
@@ -31,15 +26,9 @@ class MainActivity : ComponentActivity() {
                 // innerPadding is necessary so that content and top bar/etc. don't overlap
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val modifier: Modifier = Modifier.padding(innerPadding)
-                    val navController: NavHostController = rememberNavController()
 
-                    NavHost(
-                        navController = navController,
-                        startDestination = "home"
-                    ) {
-                        composable("home") { HomeScreen(navController, modifier) }
-                        composable("settings") { SettingsScreen(navController, modifier) }
-                    }
+                    // Initialize navigation
+                    SetupNavGraph(modifier)
                 }
             }
         }
