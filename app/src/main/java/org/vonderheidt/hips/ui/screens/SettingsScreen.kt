@@ -141,6 +141,8 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                 )
             }
         }
+
+        Spacer(modifier = modifier.height(32.dp))
     }
 }
 
