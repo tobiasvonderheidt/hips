@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Settings
@@ -84,11 +85,21 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
             .verticalScroll(state = scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Settings icon
         Row(
             modifier = modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            // Conversation icon
+            IconButton(
+                onClick = { navController.navigate(Screen.Conversation.route) }
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Forum,
+                    contentDescription = "Conversations"
+                )
+            }
+
+            // Settings icon
             IconButton(
                 onClick = { navController.navigate(Screen.Settings.route) }
             ) {
