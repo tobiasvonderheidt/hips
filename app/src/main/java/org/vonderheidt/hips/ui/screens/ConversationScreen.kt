@@ -10,13 +10,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,6 +46,8 @@ import org.vonderheidt.hips.ui.theme.HiPSTheme
 fun ConversationScreen(navController: NavController, modifier: Modifier) {
     // State variables
     var messages by rememberSaveable { mutableStateOf(listOf<Message>()) }
+    var newMessage by rememberSaveable { mutableStateOf("") }
+    var sender by rememberSaveable { mutableStateOf(true) }
 
     // UI components
     Column(
@@ -75,7 +81,9 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
         // Messages
         // Use LazyColumn as it only loads visible messages into memory, allowing for arbitrary number of messages
         LazyColumn(
-            modifier = modifier.fillMaxWidth(0.95f)
+            modifier = modifier
+                .fillMaxWidth(0.95f)
+                .weight(1f)
         ) {
             // Current user (senderID == 0) is right aligned and green
             // Chat partners (senderID != 0) are left aligned and red
@@ -103,6 +111,55 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                 Spacer(modifier = modifier.height(8.dp))
             }
         }
+
+        Row(
+            modifier = modifier.fillMaxWidth(0.95f),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            // Input field for new message
+            OutlinedTextField(
+                value = newMessage,
+                onValueChange = {newMessage = it},
+                modifier = modifier.weight(1f),
+                label = { Text(text = "New message") }
+            )
+
+            Spacer(modifier = modifier.width(8.dp))
+
+            // Send button
+            // Colour corresponds to user a new message is being sent as
+            IconButton(
+                onClick = {
+                    // Only send non-empty messages
+                    // Allows to switch user on button press
+                    if (newMessage != "") {
+                        messages += Message(
+                            senderID = if (sender) 0 else 1,
+                            receiverID = if (sender) 1 else 0,
+                            timestamp = System.currentTimeMillis(),
+                            content = newMessage
+                        )
+                    }
+
+                    // Clear input field and change mode
+                    newMessage = ""
+                    sender = !sender
+                },
+                modifier = modifier
+                    .background(
+                        color = if (sender) Color(0xFF2E7D32) else Color(0xFFB71C1C),
+                        shape = CircleShape
+                    )
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.Send,
+                    contentDescription = "Send message",
+                    tint = Color.White
+                )
+            }
+        }
+
+        Spacer(modifier = modifier.height(8.dp))
     }
 }
 
