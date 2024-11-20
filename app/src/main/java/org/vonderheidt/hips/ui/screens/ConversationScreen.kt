@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.Send
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -32,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
@@ -77,6 +80,29 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                 )
             }
         }
+
+        // Chat partner
+        Row (
+            modifier = modifier.fillMaxWidth(0.95f),
+            verticalAlignment = Alignment.CenterVertically
+        ){
+            // Profile picture
+            Icon(
+                imageVector = Icons.Outlined.Person,
+                contentDescription = "Profile picture",
+                modifier = modifier.size(24.dp)
+            )
+
+            Spacer(modifier = modifier.width(8.dp))
+
+            // Name
+            Text(
+                text = "Demo",
+                fontSize = 24.sp,
+            )
+        }
+
+        Spacer(modifier = modifier.height(8.dp))
 
         // Messages
         // Use LazyColumn as it only loads visible messages into memory, allowing for arbitrary number of messages
