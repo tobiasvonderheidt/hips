@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import org.vonderheidt.hips.ui.screens.ConversationScreen
 import org.vonderheidt.hips.ui.screens.HomeScreen
 import org.vonderheidt.hips.ui.screens.SettingsScreen
 
@@ -22,5 +23,6 @@ fun SetupNavGraph(modifier: Modifier) {
     ) {
         composable(Screen.Home.route) { HomeScreen(navController, modifier) }
         composable(Screen.Settings.route) { SettingsScreen(navController, modifier) }
+        composable(Screen.Conversation.route) { ConversationScreen(navController, modifier) }
     }
 }
