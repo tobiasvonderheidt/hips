@@ -6,12 +6,15 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -22,6 +25,7 @@ import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -53,6 +57,7 @@ import org.vonderheidt.hips.utils.decode
 import org.vonderheidt.hips.utils.encode
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
+import org.vonderheidt.hips.utils.llmDownloaded
 
 /**
  * Function that defines contents of the home screen.
@@ -60,6 +65,7 @@ import org.vonderheidt.hips.ui.theme.HiPSTheme
 @Composable
 fun HomeScreen(navController: NavController, modifier: Modifier) {
     // State variables
+    var llmDownloaded by rememberSaveable { mutableStateOf(llmDownloaded()) }
     var context by rememberSaveable { mutableStateOf("") }
     var secretMessage by rememberSaveable { mutableStateOf("") }
     val modes = listOf("Encode", "Decode")
@@ -100,13 +106,25 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
             }
 
             // Settings icon
-            IconButton(
-                onClick = { navController.navigate(Screen.Settings.route) }
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Settings,
-                    contentDescription = "Settings"
-                )
+            // Use a Box to overlay Badge and IconButton
+            Box {
+                IconButton(
+                    onClick = { navController.navigate(Screen.Settings.route) }
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = "Settings"
+                    )
+                }
+
+                if (!llmDownloaded) {
+                    Badge(
+                        modifier = modifier
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                            .size(8.dp)
+                    )
+                }
             }
         }
 
