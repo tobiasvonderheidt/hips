@@ -57,7 +57,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
     // Scrolling
     val scrollState = rememberScrollState()
 
-    // Links
+    // Download and links
     val currentLocalContext = LocalContext.current
 
     // Coroutines
@@ -137,7 +137,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                 onClick = {
                     if(!llmDownloaded) {
                         coroutineScope.launch {
-                            downloadLLM()
+                            downloadLLM(currentLocalContext)
                             llmDownloaded = true
                         }
                     }
