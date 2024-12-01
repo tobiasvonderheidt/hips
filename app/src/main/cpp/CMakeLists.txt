@@ -12,6 +12,19 @@ cmake_minimum_required(VERSION 3.22.1)
 # build script scope).
 project("hips")
 
+# Include CMake's FetchContent module
+include(FetchContent)
+
+# Declare Git repo to fetch llama.cpp library from (has to be called "llama")
+FetchContent_Declare(
+    llama
+    GIT_REPOSITORY https://github.com/ggerganov/llama.cpp
+    GIT_TAG        master
+)
+
+# Fetch llama.cpp (also provides "common")
+FetchContent_MakeAvailable(llama)
+
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
@@ -35,4 +48,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
 target_link_libraries(${CMAKE_PROJECT_NAME}
     # List libraries link to the target library
     android
-    log)
+    log
+    llama
+    common
+)

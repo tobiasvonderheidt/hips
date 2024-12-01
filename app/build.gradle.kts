@@ -18,6 +18,11 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
+                // CLI arguments for CMake
+                arguments += "-DLLAMA_BUILD_COMMON=ON"
+                arguments += "-DCMAKE_BUILD_TYPE=Release"
+
+                // CLI flags for C++ compiler called by CMake
                 cppFlags += ""
             }
         }
