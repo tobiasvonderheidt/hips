@@ -33,4 +33,11 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    // Load C++ libraries
+    companion object {
+        init {
+            System.loadLibrary("hips")
+        }
+    }
 }
