@@ -174,9 +174,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                     fontWeight = FontWeight.Bold
                 )
 
-                Text(
-                    text = "Tobias Vonderheidt <tobias@vonderheidt.org>"
-                )
+                Text(text = "Tobias Vonderheidt <tobias@vonderheidt.org>")
             }
         }
 
@@ -208,9 +206,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                     fontWeight = FontWeight.Bold
                 )
 
-                Text(
-                    text = "github.com/tobiasvonderheidt/hips"
-                )
+                Text(text = "github.com/tobiasvonderheidt/hips")
             }
         }
 
