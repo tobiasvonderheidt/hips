@@ -27,7 +27,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -40,11 +39,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import kotlinx.coroutines.launch
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
-import org.vonderheidt.hips.utils.downloadLLM
-import org.vonderheidt.hips.utils.llmDownloaded
+import org.vonderheidt.hips.utils.LLM
 
 /**
  * Function that defines the settings screen.
@@ -52,16 +49,13 @@ import org.vonderheidt.hips.utils.llmDownloaded
 @Composable
 fun SettingsScreen(navController: NavController, modifier: Modifier) {
     // State variables
-    var llmDownloaded by rememberSaveable { mutableStateOf(llmDownloaded()) }
+    var isDownloaded by rememberSaveable { mutableStateOf(LLM.isDownloaded()) }
 
     // Scrolling
     val scrollState = rememberScrollState()
 
     // Download and links
     val currentLocalContext = LocalContext.current
-
-    // Coroutines
-    val coroutineScope = rememberCoroutineScope()
 
     // UI components
     Column(
@@ -98,7 +92,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
         Row(
             modifier = modifier.fillMaxWidth(0.9f)
         ) {
-            if (llmDownloaded) {
+            if (isDownloaded) {
                 Icon(
                     imageVector = Icons.Outlined.CheckCircle,
                     contentDescription = "Check mark"
@@ -120,7 +114,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                     fontWeight = FontWeight.Bold
                 )
 
-                if (llmDownloaded) {
+                if (isDownloaded) {
                     Text(text = "The LLM has been downloaded. You can now start using this app.")
                 }
                 else {
@@ -135,14 +129,12 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
         Row {
             Button(
                 onClick = {
-                    if(!llmDownloaded) {
-                        coroutineScope.launch {
-                            downloadLLM(currentLocalContext)
-                            llmDownloaded = true
-                        }
+                    if(!isDownloaded) {
+                        LLM.download(currentLocalContext)
+                        isDownloaded = true
                     }
                 },
-                enabled = !llmDownloaded,
+                enabled = !isDownloaded,
                 shape = RoundedCornerShape(4.dp)
             ) {
                 Text(text = "Download")

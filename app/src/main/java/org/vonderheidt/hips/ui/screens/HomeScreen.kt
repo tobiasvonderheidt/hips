@@ -57,7 +57,7 @@ import org.vonderheidt.hips.utils.decode
 import org.vonderheidt.hips.utils.encode
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
-import org.vonderheidt.hips.utils.llmDownloaded
+import org.vonderheidt.hips.utils.LLM
 
 /**
  * Function that defines contents of the home screen.
@@ -65,7 +65,7 @@ import org.vonderheidt.hips.utils.llmDownloaded
 @Composable
 fun HomeScreen(navController: NavController, modifier: Modifier) {
     // State variables
-    var llmDownloaded by rememberSaveable { mutableStateOf(llmDownloaded()) }
+    val isDownloaded by rememberSaveable { mutableStateOf(LLM.isDownloaded()) }
     var context by rememberSaveable { mutableStateOf("") }
     var secretMessage by rememberSaveable { mutableStateOf("") }
     val modes = listOf("Encode", "Decode")
@@ -117,7 +117,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                     )
                 }
 
-                if (!llmDownloaded) {
+                if (!isDownloaded) {
                     Badge(
                         modifier = modifier
                             .align(Alignment.TopEnd)
