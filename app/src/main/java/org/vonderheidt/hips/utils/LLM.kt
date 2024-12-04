@@ -51,4 +51,14 @@ object LLM {
             Toast.makeText(currentLocalContext, "Download failed", Toast.LENGTH_LONG).show()
         }
     }
+
+    /**
+     * Function to get the path to the LLM (.gguf file).
+     */
+    fun getPath(): String {
+        val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val path = "$downloadDir/$FILE_NAME"
+
+        return path
+    }
 }
