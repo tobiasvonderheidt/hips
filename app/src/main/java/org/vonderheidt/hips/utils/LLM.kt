@@ -11,8 +11,8 @@ import java.io.File
  * Object (i.e. singleton class) to handle LLM download.
  */
 object LLM {
-    private const val DOWNLOAD_LINK = "https://upload.wikimedia.org/wikipedia/commons/9/9a/Pablo_Escobar_Mug.jpg?download"
-    private const val FILE_NAME = "Pablo_Escobar_Mug.jpg"
+    private const val DOWNLOAD_LINK = "https://huggingface.co/hugging-quants/Llama-3.2-1B-Instruct-Q4_K_M-GGUF/resolve/main/llama-3.2-1b-instruct-q4_k_m.gguf"
+    private const val FILE_NAME = "llama-3.2-1b-instruct-q4_k_m.gguf"
 
     /**
      * Function to check if the LLM has already been downloaded.
