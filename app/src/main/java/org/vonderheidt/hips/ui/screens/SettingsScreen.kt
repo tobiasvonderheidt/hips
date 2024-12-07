@@ -16,7 +16,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
@@ -27,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -39,9 +42,11 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 import org.vonderheidt.hips.utils.LLM
+import org.vonderheidt.hips.utils.LlamaCpp
 
 /**
  * Function that defines the settings screen.
@@ -50,12 +55,16 @@ import org.vonderheidt.hips.utils.LLM
 fun SettingsScreen(navController: NavController, modifier: Modifier) {
     // State variables
     var isDownloaded by rememberSaveable { mutableStateOf(LLM.isDownloaded()) }
+    var isInMemory by rememberSaveable { mutableStateOf(false) }
 
     // Scrolling
     val scrollState = rememberScrollState()
 
     // Download and links
     val currentLocalContext = LocalContext.current
+
+    // Coroutines
+    val coroutineScope = rememberCoroutineScope()
 
     // UI components
     Column(
@@ -142,6 +151,37 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
         }
 
         Spacer(modifier = modifier.height(16.dp))
+
+        // Button to load LLM into memory
+        if (isDownloaded) {
+            Row(
+                modifier = modifier.fillMaxWidth(0.9f)
+            ) {
+                Icon(
+                    imageVector = if (!isInMemory) Icons.Outlined.PlayArrow else Icons.Outlined.Pause,
+                    contentDescription = if (!isInMemory) "Load LLM into memory" else "Unload LLM from memory"
+                )
+
+                Spacer(modifier = modifier.width(16.dp))
+
+                Text(text = "The LLM needs to be loaded into memory.")
+            }
+
+            Spacer(modifier = modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    // Load model in coroutine so app doesn't crash
+                    coroutineScope.launch { LlamaCpp.loadModel() }
+                    isInMemory = true
+                },
+                shape = RoundedCornerShape(4.dp)
+            ) {
+                Text(text = if (!isInMemory) "Start LLM" else "Stop LLM")
+            }
+
+            Spacer(modifier = modifier.height(16.dp))
+        }
 
         HorizontalDivider()
 
