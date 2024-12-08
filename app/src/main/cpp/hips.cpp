@@ -62,3 +62,22 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_load
 
     return jModel;
 }
+
+/**
+ * Function to unload the LLM from memory.
+ *
+ * @param env The JNI environment.
+ * @param thiz Java object this function was called with.
+ * @param jModel Memory address of the LLM.
+ */
+extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloadModel(JNIEnv* env, jobject thiz, jlong jModel) {
+    // Cast memory address of LLM from Java long to C++ pointer
+    auto cppModel = reinterpret_cast<llama_model*>(jModel);
+
+    // Unload model from memory
+    llama_free_model(cppModel);
+
+    // Log success message
+    // Java long is used instead of now invalid C++ pointer, needs to formated as C++ long long to get all 64 bits
+    LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_unloadModel: LLM was unloaded from memory address 0x%llx", jModel);
+}

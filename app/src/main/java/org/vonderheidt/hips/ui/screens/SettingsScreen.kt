@@ -28,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -56,6 +57,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
     // State variables
     var isDownloaded by rememberSaveable { mutableStateOf(LLM.isDownloaded()) }
     var isInMemory by rememberSaveable { mutableStateOf(false) }
+    var model by rememberSaveable { mutableLongStateOf(0L) }
 
     // Scrolling
     val scrollState = rememberScrollState()
@@ -171,9 +173,15 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
             Button(
                 onClick = {
-                    // Load model in coroutine so app doesn't crash
-                    coroutineScope.launch { LlamaCpp.loadModel() }
-                    isInMemory = true
+                    // Load and unload model in coroutines so app doesn't crash
+                    if (!isInMemory) {
+                        coroutineScope.launch { model = LlamaCpp.loadModel() }
+                        isInMemory = true
+                    }
+                    else {
+                        coroutineScope.launch { LlamaCpp.unloadModel(model) }
+                        isInMemory = false
+                    }
                 },
                 shape = RoundedCornerShape(4.dp)
             ) {

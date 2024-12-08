@@ -13,4 +13,11 @@ object LlamaCpp {
      * @return Memory address of the LLM.
      */
     external fun loadModel(path: String = this.path): Long
+
+    /**
+     * Wrapper for the `llama_free_model` function of llama.cpp. Unloads the LLM from memory.
+     *
+     * @param model Memory address of the LLM.
+     */
+    external fun unloadModel(model: Long)
 }
