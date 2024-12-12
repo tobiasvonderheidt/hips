@@ -28,7 +28,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -56,8 +55,7 @@ import org.vonderheidt.hips.utils.LlamaCpp
 fun SettingsScreen(navController: NavController, modifier: Modifier) {
     // State variables
     var isDownloaded by rememberSaveable { mutableStateOf(LLM.isDownloaded()) }
-    var isInMemory by rememberSaveable { mutableStateOf(false) }
-    var model by rememberSaveable { mutableLongStateOf(0L) }
+    var isInMemory by rememberSaveable { mutableStateOf(LlamaCpp.isInMemory()) }
 
     // Scrolling
     val scrollState = rememberScrollState()
@@ -173,15 +171,15 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
             Button(
                 onClick = {
-                    // Load and unload model in coroutines so app doesn't crash
+                    // Check if the LLM is in memory already, load/unload it and update the state variable
+                    // Needs coroutineScope.launch{...} around every function call to update the state only after loading/unloading
                     if (!isInMemory) {
-                        coroutineScope.launch { model = LlamaCpp.loadModel() }
-                        isInMemory = true
+                        coroutineScope.launch { LlamaCpp.startInstance() }
                     }
                     else {
-                        coroutineScope.launch { LlamaCpp.unloadModel(model) }
-                        isInMemory = false
+                        coroutineScope.launch { LlamaCpp.stopInstance() }
                     }
+                    coroutineScope.launch { isInMemory = LlamaCpp.isInMemory() }
                 },
                 shape = RoundedCornerShape(4.dp)
             ) {

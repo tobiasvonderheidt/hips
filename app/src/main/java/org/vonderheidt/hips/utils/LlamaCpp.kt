@@ -6,18 +6,72 @@ package org.vonderheidt.hips.utils
 object LlamaCpp {
     private val path = LLM.getPath()
 
+    // Annotate pointer to the LLM as volatile so that r/w to it is atomic and immediately visible to all threads
+    // Avoids race conditions, i.e. multiple threads trying to load/unload the LLM simultaneously
+    @Volatile
+    private var model = 0L
+
+    /**
+     * Function to check if LLM has already been loaded into memory.
+     *
+     * @return Boolean that is true if the LLM is in memory, false otherwise.
+     */
+    fun isInMemory(): Boolean {
+        return model != 0L
+    }
+
+    /**
+     * Function to start the instance of the LLM in a thread-safe manner.
+     *
+     * Does not return a pointer to the LLM as the LlamaCpp object already stores this internally.
+     */
+    fun startInstance() {
+        // If the LLM is already loaded, there is nothing to do
+        if (isInMemory()) {
+            return
+        }
+
+        // Otherwise, load the LLM and store its memory address
+        // Synchronized allows only one thread to execute the code inside {...}, so other threads can't load LLM simultaneously
+        synchronized(this) {
+            if (!isInMemory()) {
+                model = loadModel()
+            }
+        }
+    }
+
+    /**
+     * Function to stop the instance of the LLM in a thread-safe manner.
+     */
+    fun stopInstance() {
+        // Mirrors startInstance
+        if (!isInMemory()) {
+            return
+        }
+
+        synchronized(this) {
+            if (isInMemory()) {
+                unloadModel()
+
+                model = 0L
+            }
+        }
+    }
+
+    // Declare the native methods called via JNI as Kotlin external functions
+
     /**
      * Wrapper for the `llama_load_model_from_file` function of llama.cpp. Loads the LLM into memory.
      *
      * @param path Path to the LLM (.gguf file).
      * @return Memory address of the LLM.
      */
-    external fun loadModel(path: String = this.path): Long
+    private external fun loadModel(path: String = this.path): Long
 
     /**
      * Wrapper for the `llama_free_model` function of llama.cpp. Unloads the LLM from memory.
      *
      * @param model Memory address of the LLM.
      */
-    external fun unloadModel(model: Long)
+    private external fun unloadModel(model: Long = this.model)
 }
