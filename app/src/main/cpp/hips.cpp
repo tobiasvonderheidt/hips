@@ -74,7 +74,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloa
     // Cast memory address of LLM from Java long to C++ pointer
     auto cppModel = reinterpret_cast<llama_model*>(jModel);
 
-    // Unload model from memory
+    // Unload LLM from memory
     llama_free_model(cppModel);
 
     // Log success message

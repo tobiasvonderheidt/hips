@@ -55,7 +55,7 @@ object LlamaCpp {
 
         synchronized(this) {
             if (isInMemory()) {
-                // Unload ctx first as model is needed for ctx
+                // Unload context first as LLM is needed for context
                 unloadCtx()
                 ctx = 0L
 
