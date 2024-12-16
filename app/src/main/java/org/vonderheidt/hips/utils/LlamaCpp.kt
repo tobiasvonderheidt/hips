@@ -6,10 +6,13 @@ package org.vonderheidt.hips.utils
 object LlamaCpp {
     private val path = LLM.getPath()
 
-    // Annotate pointer to the LLM as volatile so that r/w to it is atomic and immediately visible to all threads
-    // Avoids race conditions, i.e. multiple threads trying to load/unload the LLM simultaneously
+    // Annotate pointers to the LLM and its context as volatile so that r/w to them is atomic and immediately visible to all threads
+    // Avoids race conditions, i.e. multiple threads trying to load/unload the LLM or its context simultaneously
     @Volatile
     private var model = 0L
+
+    @Volatile
+    private var ctx = 0L
 
     /**
      * Function to check if LLM has already been loaded into memory.
@@ -17,7 +20,7 @@ object LlamaCpp {
      * @return Boolean that is true if the LLM is in memory, false otherwise.
      */
     fun isInMemory(): Boolean {
-        return model != 0L
+        return model != 0L && ctx != 0L
     }
 
     /**
@@ -36,6 +39,7 @@ object LlamaCpp {
         synchronized(this) {
             if (!isInMemory()) {
                 model = loadModel()
+                ctx = loadCtx()
             }
         }
     }
@@ -51,8 +55,11 @@ object LlamaCpp {
 
         synchronized(this) {
             if (isInMemory()) {
-                unloadModel()
+                // Unload ctx first as model is needed for ctx
+                unloadCtx()
+                ctx = 0L
 
+                unloadModel()
                 model = 0L
             }
         }
@@ -74,4 +81,19 @@ object LlamaCpp {
      * @param model Memory address of the LLM.
      */
     private external fun unloadModel(model: Long = this.model)
+
+    /**
+     * Wrapper for the `llama_new_context_with_model` function of llama.cpp. Loads the context into memory.
+     *
+     * @param model Memory address of the LLM.
+     * @return Memory address of the context.
+     */
+    private external fun loadCtx(model: Long = this.model): Long
+
+    /**
+     * Wrapper for the `llama_free` function of llama.cpp. Unloads the context from memory.
+     *
+     * @param ctx Memory address of the context.
+     */
+    private external fun unloadCtx(ctx: Long = this.ctx)
 }

@@ -81,3 +81,57 @@ extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloa
     // Java long is used instead of now invalid C++ pointer, needs to formated as C++ long long to get all 64 bits
     LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_unloadModel: LLM was unloaded from memory address 0x%llx", jModel);
 }
+
+/**
+ * Function to load the context into memory.
+ *
+ * @param env The JNI environment.
+ * @param thiz Java object this function was called with.
+ * @param jModel Memory address of the LLM.
+ * @return Memory address of the context.
+ */
+extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_loadCtx(JNIEnv* env, jobject thiz, jlong jModel) {
+    // Similar to loadModel
+
+    // Cast memory address of the LLM from Java long to C++ pointer
+    auto cppModel = reinterpret_cast<llama_model*>(jModel);
+
+    // Use default parameters for the context
+    llama_context_params params = llama_context_default_params();
+
+    // Create context with the LLM (=> context knows its state) and save pointer to it
+    llama_context* cppCtx = llama_new_context_with_model(cppModel, params);
+
+    // Log success or error message
+    if (cppCtx != nullptr) {
+        LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_loadCtx: Context was loaded into memory at address 0x%lx", reinterpret_cast<u_long>(cppCtx));
+    }
+    else {
+        LOGe("Java_org_vonderheidt_hips_utils_LlamaCpp_loadCtx: Context could not be loaded into memory (address 0x%lx)", reinterpret_cast<u_long>(cppCtx));
+    }
+
+    // Cast C++ pointer to Java long to return it
+    auto jCtx = reinterpret_cast<jlong>(cppCtx);
+
+    return jCtx;
+}
+
+/**
+ * Function to unload the context from memory.
+ *
+ * @param env The JNI environment.
+ * @param thiz Java object this function was called with.
+ * @param jCtx Memory address of the context.
+ */
+extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloadCtx(JNIEnv* env, jobject thiz, jlong jCtx) {
+    // Similar to unloadModel
+
+    // Cast memory address of context from Java long to C++ pointer
+    auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
+
+    // Unload context from memory
+    llama_free(cppCtx);
+
+    // Log success message
+    LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_unloadCtx: Context was unloaded from memory address 0x%llx", jCtx);
+}
