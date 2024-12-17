@@ -20,6 +20,7 @@
 #include <android/log.h>
 #include <jni.h>
 #include "llama.h"
+#include "common.h"
 
 #define TAG "hips.cpp"                                                              // Logcat tag to identify entries from hips.cpp
 #define LOGi(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)           // Log info message
@@ -134,4 +135,38 @@ extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloa
 
     // Log success message
     LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_unloadCtx: Context was unloaded from memory address 0x%llx", jCtx);
+}
+
+/**
+ * Function to tokenize a string into an array of token IDs.
+ *
+ * @param env The JNI environment.
+ * @param thiz Java object this function was called with.
+ * @param jString String to be tokenized.
+ * @param jCtx Memory address of the context.
+ * @return Tokenization as an array of token IDs.
+ */
+extern "C" JNIEXPORT jintArray JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_tokenize(JNIEnv* env, jobject thiz, jstring jString, jlong jCtx) {
+    // Cast memory address of the context from Java long to C++ pointer
+    auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
+
+    // Convert Java string to be tokenized to C++ string
+    jboolean isCopy = true;
+    const char* cppString = env -> GetStringUTFChars(jString, &isCopy);
+
+    // Tokenize string, save tokens as llama_tokens (equivalent to std::vector<llama_token>, with llama_token equivalent to int32_t)
+    // Hide special tokens to get clean input
+    // See common.cpp: common_tokenize(ctx, ...) calls common_tokenize(model, ...), which calls llama_tokenize
+    llama_tokens cppTokens = common_tokenize(cppCtx, cppString, false, false);
+
+    // Release C++ string from memory
+    env -> ReleaseStringUTFChars(jString, cppString);
+
+    // Initialize Java int array to store token IDs
+    jintArray jTokens = env -> NewIntArray(cppTokens.size());
+
+    // Fill the Java array with token IDs and return it
+    env -> SetIntArrayRegion(jTokens, 0, cppTokens.size(), reinterpret_cast<const jint*>(cppTokens.data()));
+
+    return jTokens;
 }

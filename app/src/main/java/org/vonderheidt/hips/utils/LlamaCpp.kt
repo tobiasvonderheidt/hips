@@ -96,4 +96,15 @@ object LlamaCpp {
      * @param ctx Memory address of the context.
      */
     private external fun unloadCtx(ctx: Long = this.ctx)
+
+    // Parameter ctx is optional since it has a default value, put it at the end to avoid conflicts
+
+    /**
+     * Wrapper for the `common_tokenize` function of llama.cpp. Tokenizes a string into an array of token IDs.
+     *
+     * @param string String to be tokenized.
+     * @param ctx Memory address of the context.
+     * @return Tokenization as an array of token IDs.
+     */
+    external fun tokenize(string: String, ctx: Long = this.ctx): IntArray
 }
