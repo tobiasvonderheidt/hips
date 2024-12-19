@@ -170,3 +170,33 @@ extern "C" JNIEXPORT jintArray JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_
 
     return jTokens;
 }
+
+/**
+ * Function to detokenize an array of token IDs into a string.
+ *
+ * @param env The JNI environment.
+ * @param thiz Java object this function was called with.
+ * @param jTokens Array of token IDs to be detokenized.
+ * @param jCtx Memory address of the context.
+ * @return Detokenization as a string.
+ */
+extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_detokenize(JNIEnv* env, jobject thiz, jintArray jTokens, jlong jCtx) {
+    // Cast memory address of the context from Java long to C++ pointer
+    auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
+
+    // Initialize C++ array for token IDs and fill it
+    jsize jTokensSize = env -> GetArrayLength(jTokens);
+
+    llama_tokens cppTokens(jTokensSize);
+
+    env -> GetIntArrayRegion(jTokens, 0, jTokensSize, reinterpret_cast<jint*>(cppTokens.data()));
+
+    // Detokenize array of tokens to C++ string, hide special tokens to get clean output
+    // See common.cpp: common_detokenize calls llama_detokenize
+    std::basic_string<char> cppString = common_detokenize(cppCtx, cppTokens, false);
+
+    // Convert C++ string to Java string and return it
+    jstring jString = env -> NewStringUTF(cppString.c_str());
+
+    return jString;
+}

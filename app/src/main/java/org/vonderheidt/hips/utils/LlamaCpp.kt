@@ -107,4 +107,13 @@ object LlamaCpp {
      * @return Tokenization as an array of token IDs.
      */
     external fun tokenize(string: String, ctx: Long = this.ctx): IntArray
+
+    /**
+     * Wrapper for the `common_detokenize` function of llama.cpp. Detokenizes an array of token IDs into a string.
+     *
+     * @param tokens Array of token IDs.
+     * @param ctx Memory address of the context.
+     * @return Detokenization as a string.
+     */
+    external fun detokenize(tokens: IntArray, ctx: Long = this.ctx): String
 }
