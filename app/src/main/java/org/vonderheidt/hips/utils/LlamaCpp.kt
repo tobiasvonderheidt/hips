@@ -6,7 +6,7 @@ package org.vonderheidt.hips.utils
 object LlamaCpp {
     private val path = LLM.getPath()
 
-    // Annotate pointers to the LLM and its context as volatile so that r/w to them is atomic and immediately visible to all threads
+    // Annotate pointers to the LLM, its context and sampler as volatile so that r/w to them is atomic and immediately visible to all threads
     // Avoids race conditions, i.e. multiple threads trying to load/unload the LLM or its context simultaneously
     @Volatile
     private var model = 0L
@@ -14,13 +14,18 @@ object LlamaCpp {
     @Volatile
     private var ctx = 0L
 
+    @Volatile
+    private var smpl = 0L
+
     /**
      * Function to check if LLM has already been loaded into memory.
      *
      * @return Boolean that is true if the LLM is in memory, false otherwise.
      */
     fun isInMemory(): Boolean {
-        return model != 0L && ctx != 0L
+        return model != 0L
+                && ctx != 0L
+                && smpl != 0L
     }
 
     /**
@@ -40,6 +45,7 @@ object LlamaCpp {
             if (!isInMemory()) {
                 model = loadModel()
                 ctx = loadCtx()
+                smpl = loadSmpl()
             }
         }
     }
@@ -55,6 +61,9 @@ object LlamaCpp {
 
         synchronized(this) {
             if (isInMemory()) {
+                unloadSmpl()
+                smpl = 0L
+
                 // Unload context first as LLM is needed for context
                 unloadCtx()
                 ctx = 0L
@@ -96,6 +105,22 @@ object LlamaCpp {
      * @param ctx Memory address of the context.
      */
     private external fun unloadCtx(ctx: Long = this.ctx)
+
+    /**
+     * Wrapper for the `llama_sampler_init_*` functions of llama.cpp. Loads the sampler into memory.
+     *
+     * Currently only supports greedy sampler for Huffman encoding.
+     *
+     * @return Memory address of the sampler.
+     */
+    private external fun loadSmpl(): Long
+
+    /**
+     * Wrapper for the `llama_sampler_free` function of llama.cpp. Unloads the sampler from memory.
+     *
+     * @param smpl Memory address of the sampler.
+     */
+    private external fun unloadSmpl(smpl: Long = this.smpl)
 
     // Parameter ctx is optional since it has a default value, put it at the end to avoid conflicts
 

@@ -138,6 +138,56 @@ extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloa
 }
 
 /**
+ * Function to load the sampler into memory.
+ *
+ * Currently only supports greedy sampler for Huffman encoding.
+ *
+ * @param env The JNI environment.
+ * @param thiz Java object this function was called with.
+ * @return Memory address of the sampler.
+ */
+extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_loadSmpl(JNIEnv* env, jobject thiz) {
+    // Similar to loadModel
+
+    // Initialize greedy sampler (no sampler chain needed when using only a single sampler)
+    llama_sampler* cppSmpl = llama_sampler_init_greedy();
+
+    // Log success or error message
+    if (cppSmpl != nullptr) {
+        LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_loadSmpl: Greedy sampler was loaded into memory at address 0x%lx", reinterpret_cast<u_long>(cppSmpl));
+    }
+    else {
+        LOGe("Java_org_vonderheidt_hips_utils_LlamaCpp_loadSmpl: Greedy sampler could not be loaded into memory (address 0x%lx)", reinterpret_cast<u_long>(cppSmpl));
+    }
+
+    // Convert C++ pointer to Java long to return it
+    auto jSmpl = reinterpret_cast<jlong>(cppSmpl);
+
+    return jSmpl;
+}
+
+/**
+ * Function to unload the sampler from memory.
+ *
+ * @param env The JNI environment.
+ * @param thiz Java object this function was called with.
+ * @param jSmpl Memory address of the sampler.
+ */
+extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloadSmpl(JNIEnv* env, jobject thiz, jlong jSmpl) {
+    // Similar to unloadModel
+
+    // Cast memory address of sampler from Java long to C++ pointer
+    auto cppSmpl = reinterpret_cast<llama_sampler*>(jSmpl);
+
+    // Unload sampler from memory
+    // llama.cpp docs: "important: do not free if the sampler has been added to a llama_sampler_chain (via llama_sampler_chain_add)" (not the case here)
+    llama_sampler_free(cppSmpl);
+
+    // Log success message
+    LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_unloadSmpl: Sampler was unloaded from memory address 0x%llx", jSmpl);
+}
+
+/**
  * Function to tokenize a string into an array of token IDs.
  *
  * @param env The JNI environment.
