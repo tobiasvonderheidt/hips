@@ -74,6 +74,25 @@ object LlamaCpp {
         }
     }
 
+    /**
+     * Function to check if a token is the end of a sentence. Needed to complete the last sentence of the cover text.
+     *
+     * Corresponds to Stegasuras method `is_sent_finish` in `utils.py`.
+     *
+     * @param token Token ID to check.
+     * @return Boolean that is true if the token ends with `.`, `?` or `!`, false otherwise.
+     */
+    fun isEndOfSentence(token: Int): Boolean {
+        // Detokenize the token and check if it ends with a punctuation mark (covers "?" vs " ?" etc)
+        val detokenization = detokenize(intArrayOf(token))
+
+        val isSentenceFinished = detokenization.endsWith(".")
+                || detokenization.endsWith("!")
+                || detokenization.endsWith("?")
+
+        return isSentenceFinished
+    }
+
     // Declare the native methods called via JNI as Kotlin external functions
 
     /**
