@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import org.vonderheidt.hips.data.HiPSDataStore
 import org.vonderheidt.hips.navigation.SetupNavGraph
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 
@@ -32,6 +35,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+        // Instantiate DataStore on app startup and read stored settings
+        // Writes default settings to DataStore if app was just installed
+        HiPSDataStore.startInstance(applicationContext)
+        lifecycleScope.launch { HiPSDataStore.readSettings() }
     }
 
     // Load C++ libraries
