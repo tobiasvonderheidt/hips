@@ -7,7 +7,7 @@ object LlamaCpp {
     private val path = LLM.getPath()
 
     // Annotate pointers to the LLM, its context and sampler as volatile so that r/w to them is atomic and immediately visible to all threads
-    // Avoids race conditions, i.e. multiple threads trying to load/unload the LLM or its context simultaneously
+    // Avoids race conditions, i.e. multiple threads trying to load/unload the LLM, its context or sampler simultaneously
     @Volatile
     private var model = 0L
 
@@ -40,7 +40,7 @@ object LlamaCpp {
         }
 
         // Otherwise, load the LLM and store its memory address
-        // Synchronized allows only one thread to execute the code inside {...}, so other threads can't load LLM simultaneously
+        // Synchronized allows only one thread to execute the code inside {...}, so other threads can't load the LLM simultaneously
         synchronized(this) {
             if (!isInMemory()) {
                 model = loadModel()
