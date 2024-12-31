@@ -3,6 +3,7 @@ package org.vonderheidt.hips.ui.screens
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,11 +12,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PlayArrow
@@ -25,9 +29,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -43,10 +51,14 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
+import org.vonderheidt.hips.data.HiPSDataStore
+import org.vonderheidt.hips.data.Settings
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
+import org.vonderheidt.hips.utils.ConversionMode
 import org.vonderheidt.hips.utils.LLM
 import org.vonderheidt.hips.utils.LlamaCpp
+import org.vonderheidt.hips.utils.SteganographyMode
 
 /**
  * Function that defines the settings screen.
@@ -56,6 +68,11 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
     // State variables
     var isDownloaded by rememberSaveable { mutableStateOf(LLM.isDownloaded()) }
     var isInMemory by rememberSaveable { mutableStateOf(LlamaCpp.isInMemory()) }
+    var selectedConversionMode by rememberSaveable { mutableStateOf(Settings.conversionMode) }
+    var selectedSteganographyMode by rememberSaveable { mutableStateOf(Settings.steganographyMode) }
+    var selectedTemperature by rememberSaveable { mutableFloatStateOf(Settings.temperature) }
+    var selectedBlockSize by rememberSaveable { mutableIntStateOf(Settings.blockSize) }
+    var selectedBitsPerToken by rememberSaveable { mutableIntStateOf(Settings.bitsPerToken) }
 
     // Scrolling
     val scrollState = rememberScrollState()
@@ -188,6 +205,200 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
             Spacer(modifier = modifier.height(16.dp))
         }
+
+        // Steganography settings
+        Row(
+            modifier = modifier.fillMaxWidth(0.9f)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Key,
+                contentDescription = "Steganography settings"
+            )
+
+            Spacer(modifier = modifier.width(16.dp))
+
+            Column {
+                Text(
+                    text = "Steganography",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(text = "Select how to convert the secret message from string to binary.")
+
+                Spacer(modifier = modifier.height(16.dp))
+
+                // Select conversion mode
+                ConversionMode.entries.toTypedArray().forEach { conversionMode ->
+                    Row(
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                // Make the whole row selectable instead of just the button for better accessibility
+                                selected = conversionMode == selectedConversionMode,
+                                onClick = {
+                                    // Update state variable
+                                    selectedConversionMode = conversionMode
+
+                                    // Update DataStore
+                                    Settings.conversionMode = conversionMode
+                                    coroutineScope.launch { HiPSDataStore.writeSettings() }
+                                }
+                            ),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = conversionMode == selectedConversionMode,
+                            onClick = {
+                                // Same as row onClick
+                                selectedConversionMode = conversionMode
+
+                                Settings.conversionMode = conversionMode
+                                coroutineScope.launch { HiPSDataStore.writeSettings() }
+                            }
+                        )
+
+                        // Use .toString() instead of .name to get display name
+                        Text(text = conversionMode.toString())
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = modifier.height(16.dp))
+
+        Row(
+            modifier = modifier.fillMaxWidth(0.9f)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Lock,
+                contentDescription = "Steganography settings"
+            )
+
+            Spacer(modifier = modifier.width(16.dp))
+
+            Column {
+                Text(text = "Select how to encode the secret message into a cover text.")
+
+                Spacer(modifier = modifier.height(16.dp))
+
+                // Select steganography mode
+                SteganographyMode.entries.toTypedArray().forEach { steganographyMode ->
+                    Row(
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                // Again, make the whole row selectable
+                                selected = steganographyMode == selectedSteganographyMode,
+                                onClick = {
+                                    // Update state variable
+                                    selectedSteganographyMode = steganographyMode
+
+                                    // Update DataStore
+                                    Settings.steganographyMode = steganographyMode
+                                    coroutineScope.launch { HiPSDataStore.writeSettings() }
+                                }
+                            ),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = steganographyMode == selectedSteganographyMode,
+                            onClick = {
+                                // Same as row onClick
+                                selectedSteganographyMode = steganographyMode
+
+                                Settings.steganographyMode = steganographyMode
+                                coroutineScope.launch { HiPSDataStore.writeSettings() }
+                            }
+                        )
+
+                        // Use .toString() instead of .name to get display name
+                        Text(text = steganographyMode.toString())
+                    }
+                }
+
+                Spacer(modifier = modifier.height(16.dp))
+
+                // Specific settings for each steganography mode
+                when (selectedSteganographyMode) {
+                    SteganographyMode.Arithmetic -> {
+                        Text(text = "Set the temperature for token sampling (\"creativity\" of the LLM).")
+
+                        Spacer(modifier = modifier.height(16.dp))
+
+                        Slider(
+                            value = selectedTemperature,
+                            onValueChange = {
+                                // Update state variable
+                                selectedTemperature = it
+
+                                // Update DataStore
+                                Settings.temperature = it
+                                coroutineScope.launch { HiPSDataStore.writeSettings() }
+                            },
+                            valueRange = 0f..2f,
+                            steps = 19
+                        )
+
+                        Spacer(modifier = modifier.height(16.dp))
+
+                        Text(text = "T = $selectedTemperature")
+                    }
+                    SteganographyMode.Bins -> {
+                        Text(text = "Set the number of bins (higher is more efficient, but less coherent).")
+
+                        Spacer(modifier = modifier.height(16.dp))
+
+                        // Slider only allows floats, do int conversion here to abstract it away from state variable
+                        Slider(
+                            value = selectedBlockSize.toFloat(),
+                            onValueChange = {
+                                // Update state variable
+                                selectedBlockSize = it.toInt()
+
+                                // Update DataStore
+                                Settings.blockSize = it.toInt()
+                                coroutineScope.launch { HiPSDataStore.writeSettings() }
+                            },
+                            valueRange = 1f..4f,
+                            steps = 2
+                        )
+
+                        Spacer(modifier = modifier.height(16.dp))
+
+                        Text(text = "n = 2^$selectedBlockSize bins")
+                    }
+                    SteganographyMode.Huffman -> {
+                        Text(text = "Set the bits per token (higher is more efficient, but less coherent).")
+
+                        Spacer(modifier = modifier.height(16.dp))
+
+                        // Again, do int conversion here as slider only allows floats
+                        Slider(
+                            value = selectedBitsPerToken.toFloat(),
+                            onValueChange = {
+                                // Update state variable
+                                selectedBitsPerToken = it.toInt()
+
+                                // Update DataStore
+                                Settings.bitsPerToken = it.toInt()
+                                coroutineScope.launch { HiPSDataStore.writeSettings() }
+                            },
+                            valueRange = 1f..4f,
+                            steps = 2
+                        )
+
+                        Spacer(modifier = modifier.height(16.dp))
+
+                        Text(text = "n = $selectedBitsPerToken bits/token")
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = modifier.height(16.dp))
 
         HorizontalDivider()
 
