@@ -69,7 +69,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
     var secretMessage by rememberSaveable { mutableStateOf("") }
     val modes = listOf("Encode", "Decode")
     var selectedMode by rememberSaveable { mutableIntStateOf(0) }
-    var outputVisible by rememberSaveable { mutableStateOf(false) }
+    var isOutputVisible by rememberSaveable { mutableStateOf(false) }
     var isLoading by rememberSaveable { mutableStateOf(false) }
     var coverText by rememberSaveable { mutableStateOf("") }
 
@@ -229,7 +229,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                             selectedMode = index
 
                             // Hide old output when mode is changed
-                            outputVisible = false
+                            isOutputVisible = false
 
                             // Clear both secret message and cover text when mode is changed
                             secretMessage = ""
@@ -249,7 +249,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
             Button(
                 onClick = {
                     // Hide old output when start button is pressed again, show loading animation
-                    outputVisible = false
+                    isOutputVisible = false
                     isLoading = true
 
                     // Call encode or decode function as coroutine, depending on mode selected
@@ -263,7 +263,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
 
                         // Hide loading animation, show new output only when encode or decode is finished
                         isLoading = false
-                        outputVisible = true
+                        isOutputVisible = true
                     }
                 },
                 shape = RoundedCornerShape(4.dp)
@@ -281,7 +281,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
 
         // Output is either cover text or secret message
         // Only show when encode or decode is finished (i.e. also not on app startup)
-        if (outputVisible) {
+        if (isOutputVisible) {
             Spacer(modifier = modifier.height(32.dp))
 
             if (selectedMode == 0) {
