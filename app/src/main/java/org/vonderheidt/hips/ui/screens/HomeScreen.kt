@@ -53,11 +53,10 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
-import org.vonderheidt.hips.utils.decode
-import org.vonderheidt.hips.utils.encode
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 import org.vonderheidt.hips.utils.LLM
+import org.vonderheidt.hips.utils.Steganography
 
 /**
  * Function that defines contents of the home screen.
@@ -256,10 +255,10 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                     // Call encode or decode function as coroutine, depending on mode selected
                     coroutineScope.launch {
                         if (selectedMode == 0) {
-                            coverText = encode(context, secretMessage)
+                            coverText = Steganography.encode(context, secretMessage)
                         }
                         else {
-                            secretMessage = decode(context, coverText)
+                            secretMessage = Steganography.decode(context, coverText)
                         }
 
                         // Hide loading animation, show new output only when encode or decode is finished
