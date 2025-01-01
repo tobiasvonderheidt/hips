@@ -59,7 +59,7 @@ import org.vonderheidt.hips.utils.LLM
 import org.vonderheidt.hips.utils.Steganography
 
 /**
- * Function that defines contents of the home screen.
+ * Function that defines the home screen.
  */
 @Composable
 fun HomeScreen(navController: NavController, modifier: Modifier) {
@@ -326,7 +326,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
 }
 
 /**
- * Function to show preview of the main screen in Android Studio.
+ * Function to show preview of the home screen in Android Studio.
  */
 @Preview(showBackground = true)
 @Composable
