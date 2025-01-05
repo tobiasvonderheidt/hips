@@ -13,8 +13,8 @@ object Crypto {
         // Wait 5 seconds
         delay(5000)
 
-        // Return placeholder
-        val cipherBits = ByteArray(size = 0)
+        // Skip encryption for now
+        val cipherBits = plainBits
 
         return cipherBits
     }
@@ -26,8 +26,8 @@ object Crypto {
         // Wait 5 seconds
         delay(5000)
 
-        // Return placeholder
-        val plainBits = ByteArray(size = 0)
+        // Skip decryption for now
+        val plainBits = cipherBits
 
         return plainBits
     }
