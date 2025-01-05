@@ -1,7 +1,5 @@
 package org.vonderheidt.hips.utils
 
-import kotlinx.coroutines.delay
-
 /**
  * Object (i.e. singleton class) that represents the binary conversion of the secret message using UTF-8 encoding.
  *
@@ -14,12 +12,8 @@ object UTF8 {
      * @param secretMessage Secret message.
      * @return Binary representation of the secret message.
      */
-    suspend fun encode(secretMessage: String): ByteArray {
-        // Wait 5 seconds
-        delay(5000)
-
-        // Return placeholder
-        val plainBits = ByteArray(size = 0)
+    fun encode(secretMessage: String): ByteArray {
+        val plainBits = secretMessage.toByteArray(charset = Charsets.UTF_8)
 
         return plainBits
     }
@@ -30,13 +24,9 @@ object UTF8 {
      * @param plainBits Binary representation of the secret message.
      * @return Secret message.
      */
-    suspend fun decode(plainBits: ByteArray): String {
-        // Wait 5 seconds
-        delay(5000)
+    fun decode(plainBits: ByteArray): String {
+        val secretMessage = String(bytes = plainBits, charset = Charsets.UTF_8)
 
-        // Return placeholder
-        val coverText = ""
-
-        return coverText
+        return secretMessage
     }
 }
