@@ -50,6 +50,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.vonderheidt.hips.data.HiPSDataStore
 import org.vonderheidt.hips.data.Settings
@@ -189,14 +191,19 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
             Button(
                 onClick = {
                     // Check if the LLM is in memory already, load/unload it and update the state variable
-                    // Needs coroutineScope.launch{...} around every function call to update the state only after loading/unloading
+                    // Use coroutine with Dispatchers.IO since loading the LLM is I/O-bound, doesn't block UI in main thread anymore this way
                     if (!isInMemory) {
-                        coroutineScope.launch { LlamaCpp.startInstance() }
+                        CoroutineScope(Dispatchers.IO).launch {
+                            LlamaCpp.startInstance()
+                            isInMemory = LlamaCpp.isInMemory()
+                        }
                     }
                     else {
-                        coroutineScope.launch { LlamaCpp.stopInstance() }
+                        CoroutineScope(Dispatchers.IO).launch {
+                            LlamaCpp.stopInstance()
+                            isInMemory = LlamaCpp.isInMemory()
+                        }
                     }
-                    coroutineScope.launch { isInMemory = LlamaCpp.isInMemory() }
                 },
                 shape = RoundedCornerShape(4.dp)
             ) {
