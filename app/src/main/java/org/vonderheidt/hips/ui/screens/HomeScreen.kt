@@ -39,7 +39,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -52,6 +51,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
@@ -79,9 +80,6 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
     // Clipboard
     val currentLocalContext = LocalContext.current
     val clipboardManager = currentLocalContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
-    // Coroutines
-    val coroutineScope = rememberCoroutineScope()
 
     // UI components
     Column(
@@ -253,7 +251,9 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                     isLoading = true
 
                     // Call encode or decode function as coroutine, depending on mode selected
-                    coroutineScope.launch {
+                    // Use Dispatchers.Default since LLM inference is CPU-bound
+                    // Keep encapsulation of coroutine vs if-else like this so the loading animation works
+                    CoroutineScope(Dispatchers.Default).launch {
                         if (selectedMode == 0) {
                             coverText = Steganography.encode(context, secretMessage)
                         }
