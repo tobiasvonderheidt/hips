@@ -57,6 +57,7 @@ import kotlinx.coroutines.launch
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 import org.vonderheidt.hips.utils.LLM
+import org.vonderheidt.hips.utils.LlamaCpp
 import org.vonderheidt.hips.utils.Steganography
 
 /**
@@ -254,6 +255,11 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                     // Use Dispatchers.Default since LLM inference is CPU-bound
                     // Keep encapsulation of coroutine vs if-else like this so the loading animation works
                     CoroutineScope(Dispatchers.Default).launch {
+                        // Reset LLM instance on every button press to ensure reproducibility, otherwise ctx before encode and decode would not be the same
+                        // Works when called before this coroutine or inside it, but crashes when called inside its own coroutine before this one
+                        // Might be desirable to use it with Dispatchers.IO as it is presumably I/O-bound, but seems negligible
+                        LlamaCpp.resetInstance()
+
                         if (selectedMode == 0) {
                             coverText = Steganography.encode(context, secretMessage)
                         }

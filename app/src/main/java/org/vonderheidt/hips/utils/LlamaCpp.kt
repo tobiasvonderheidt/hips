@@ -75,6 +75,27 @@ object LlamaCpp {
     }
 
     /**
+     * Function to reset the instance of the LLM in a thread-safe manner.
+     *
+     * Needed to ensure reproducible results when switching between encode/decode mode or when encoding/decoding multiple times sequentially.
+     */
+    fun resetInstance() {
+        // Mirrors startInstance
+        if (ctx == 0L) {
+            return
+        }
+
+        synchronized(this) {
+            if (ctx != 0L) {
+                unloadCtx()
+                ctx = 0L
+
+                ctx = loadCtx()
+            }
+        }
+    }
+
+    /**
      * Function to check if a token is the end of a sentence. Needed to complete the last sentence of the cover text.
      *
      * Corresponds to Stegasuras method `is_sent_finish` in `utils.py`.
