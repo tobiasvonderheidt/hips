@@ -181,4 +181,13 @@ object LlamaCpp {
      * @return Detokenization as a string.
      */
     external fun detokenize(tokens: IntArray, ctx: Long = this.ctx): String
+
+    /**
+     * Wrapper for the `llama_sampler_sample` function of llama.cpp. Samples the next token based on the last one.
+     *
+     * @param lastToken ID of the last token.
+     * @param ctx Memory address of the context.
+     * @return ID of the next token.
+     */
+    external fun sample(lastToken: Int, ctx: Long = this.ctx, smpl: Long = this.smpl): Int
 }

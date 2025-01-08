@@ -24,6 +24,7 @@
 
 #define TAG "hips.cpp"                                                              // Logcat tag to identify entries from hips.cpp
 #define LOGi(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)           // Log info message
+#define LOGw(...) __android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__)           // Log warning message
 #define LOGe(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)          // Log error message
 
 /**
@@ -249,4 +250,47 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_de
     jstring jString = env -> NewStringUTF(cppString.c_str());
 
     return jString;
+}
+
+/**
+ * Function to sample the next token based on the last one.
+ *
+ * @param env The JNI environment.
+ * @param thiz Java object this function was called with.
+ * @param lastToken ID of the last token.
+ * @param jCtx Memory address of the context.
+ * @param jSmpl Memory address of the sampler.
+ * @return ID of the next token.
+ */
+extern "C" JNIEXPORT jint JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_sample(JNIEnv* env, jobject thiz, jint lastToken, jlong jCtx, jlong jSmpl) {
+    // Cast memory addresses of context and sampler from Java long to C++ pointers
+    // Casting the last token ID from jint to llama_token is not necessary since both is just int32_t
+    auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
+    auto cppSmpl = reinterpret_cast<llama_sampler*>(jSmpl);
+
+    // Create a batch containing only the last token
+    // TODO
+    //  llama.cpp docs: "NOTE: this is a helper function to facilitate transition to the new batch API - avoid using it"
+    //  But is used like this in https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp
+    llama_batch batch = llama_batch_get_one(&lastToken, 1);
+
+    // Run decoder to calculate logits for the next token
+    int32_t decode = llama_decode(cppCtx, batch);
+
+    // Log success or error message
+    if (decode == 0) {
+        LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_sample: decode = %d, success", decode);
+    }
+    else if (decode == 1) {
+        LOGw("Java_org_vonderheidt_hips_utils_LlamaCpp_sample: decode = %d, could not find a KV slot for the batch", decode);
+    }
+    else {
+        LOGe("Java_org_vonderheidt_hips_utils_LlamaCpp_sample: decode = %d, error. the KV cache state is restored to the state before this call", decode);
+    }
+
+    // Sample next token from logits with given sampler and return it
+    // Again, casting the next token ID is not necessary
+    llama_token nextToken = llama_sampler_sample(cppSmpl, cppCtx, -1);
+
+    return nextToken;
 }
