@@ -45,7 +45,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_load
     llama_model_params params = llama_model_default_params();
 
     // Load the LLM into memory and save pointer to it
-    llama_model* cppModel = llama_load_model_from_file(cppPath, params);
+    llama_model* cppModel = llama_model_load_from_file(cppPath, params);
 
     // Log success or error message
     // Cast pointer to unsigned long and format it as hex
@@ -77,7 +77,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloa
     auto cppModel = reinterpret_cast<llama_model*>(jModel);
 
     // Unload LLM from memory
-    llama_free_model(cppModel);
+    llama_model_free(cppModel);
 
     // Log success message
     // Java long is used instead of now invalid C++ pointer, needs to formated as C++ long long to get all 64 bits
