@@ -117,7 +117,7 @@ object LlamaCpp {
     // Declare the native methods called via JNI as Kotlin external functions
 
     /**
-     * Wrapper for the `llama_load_model_from_file` function of llama.cpp. Loads the LLM into memory.
+     * Wrapper for the `llama_model_load_from_file` function of llama.cpp. Loads the LLM into memory.
      *
      * @param path Path to the LLM (.gguf file).
      * @return Memory address of the LLM.
@@ -125,7 +125,7 @@ object LlamaCpp {
     private external fun loadModel(path: String = this.path): Long
 
     /**
-     * Wrapper for the `llama_free_model` function of llama.cpp. Unloads the LLM from memory.
+     * Wrapper for the `llama_model_free` function of llama.cpp. Unloads the LLM from memory.
      *
      * @param model Memory address of the LLM.
      */
