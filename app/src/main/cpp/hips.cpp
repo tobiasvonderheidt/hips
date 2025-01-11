@@ -253,6 +253,92 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_de
 }
 
 /**
+ * Function to calculate the logit matrix (i.e. predictions for every token in the prompt).
+ *
+ * Only the last row of the `n_tokens` x `n_vocab` matrix is actually needed as it contains the logits corresponding to the last token of the prompt.
+ *
+ * @param env The JNI environment.
+ * @param thiz Java object this function was called with.
+ * @param jTokens Token IDs from tokenization of the prompt.
+ * @param jCtx Memory address of the context.
+ * @return The logit matrix.
+ */
+extern "C" JNIEXPORT jobjectArray JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_getLogits(JNIEnv* env, jobject thiz, jintArray jTokens, jlong jCtx) {
+    // Cast memory addresses of context from Java long to C++ pointer
+    auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
+
+    // Get model the context was created with
+    // No need to specify cppModel in variable name as there is no jModel
+    const llama_model* model = llama_get_model(cppCtx);
+
+    // Copy token IDs from Java array to C++ array
+    // Data types jint, jsize and int32_t are all equivalent
+    jint* cppTokens = env -> GetIntArrayElements(jTokens, nullptr);
+
+    // C++ allows accessing illegal array indices and returns garbage values, doesn't throw IndexOutOfBoundsException like Java/Kotlin
+    // Manually ensure that indices stay within dimensions n_tokens x n_vocab of the logit matrix
+    jsize n_tokens = env -> GetArrayLength(jTokens);
+    int32_t n_vocab = llama_n_vocab(model);
+
+    // Store tokens to be processed in batch data structure
+    // llama.cpp example cited below stores multiple tokens from tokenization of the prompt in the first run, single last sampled token in subsequent runs
+    // TODO
+    //  llama.cpp docs: "NOTE: this is a helper function to facilitate transition to the new batch API - avoid using it"
+    //  But is used like this in https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp
+    llama_batch batch = llama_batch_get_one(cppTokens, n_tokens);
+
+    // Run decoder to calculate logits for the next token
+    int32_t decode = llama_decode(cppCtx, batch);
+
+    // Log success or error message
+    if (decode == 0) {
+        LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_getLogits: decode = %d, success", decode);
+    }
+    else if (decode == 1) {
+        LOGw("Java_org_vonderheidt_hips_utils_LlamaCpp_getLogits: decode = %d, could not find a KV slot for the batch", decode);
+    }
+    else {
+        LOGe("Java_org_vonderheidt_hips_utils_LlamaCpp_getLogits: decode = %d, error. the KV cache state is restored to the state before this call", decode);
+    }
+
+    // Get pointer to the logit matrix
+    float* cppLogits = llama_get_logits(cppCtx);
+
+    // Copy logits from C++ matrix to Java matrix
+    // Initialize outer Java array as object array with as many components as there are rows
+    // TODO
+    //  n_rows should be n_tokens, but llama_get_logits consistently returns 1 x n_vocab matrix that generates reasonable text, so likely already is last row of actual logit matrix
+    //  Possibly related to dimension of batch when using llama_batch_get_one
+    jsize n_rows = 1;
+    jsize n_columns = n_vocab;
+
+    jobjectArray jLogits = env -> NewObjectArray(n_rows, env -> FindClass("[F"), nullptr);
+
+    // Fill outer array with inner arrays
+    for (jsize i = 0; i < n_rows; i++) {
+        // Initialize inner Java arrays as float arrays with as many components as there are columns
+        jfloatArray row = env -> NewFloatArray(n_columns);
+
+        // Float array for row i contains the n_columns elements from cppLogits matrix that start at offset i * n_columns
+        env -> SetFloatArrayRegion(row, 0, n_columns, cppLogits + (i * n_columns));
+
+        // Put float array as row i into outer Java array
+        env -> SetObjectArrayElement(jLogits, i, row);
+
+        // Free local reference to float array from memory
+        env -> DeleteLocalRef(row);
+    }
+
+    // Free C++ array of token IDs from memory
+    env -> ReleaseIntArrayElements(jTokens, cppTokens, 0);
+
+    // llama.cpp example cited above doesn't use llama_batch_free(batch) to free the batch from memory, actually causes crash if done here
+    // Does only free model, context and sampler after text generation finishes, but those are managed by the LlamaCpp Kotlin object
+
+    return jLogits;
+}
+
+/**
  * Function to sample the next token based on the last one.
  *
  * @param env The JNI environment.
