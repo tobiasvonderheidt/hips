@@ -1,6 +1,5 @@
 package org.vonderheidt.hips.utils
 
-import kotlinx.coroutines.delay
 import org.vonderheidt.hips.data.Settings
 
 /**
@@ -101,13 +100,51 @@ object Huffman {
      * Function to decode a cover text into (the encrypted binary representation of) the secret message using Huffman decoding.
      *
      * Corresponds to Stegasuras method `decode_huffman` in `huffman_baseline.py`.
+     *
+     * @param context The context to decode the cover text with.
+     * @param coverText The cover text containing a secret message.
+     * @return The encrypted binary representation of the secret message.
      */
-    suspend fun decode(context: String, coverText: String, bitsPerToken: Int = Settings.bitsPerToken): ByteArray {
-        // Wait 5 seconds
-        delay(5000)
+    fun decode(context: String, coverText: String): ByteArray {
+        // Tokenize context and cover text
+        val contextTokens = LlamaCpp.tokenize(context)
+        val coverTextTokens = LlamaCpp.tokenize(coverText)
 
-        // Return placeholder
-        val cipherBits = ByteArray(size = 0)
+        // Initialize string to store cipher bits
+        var cipherBitString = ""
+
+        // Initialize variables and flags for loop (similar to encode)
+        var i = 0
+
+        var isFirstRun = true
+        var coverTextToken = -1     // Will always be overwritten with last cover text token
+
+        // Decode every cover text token into bitsPerToken bits
+        while (i < coverTextTokens.size) {
+            // Calculate the logit matrix again initially from context tokens, then from last cover text token, and get last row
+            val logits = LlamaCpp.getLogits(if (isFirstRun) contextTokens else intArrayOf(coverTextToken)).last()
+
+            // Get top 2^bitsPerToken logits
+            val topLogits = getTopLogits(logits)
+
+            // Construct Huffman tree
+            val huffmanCoding = HuffmanCoding()
+            huffmanCoding.buildHuffmanTree(topLogits)
+            huffmanCoding.mergeHuffmanNodes()
+            huffmanCoding.generateHuffmanCodes()        // Return value (root) is not needed here as Huffman tree is not traversed manually
+
+            // Querying Huffman tree for the path to the current cover text token decodes the encoded information
+            cipherBitString += huffmanCoding.huffmanCodes[coverTextTokens[i]]
+
+            // Update loop variables and flags
+            coverTextToken = coverTextTokens[i]
+            isFirstRun = false
+
+            i++
+        }
+
+        // Create ByteArray from bit string to return cipher bits
+        val cipherBits = Format.asByteArray(cipherBitString)
 
         return cipherBits
     }
