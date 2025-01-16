@@ -8,6 +8,12 @@ import org.vonderheidt.hips.data.Settings
 object Steganography {
     /**
      * Function to encode secret message into cover text using given context.
+     *
+     * @param context The context to encode the secret message with.
+     * @param secretMessage The secret message to be encoded.
+     * @param conversionMode Conversion mode, determined by Settings object.
+     * @param steganographyMode Steganography mode, determined by Settings object.
+     * @return A cover text containing the secret message.
      */
     suspend fun encode(
         context: String,
@@ -39,6 +45,12 @@ object Steganography {
 
     /**
      * Function to decode secret message from cover text using given context.
+     *
+     * @param context The context to decode the cover text with.
+     * @param coverText The cover text containing a secret message.
+     * @param conversionMode Conversion mode, determined by Settings object.
+     * @param steganographyMode Steganography mode, determined by Settings object.
+     * @return The secret message.
      */
     suspend fun decode(
         context: String,
