@@ -253,6 +253,33 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_de
 }
 
 /**
+ * Function to check if a token is a special token.
+ *
+ * @param env The JNI environment.
+ * @param thiz Java object this function was called with.
+ * @param token Token ID to check.
+ * @param jCtx Memory address of the context.
+ * @return Boolean that is true if the token special, false otherwise.
+ */
+extern "C" JNIEXPORT jboolean JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_isSpecial(JNIEnv* env, jobject thiz, jint token, jlong jCtx) {
+    // Cast memory address of the context from Java long to C++ pointer
+    auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
+
+    // Get model the context was created with
+    const llama_model* model = llama_get_model(cppCtx);
+
+    // Check if token is special
+    // Token ID doesn't need casting because jint and llama_token are both just int32_t
+    bool cppIsSpecial = llama_token_is_eog(model, token) || llama_token_is_control(model,token);
+
+    // Cast boolean to return it
+    // static_cast because casting booleans is type safe, unlike reinterpret_cast for casting C++ pointers to Java long
+    auto jIsSpecial = static_cast<jboolean>(cppIsSpecial);
+
+    return jIsSpecial;
+}
+
+/**
  * Function to calculate the logit matrix (i.e. predictions for every token in the prompt).
  *
  * Only the last row of the `n_tokens` x `n_vocab` matrix is actually needed as it contains the logits corresponding to the last token of the prompt.

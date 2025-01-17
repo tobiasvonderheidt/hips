@@ -41,6 +41,9 @@ object Huffman {
                 // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
                 val logits = LlamaCpp.getLogits(if (isFirstRun) contextTokens else intArrayOf(sampledToken)).last()
 
+                // Suppress special tokens to avoid early termination before all bits of secret message are encoded
+                LlamaCpp.suppressSpecialTokens(logits)
+
                 // Get top 2^bitsPerToken logits for last token of prompt (= height of Huffman tree)
                 val topLogits = getTopLogits(logits)
 
@@ -123,6 +126,9 @@ object Huffman {
         while (i < coverTextTokens.size) {
             // Calculate the logit matrix again initially from context tokens, then from last cover text token, and get last row
             val logits = LlamaCpp.getLogits(if (isFirstRun) contextTokens else intArrayOf(coverTextToken)).last()
+
+            // Suppress special tokens
+            LlamaCpp.suppressSpecialTokens(logits)
 
             // Get top 2^bitsPerToken logits
             val topLogits = getTopLogits(logits)

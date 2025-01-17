@@ -96,6 +96,25 @@ object LlamaCpp {
     }
 
     /**
+     * Function to suppress special tokens, i.e. eog (end-of-generation) and control tokens.
+     *
+     * Suppressing eog tokens is needed to avoid early termination when generating a cover text.
+     *
+     * Additionally suppressing control tokens is beneficial because the cover text then can't contain any invisible tokens.
+     * This ensures integrity when using a non-digital communication medium.
+     *
+     * @param logits Logits for the last token of the prompt (= last row of logits matrix).
+     */
+    fun suppressSpecialTokens(logits: FloatArray) {
+        // Suppress special tokens by setting their logits to negative values
+        for (token in logits.indices) {
+            if (isSpecial(token)) {
+                logits[token] = -100f
+            }
+        }
+    }
+
+    /**
      * Function to check if a token is the end of a sentence. Needed to complete the last sentence of the cover text.
      *
      * Corresponds to Stegasuras method `is_sent_finish` in `utils.py`.
@@ -192,6 +211,15 @@ object LlamaCpp {
      * @return The logit matrix.
      */
     external fun getLogits(tokens: IntArray, ctx: Long = this.ctx): Array<FloatArray>
+
+    /**
+     * Wrapper for the `llama_token_is_eog` and `llama_token_is_control` functions of llama.cpp. Checks if a token is a special token.
+     *
+     * @param token Token ID to check.
+     * @param ctx Memory address of the context.
+     * @return Boolean that is true if the token special, false otherwise.
+     */
+    private external fun isSpecial(token: Int, ctx: Long = this.ctx): Boolean
 
     /**
      * Wrapper for the `llama_sampler_sample` function of llama.cpp. Samples the next token based on the last one.
