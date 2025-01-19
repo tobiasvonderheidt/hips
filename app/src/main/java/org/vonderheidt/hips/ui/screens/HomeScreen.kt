@@ -6,12 +6,15 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -22,6 +25,7 @@ import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -35,7 +39,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -48,23 +51,27 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.vonderheidt.hips.utils.decode
-import org.vonderheidt.hips.utils.encode
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
+import org.vonderheidt.hips.utils.LLM
+import org.vonderheidt.hips.utils.LlamaCpp
+import org.vonderheidt.hips.utils.Steganography
 
 /**
- * Function that defines contents of the home screen.
+ * Function that defines the home screen.
  */
 @Composable
 fun HomeScreen(navController: NavController, modifier: Modifier) {
     // State variables
+    val isDownloaded by rememberSaveable { mutableStateOf(LLM.isDownloaded()) }
     var context by rememberSaveable { mutableStateOf("") }
     var secretMessage by rememberSaveable { mutableStateOf("") }
     val modes = listOf("Encode", "Decode")
     var selectedMode by rememberSaveable { mutableIntStateOf(0) }
-    var outputVisible by rememberSaveable { mutableStateOf(false) }
+    var isOutputVisible by rememberSaveable { mutableStateOf(false) }
     var isLoading by rememberSaveable { mutableStateOf(false) }
     var coverText by rememberSaveable { mutableStateOf("") }
 
@@ -74,9 +81,6 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
     // Clipboard
     val currentLocalContext = LocalContext.current
     val clipboardManager = currentLocalContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
-    // Coroutines
-    val coroutineScope = rememberCoroutineScope()
 
     // UI components
     Column(
@@ -100,13 +104,25 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
             }
 
             // Settings icon
-            IconButton(
-                onClick = { navController.navigate(Screen.Settings.route) }
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Settings,
-                    contentDescription = "Settings"
-                )
+            // Use a Box to overlay Badge and IconButton
+            Box {
+                IconButton(
+                    onClick = { navController.navigate(Screen.Settings.route) }
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = "Settings"
+                    )
+                }
+
+                if (!isDownloaded) {
+                    Badge(
+                        modifier = modifier
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                            .size(8.dp)
+                    )
+                }
             }
         }
 
@@ -212,7 +228,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                             selectedMode = index
 
                             // Hide old output when mode is changed
-                            outputVisible = false
+                            isOutputVisible = false
 
                             // Clear both secret message and cover text when mode is changed
                             secretMessage = ""
@@ -232,21 +248,28 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
             Button(
                 onClick = {
                     // Hide old output when start button is pressed again, show loading animation
-                    outputVisible = false
+                    isOutputVisible = false
                     isLoading = true
 
                     // Call encode or decode function as coroutine, depending on mode selected
-                    coroutineScope.launch {
+                    // Use Dispatchers.Default since LLM inference is CPU-bound
+                    // Keep encapsulation of coroutine vs if-else like this so the loading animation works
+                    CoroutineScope(Dispatchers.Default).launch {
+                        // Reset LLM instance on every button press to ensure reproducibility, otherwise ctx before encode and decode would not be the same
+                        // Works when called before this coroutine or inside it, but crashes when called inside its own coroutine before this one
+                        // Might be desirable to use it with Dispatchers.IO as it is presumably I/O-bound, but seems negligible
+                        LlamaCpp.resetInstance()
+
                         if (selectedMode == 0) {
-                            coverText = encode(context, secretMessage)
+                            coverText = Steganography.encode(context, secretMessage)
                         }
                         else {
-                            secretMessage = decode(context, coverText)
+                            secretMessage = Steganography.decode(context, coverText)
                         }
 
                         // Hide loading animation, show new output only when encode or decode is finished
                         isLoading = false
-                        outputVisible = true
+                        isOutputVisible = true
                     }
                 },
                 shape = RoundedCornerShape(4.dp)
@@ -264,7 +287,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
 
         // Output is either cover text or secret message
         // Only show when encode or decode is finished (i.e. also not on app startup)
-        if (outputVisible) {
+        if (isOutputVisible) {
             Spacer(modifier = modifier.height(32.dp))
 
             if (selectedMode == 0) {
@@ -309,7 +332,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
 }
 
 /**
- * Function to show preview of the main screen in Android Studio.
+ * Function to show preview of the home screen in Android Studio.
  */
 @Preview(showBackground = true)
 @Composable
