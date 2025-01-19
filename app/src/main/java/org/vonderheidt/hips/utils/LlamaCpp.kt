@@ -168,7 +168,7 @@ object LlamaCpp {
     /**
      * Wrapper for the `llama_sampler_init_*` functions of llama.cpp. Loads the sampler into memory.
      *
-     * Currently only supports greedy sampler for Huffman encoding.
+     * Currently only supports greedy sampler.
      *
      * @return Memory address of the sampler.
      */
