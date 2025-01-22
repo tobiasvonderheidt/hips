@@ -9,10 +9,10 @@ data class Message (
     val timestamp: Long,
     val content: String
 ) {
-    /**
-     * Some sample messages for the conversation screen.
-     */
     companion object {
+        /**
+         * Some sample messages for the conversation screen.
+         */
         val Samples = listOf(
             Message(1, 0, System.currentTimeMillis() - 5982341, "Oi, Lionel! What a match today! I honestly thought we were done for at halftime being 2-0 down, but that second half was brilliant! We really pulled it together, didn’t we?"),
             Message(0, 1, System.currentTimeMillis() - 4553793, "Absolutely, Cristiano! That comeback was mental! Your goal really got everyone buzzing. And that assist I had? Proper chuffed to finally chip in like that! But can we talk about the ref? What a wanker!"),
