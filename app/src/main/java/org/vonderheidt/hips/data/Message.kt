@@ -2,6 +2,11 @@ package org.vonderheidt.hips.data
 
 /**
  * Class that represents a chat message in a conversation.
+ *
+ * @param senderID User ID of the message's sender.
+ * @param receiverID User ID of the message's receiver.
+ * @param timestamp Time the message was sent at (milliseconds since Unix epoch, i.e. 1970-01-01 00:00).
+ * @param content Content of the message.
  */
 data class Message (
     val senderID: Int,
