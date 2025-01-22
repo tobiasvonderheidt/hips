@@ -1,5 +1,10 @@
 package org.vonderheidt.hips.data
 
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.ForeignKey.Companion.CASCADE
+
 /**
  * Class that represents a chat message in a conversation.
  *
@@ -8,9 +13,16 @@ package org.vonderheidt.hips.data
  * @param timestamp Time the message was sent at (milliseconds since Unix epoch, i.e. 1970-01-01 00:00).
  * @param content Content of the message.
  */
+@Entity(
+    primaryKeys = ["sender_id", "receiver_id", "timestamp"],
+    foreignKeys = [
+        ForeignKey(entity = User::class, parentColumns = ["id"], childColumns = ["sender_id"], onDelete = CASCADE, onUpdate = CASCADE),
+        ForeignKey(entity = User::class, parentColumns = ["id"], childColumns = ["receiver_id"], onDelete = CASCADE, onUpdate = CASCADE)
+    ]
+)
 data class Message (
-    val senderID: Int,
-    val receiverID: Int,
+    @ColumnInfo(name = "sender_id") val senderID: Int,
+    @ColumnInfo(name = "receiver_id") val receiverID: Int,
     val timestamp: Long,
     val content: String
 ) {
