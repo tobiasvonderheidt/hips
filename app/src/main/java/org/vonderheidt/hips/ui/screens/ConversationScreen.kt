@@ -82,10 +82,10 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
         }
 
         // Chat partner
-        Row (
+        Row(
             modifier = modifier.fillMaxWidth(0.95f),
             verticalAlignment = Alignment.CenterVertically
-        ){
+        ) {
             // Profile picture
             Icon(
                 imageVector = Icons.Outlined.Person,
@@ -114,7 +114,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
             // Current user (senderID == 0) is right aligned and green
             // Chat partners (senderID != 0) are left aligned and red
             items(messages) { message ->
-                Row (
+                Row(
                     modifier = modifier.fillMaxWidth(),
                     horizontalArrangement = if (message.senderID == 0) Arrangement.End else Arrangement.Start
                 ) {
@@ -145,7 +145,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
             // Input field for new message
             OutlinedTextField(
                 value = newMessageContent,
-                onValueChange = {newMessageContent = it},
+                onValueChange = { newMessageContent = it },
                 modifier = modifier.weight(1f),
                 label = { Text(text = "New message") }
             )
