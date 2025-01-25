@@ -25,8 +25,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -38,7 +40,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
+import org.vonderheidt.hips.data.HiPSDatabase
 import org.vonderheidt.hips.data.Message
+import org.vonderheidt.hips.data.User
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 
@@ -47,10 +52,22 @@ import org.vonderheidt.hips.ui.theme.HiPSTheme
  */
 @Composable
 fun ConversationScreen(navController: NavController, modifier: Modifier) {
+    // Database
+    val db = HiPSDatabase.getInstance()
+
+    // Coroutines
+    val coroutineScope = rememberCoroutineScope()
+
     // State variables
     var messages by rememberSaveable { mutableStateOf(listOf<Message>()) }
     var newMessageContent by rememberSaveable { mutableStateOf("") }
     var isSender by rememberSaveable { mutableStateOf(true) }
+
+    // Query messages from database upon composition of this screen
+    // Unit parameter allows query to be only run once
+    LaunchedEffect(Unit) {
+        messages = db.messageDao.getConversation(0, 1)
+    }
 
     // UI components
     Column(
@@ -159,12 +176,28 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                     // Only send non-empty messages
                     // Allows to switch user on button press
                     if (newMessageContent != "") {
-                        messages += Message(
-                            senderID = if (isSender) 0 else 1,
-                            receiverID = if (isSender) 1 else 0,
+                        // Create data objects for sender, receiver and message
+                        val newSender = if (isSender) User(0, "Alice") else User(1, "Bob")
+                        val newReceiver = if (isSender) User(1, "Bob") else User(0, "Alice")
+
+                        val newMessage = Message(
+                            senderID = newSender.id,
+                            receiverID = newReceiver.id,
                             timestamp = System.currentTimeMillis(),
                             content = newMessageContent
                         )
+
+                        // Update state variable
+                        messages += newMessage
+
+                        // Update database
+                        // Launch queries in coroutine so they can't block the UI in the main thread
+                        coroutineScope.launch {
+                            // Order is important to avoid violating foreign key relations
+                            db.userDao.upsertUser(newSender)
+                            db.userDao.upsertUser(newReceiver)
+                            db.messageDao.upsertMessage(newMessage)
+                        }
                     }
 
                     // Clear input field and change mode
