@@ -49,8 +49,8 @@ import org.vonderheidt.hips.ui.theme.HiPSTheme
 fun ConversationScreen(navController: NavController, modifier: Modifier) {
     // State variables
     var messages by rememberSaveable { mutableStateOf(listOf<Message>()) }
-    var newMessage by rememberSaveable { mutableStateOf("") }
-    var sender by rememberSaveable { mutableStateOf(true) }
+    var newMessageContent by rememberSaveable { mutableStateOf("") }
+    var isSender by rememberSaveable { mutableStateOf(true) }
 
     // UI components
     Column(
@@ -144,8 +144,8 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
         ) {
             // Input field for new message
             OutlinedTextField(
-                value = newMessage,
-                onValueChange = {newMessage = it},
+                value = newMessageContent,
+                onValueChange = {newMessageContent = it},
                 modifier = modifier.weight(1f),
                 label = { Text(text = "New message") }
             )
@@ -158,22 +158,22 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                 onClick = {
                     // Only send non-empty messages
                     // Allows to switch user on button press
-                    if (newMessage != "") {
+                    if (newMessageContent != "") {
                         messages += Message(
-                            senderID = if (sender) 0 else 1,
-                            receiverID = if (sender) 1 else 0,
+                            senderID = if (isSender) 0 else 1,
+                            receiverID = if (isSender) 1 else 0,
                             timestamp = System.currentTimeMillis(),
-                            content = newMessage
+                            content = newMessageContent
                         )
                     }
 
                     // Clear input field and change mode
-                    newMessage = ""
-                    sender = !sender
+                    newMessageContent = ""
+                    isSender = !isSender
                 },
                 modifier = modifier
                     .background(
-                        color = if (sender) Color(0xFF2E7D32) else Color(0xFFB71C1C),
+                        color = if (isSender) Color(0xFF2E7D32) else Color(0xFFB71C1C),
                         shape = CircleShape
                     )
             ) {
