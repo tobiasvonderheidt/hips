@@ -173,9 +173,9 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
             // Colour corresponds to user a new message is being sent as
             IconButton(
                 onClick = {
-                    // Only send non-empty messages
+                    // Only send non-blank messages
                     // Allows to switch user on button press
-                    if (newMessageContent != "") {
+                    if (newMessageContent.isNotBlank()) {
                         // Create data objects for sender, receiver and message
                         val newSender = if (isSender) User(0, "Alice") else User(1, "Bob")
                         val newReceiver = if (isSender) User(1, "Bob") else User(0, "Alice")
