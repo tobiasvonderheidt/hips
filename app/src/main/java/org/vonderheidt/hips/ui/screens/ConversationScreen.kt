@@ -168,7 +168,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                 modifier = modifier.weight(1f),
                 label = { Text(text = "New message") },
                 trailingIcon = {
-                    if (newMessageContent.isNotBlank()) {
+                    if (newMessageContent.isNotEmpty()) {
                         Icon(
                             imageVector = Icons.Outlined.Clear,
                             contentDescription = "Clear new message",
