@@ -175,7 +175,8 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                             modifier = modifier.clickable { newMessageContent = "" }
                         )
                     }
-                }
+                },
+                maxLines = 5
             )
 
             Spacer(modifier = modifier.width(8.dp))
