@@ -1,6 +1,7 @@
 package org.vonderheidt.hips.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.Send
+import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -164,7 +166,16 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                 value = newMessageContent,
                 onValueChange = { newMessageContent = it },
                 modifier = modifier.weight(1f),
-                label = { Text(text = "New message") }
+                label = { Text(text = "New message") },
+                trailingIcon = {
+                    if (newMessageContent.isNotBlank()) {
+                        Icon(
+                            imageVector = Icons.Outlined.Clear,
+                            contentDescription = "Clear new message",
+                            modifier = modifier.clickable { newMessageContent = "" }
+                        )
+                    }
+                }
             )
 
             Spacer(modifier = modifier.width(8.dp))
