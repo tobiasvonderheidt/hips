@@ -1,7 +1,9 @@
 package org.vonderheidt.hips.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.Clear
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,6 +39,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,8 +66,12 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
     // Coroutines
     val coroutineScope = rememberCoroutineScope()
 
+    // Toasts
+    val currentLocalContext = LocalContext.current
+
     // State variables
     var messages by rememberSaveable { mutableStateOf(listOf<Message>()) }
+    var selectedMessages by rememberSaveable { mutableStateOf(listOf<Message>()) }
     var newMessageContent by rememberSaveable { mutableStateOf("") }
     var isSender by rememberSaveable { mutableStateOf(true) }
 
@@ -119,6 +129,37 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                 text = "Demo",
                 fontSize = 24.sp,
             )
+
+            // Profile picture and name on the left, buttons on the right
+            Spacer(modifier = modifier.weight(1f))
+
+            if (selectedMessages.isNotEmpty()) {
+                // Delete button
+                IconButton(
+                    onClick = {
+                        // Only last messages of the conversation can be deleted, otherwise context would be corrupted
+                        if (messages.takeLast(selectedMessages.size) == selectedMessages) {
+                            // Update database
+                            // Inverse encapsulation of loop vs coroutine causes messages to not be deleted
+                            for (selectedMessage in selectedMessages) {
+                                coroutineScope.launch { db.messageDao.deleteMessage(selectedMessage) }
+                            }
+
+                            // Update state variables
+                            messages = messages.dropLast(selectedMessages.size)
+                            selectedMessages = listOf()
+                        }
+                        else {
+                            Toast.makeText(currentLocalContext, "Only messages at the end can be deleted", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Delete,
+                        contentDescription = "Delete selected messages"
+                    )
+                }
+            }
         }
 
         Spacer(modifier = modifier.height(8.dp))
@@ -144,7 +185,26 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                 color = if (message.senderID == 0) Color(0xFF2E7D32) else Color(0xFFB71C1C),
                                 shape = RoundedCornerShape(4.dp)
                             )
+                            .graphicsLayer(
+                                alpha = if (selectedMessages.isEmpty()) { 1f }
+                                        else {
+                                            if (message in selectedMessages) { 1f }
+                                            else { 0.25f }
+                                        }
+                            )
                             .padding(8.dp)
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onLongPress = {
+                                        // List of selected messages has to be sorted because list of messages is sorted, otherwise couldn't be compared to its end
+                                        selectedMessages += message
+                                        selectedMessages = selectedMessages.sortedBy { it.timestamp }
+                                    },
+                                    onTap = {
+                                        selectedMessages -= message
+                                    }
+                                )
+                            }
                     ) {
                         Text(
                             text = message.content,
