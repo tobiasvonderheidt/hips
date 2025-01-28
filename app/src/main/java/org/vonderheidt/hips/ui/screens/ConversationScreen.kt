@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -134,6 +135,24 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
             Spacer(modifier = modifier.weight(1f))
 
             if (selectedMessages.isNotEmpty()) {
+                // Decode button
+                IconButton(
+                    onClick = {
+                        // Only 1 message can be decoded at a time
+                        if (selectedMessages.size == 1) {
+                            Toast.makeText(currentLocalContext, "Secret message encoded in ${selectedMessages[0].content}", Toast.LENGTH_LONG).show()
+                        }
+                        else {
+                            Toast.makeText(currentLocalContext, "Only 1 message can be decoded at a time", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Visibility,
+                        contentDescription = "Decode selected message"
+                    )
+                }
+
                 // Delete button
                 IconButton(
                     onClick = {
