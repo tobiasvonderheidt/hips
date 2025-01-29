@@ -113,7 +113,9 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
         // Chat partner
         Row(
-            modifier = modifier.fillMaxWidth(0.95f),
+            modifier = modifier
+                .fillMaxWidth(0.95f)
+                .height(48.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Profile picture
