@@ -216,10 +216,10 @@ object LlamaCpp {
      * Wrapper for the `llama_token_is_eog` and `llama_token_is_control` functions of llama.cpp. Checks if a token is a special token.
      *
      * @param token Token ID to check.
-     * @param ctx Memory address of the context.
-     * @return Boolean that is true if the token special, false otherwise.
+     * @param model Memory address of the LLM.
+     * @return Boolean that is true if the token is special, false otherwise.
      */
-    private external fun isSpecial(token: Int, ctx: Long = this.ctx): Boolean
+    private external fun isSpecial(token: Int, model: Long = this.model): Boolean
 
     /**
      * Wrapper for the `llama_sampler_sample` function of llama.cpp. Samples the next token based on the last one.

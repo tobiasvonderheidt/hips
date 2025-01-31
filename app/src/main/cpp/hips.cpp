@@ -258,18 +258,15 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_de
  * @param env The JNI environment.
  * @param thiz Java object this function was called with.
  * @param token Token ID to check.
- * @param jCtx Memory address of the context.
- * @return Boolean that is true if the token special, false otherwise.
+ * @param jModel Memory address of the LLM.
+ * @return Boolean that is true if the token is special, false otherwise.
  */
-extern "C" JNIEXPORT jboolean JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_isSpecial(JNIEnv* env, jobject thiz, jint token, jlong jCtx) {
-    // Cast memory address of the context from Java long to C++ pointer
-    auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
+extern "C" JNIEXPORT jboolean JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_isSpecial(JNIEnv* env, jobject thiz, jint token, jlong jModel) {
+    // Cast memory address of the LLM from Java long to C++ pointer
+    auto cppModel = reinterpret_cast<llama_model*>(jModel);
 
-    // Get model the context was created with
-    const llama_model* model = llama_get_model(cppCtx);
-
-    // Get vocabulary of the model
-    const llama_vocab* vocab = llama_model_get_vocab(model);
+    // Get vocabulary of the LLM
+    const llama_vocab* vocab = llama_model_get_vocab(cppModel);
 
     // Check if token is special
     // Token ID doesn't need casting because jint and llama_token are both just int32_t
