@@ -268,9 +268,12 @@ extern "C" JNIEXPORT jboolean JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_i
     // Get model the context was created with
     const llama_model* model = llama_get_model(cppCtx);
 
+    // Get vocabulary of the model
+    const llama_vocab* vocab = llama_model_get_vocab(model);
+
     // Check if token is special
     // Token ID doesn't need casting because jint and llama_token are both just int32_t
-    bool cppIsSpecial = llama_token_is_eog(model, token) || llama_token_is_control(model,token);
+    bool cppIsSpecial = llama_vocab_is_eog(vocab, token) || llama_vocab_is_control(vocab, token);
 
     // Cast boolean to return it
     // static_cast because casting booleans is type safe, unlike reinterpret_cast for casting C++ pointers to Java long
@@ -298,6 +301,9 @@ extern "C" JNIEXPORT jobjectArray JNICALL Java_org_vonderheidt_hips_utils_LlamaC
     // No need to specify cppModel in variable name as there is no jModel
     const llama_model* model = llama_get_model(cppCtx);
 
+    // Get vocabulary of the model
+    const llama_vocab* vocab = llama_model_get_vocab(model);
+
     // Copy token IDs from Java array to C++ array
     // Data types jint, jsize and int32_t are all equivalent
     jint* cppTokens = env -> GetIntArrayElements(jTokens, nullptr);
@@ -305,7 +311,7 @@ extern "C" JNIEXPORT jobjectArray JNICALL Java_org_vonderheidt_hips_utils_LlamaC
     // C++ allows accessing illegal array indices and returns garbage values, doesn't throw IndexOutOfBoundsException like Java/Kotlin
     // Manually ensure that indices stay within dimensions n_tokens x n_vocab of the logit matrix
     jsize n_tokens = env -> GetArrayLength(jTokens);
-    int32_t n_vocab = llama_n_vocab(model);
+    int32_t n_vocab = llama_vocab_n_tokens(vocab);
 
     // Store tokens to be processed in batch data structure
     // llama.cpp example cited below stores multiple tokens from tokenization of the prompt in the first run, single last sampled token in subsequent runs
