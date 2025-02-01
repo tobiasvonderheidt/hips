@@ -2,6 +2,7 @@ package org.vonderheidt.hips.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Pause
@@ -29,6 +31,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -71,6 +74,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
     var isDownloaded by rememberSaveable { mutableStateOf(LLM.isDownloaded()) }
     var isInMemory by rememberSaveable { mutableStateOf(LlamaCpp.isInMemory()) }
     var selectedConversionMode by rememberSaveable { mutableStateOf(Settings.conversionMode) }
+    var systemPrompt by rememberSaveable { mutableStateOf(Settings.systemPrompt) }
     var selectedSteganographyMode by rememberSaveable { mutableStateOf(Settings.steganographyMode) }
     var selectedTemperature by rememberSaveable { mutableFloatStateOf(Settings.temperature) }
     var selectedBlockSize by rememberSaveable { mutableIntStateOf(Settings.blockSize) }
@@ -292,6 +296,57 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
+
+                // Set system prompt
+                Text(text = "Set the system prompt to define the role the LLM takes in a conversation.")
+
+                Spacer(modifier = modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = systemPrompt,
+                    onValueChange = {
+                        // Update state variable
+                        systemPrompt = it
+                    },
+                    modifier = modifier.fillMaxWidth(),
+                    label = { Text(text = "System prompt") },
+                    trailingIcon = {
+                        if (systemPrompt.isNotEmpty()) {
+                            Icon(
+                                imageVector = Icons.Outlined.Clear,
+                                contentDescription = "Clear system prompt",
+                                modifier = modifier.clickable {
+                                    // Update state variable
+                                    systemPrompt = ""
+                                }
+                            )
+                        }
+                    },
+                    maxLines = 5
+                )
+
+                Spacer(modifier = modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        if (systemPrompt.isBlank()) {
+                            Toast.makeText(currentLocalContext, "System prompt can't be blank", Toast.LENGTH_LONG).show()
+                            return@Button
+                        }
+
+                        // Update DataStore
+                        Settings.systemPrompt = systemPrompt
+                        coroutineScope.launch { HiPSDataStore.writeSettings() }
+
+                        Toast.makeText(currentLocalContext, "System prompt saved", Toast.LENGTH_LONG).show()
+                    },
+                    modifier = modifier.align(Alignment.End),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(text = "Save")
+                }
+
+                Spacer(modifier = modifier.height(16.dp))
 
                 Text(text = "Select how to encode the secret message into a cover text.")
 
