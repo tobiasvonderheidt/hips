@@ -213,20 +213,20 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
             Spacer(modifier = modifier.height(16.dp))
         }
 
-        // Steganography settings
+        // Conversion settings
         Row(
             modifier = modifier.fillMaxWidth(0.9f)
         ) {
             Icon(
                 imageVector = Icons.Outlined.Key,
-                contentDescription = "Steganography settings"
+                contentDescription = "Conversion settings"
             )
 
             Spacer(modifier = modifier.width(16.dp))
 
             Column {
                 Text(
-                    text = "Steganography",
+                    text = "Conversion",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -275,6 +275,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
         Spacer(modifier = modifier.height(16.dp))
 
+        // Steganography settings
         Row(
             modifier = modifier.fillMaxWidth(0.9f)
         ) {
@@ -286,6 +287,12 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
             Spacer(modifier = modifier.width(16.dp))
 
             Column {
+                Text(
+                    text = "Steganography",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
                 Text(text = "Select how to encode the secret message into a cover text.")
 
                 Spacer(modifier = modifier.height(16.dp))
