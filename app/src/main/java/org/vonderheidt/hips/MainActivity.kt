@@ -8,11 +8,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.vonderheidt.hips.data.HiPSDataStore
 import org.vonderheidt.hips.data.HiPSDatabase
 import org.vonderheidt.hips.navigation.SetupNavGraph
 import org.vonderheidt.hips.ui.theme.HiPSTheme
+import org.vonderheidt.hips.utils.LLM
+import org.vonderheidt.hips.utils.LlamaCpp
 
 /**
  * Class that defines the entry point into the app and calls the main screen.
@@ -35,6 +39,11 @@ class MainActivity : ComponentActivity() {
                     SetupNavGraph(modifier)
                 }
             }
+        }
+
+        // Load LLM on app startup
+        if (LLM.isDownloaded()) {
+            CoroutineScope(Dispatchers.IO).launch { LlamaCpp.startInstance() }
         }
 
         // Instantiate Room database on app startup
