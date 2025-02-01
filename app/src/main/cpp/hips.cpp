@@ -207,7 +207,7 @@ extern "C" JNIEXPORT jintArray JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_
 
     // Tokenize string, save tokens as llama_tokens (equivalent to std::vector<llama_token>, with llama_token equivalent to int32_t)
     // Hide special tokens to get clean input
-    // See common.cpp: common_tokenize(ctx, ...) calls common_tokenize(model, ...), which calls llama_tokenize
+    // See common.cpp: common_tokenize(ctx, ...) calls common_tokenize(vocab, ...), which calls llama_tokenize
     llama_tokens cppTokens = common_tokenize(cppCtx, cppString, false, false);
 
     // Release C++ string from memory
