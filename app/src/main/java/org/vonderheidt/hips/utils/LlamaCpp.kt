@@ -213,7 +213,7 @@ object LlamaCpp {
     external fun getLogits(tokens: IntArray, ctx: Long = this.ctx): Array<FloatArray>
 
     /**
-     * Wrapper for the `llama_token_is_eog` and `llama_token_is_control` functions of llama.cpp. Checks if a token is a special token.
+     * Wrapper for the `llama_vocab_is_eog` and `llama_vocab_is_control` functions of llama.cpp. Checks if a token is a special token.
      *
      * @param token Token ID to check.
      * @param model Memory address of the LLM.
