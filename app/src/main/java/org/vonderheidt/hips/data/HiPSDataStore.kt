@@ -23,6 +23,7 @@ object HiPSDataStore {
 
     // Define the data type of the values for each setting by declaring the corresponding keys
     private val conversionMode = stringPreferencesKey("conversionMode")
+    private val systemPrompt = stringPreferencesKey("systemPrompt")
     private val steganographyMode = stringPreferencesKey("steganographyMode")
     private val temperature = floatPreferencesKey("temperature")
     private val blockSize = intPreferencesKey("blockSize")
@@ -62,6 +63,7 @@ object HiPSDataStore {
         // Instance can be asserted not null because startInstance initializes it in MainActivity (i.e. on app startup)
         instance!!.data.map { settings ->
             val conversionMode = settings[conversionMode]
+            val systemPrompt = settings[systemPrompt]
             val steganographyMode = settings[steganographyMode]
             val temperature = settings[temperature]
             val blockSize = settings[blockSize]
@@ -69,6 +71,7 @@ object HiPSDataStore {
 
             // See if any settings are currently stored by checking for null values
             val isInitialized = conversionMode != null
+                    && systemPrompt != null
                     && steganographyMode != null
                     && temperature != null
                     && blockSize != null
@@ -78,6 +81,7 @@ object HiPSDataStore {
             if (isInitialized) {
                 // Can be asserted not null because of check with isInitialized
                 Settings.conversionMode = ConversionMode.valueOf(conversionMode!!)
+                Settings.systemPrompt = systemPrompt!!
                 Settings.steganographyMode = SteganographyMode.valueOf(steganographyMode!!)
                 Settings.temperature = temperature!!
                 Settings.blockSize = blockSize!!
@@ -97,6 +101,7 @@ object HiPSDataStore {
         // Instance can be asserted not null because startInstance initializes it in MainActivity (i.e. on app startup)
         instance!!.edit { settings ->
             settings[conversionMode] = Settings.conversionMode.name
+            settings[systemPrompt] = Settings.systemPrompt
             settings[steganographyMode] = Settings.steganographyMode.name
             settings[temperature] = Settings.temperature
             settings[blockSize] = Settings.blockSize
