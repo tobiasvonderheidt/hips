@@ -74,12 +74,12 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
     var messages by rememberSaveable { mutableStateOf(listOf<Message>()) }
     var selectedMessages by rememberSaveable { mutableStateOf(listOf<Message>()) }
     var newMessageContent by rememberSaveable { mutableStateOf("") }
-    var isSender by rememberSaveable { mutableStateOf(true) }
+    var isAlice by rememberSaveable { mutableStateOf(true) }
 
     // Query messages from database upon composition of this screen
     // Unit parameter allows query to be only run once
     LaunchedEffect(Unit) {
-        messages = db.messageDao.getConversation(0, 1)
+        messages = db.messageDao.getConversation(User.Alice.id, User.Bob.id)
     }
 
     // UI components
@@ -197,13 +197,13 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
             items(messages) { message ->
                 Row(
                     modifier = modifier.fillMaxWidth(),
-                    horizontalArrangement = if (message.senderID == 0) Arrangement.End else Arrangement.Start
+                    horizontalArrangement = if (message.senderID == User.Alice.id) Arrangement.End else Arrangement.Start
                 ) {
                     Box(
                         modifier = modifier
                             .fillMaxWidth(0.9f)
                             .background(
-                                color = if (message.senderID == 0) Color(0xFF2E7D32) else Color(0xFFB71C1C),
+                                color = if (message.senderID == User.Alice.id) Color(0xFF2E7D32) else Color(0xFFB71C1C),
                                 shape = RoundedCornerShape(4.dp)
                             )
                             .graphicsLayer(
@@ -270,8 +270,8 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                     // Allows to switch user on button press
                     if (newMessageContent.isNotBlank()) {
                         // Create data objects for sender, receiver and message
-                        val newSender = if (isSender) User(0, "Alice") else User(1, "Bob")
-                        val newReceiver = if (isSender) User(1, "Bob") else User(0, "Alice")
+                        val newSender = if (isAlice) User.Alice else User.Bob
+                        val newReceiver = if (isAlice) User.Bob else User.Alice
 
                         val newMessage = Message(
                             senderID = newSender.id,
@@ -295,11 +295,11 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
                     // Clear input field and change mode
                     newMessageContent = ""
-                    isSender = !isSender
+                    isAlice = !isAlice
                 },
                 modifier = modifier
                     .background(
-                        color = if (isSender) Color(0xFF2E7D32) else Color(0xFFB71C1C),
+                        color = if (isAlice) Color(0xFF2E7D32) else Color(0xFFB71C1C),
                         shape = CircleShape
                     )
             ) {
