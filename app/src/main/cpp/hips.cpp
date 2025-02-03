@@ -35,7 +35,7 @@
  * @param jPath Path to the LLM (.gguf file).
  * @return Memory address of the LLM.
  */
-extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_loadModel(JNIEnv* env, jobject thiz, jstring jPath) {
+extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_loadModel(JNIEnv* env, jobject /* thiz */, jstring jPath) {
     // Convert path to LLM from Java string to C++ string using the JNI environment
     // Set isCopy == true to copy Java string so it doesn't get overwritten in memory
     jboolean isCopy = true;
@@ -72,7 +72,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_load
  * @param thiz Java object this function was called with.
  * @param jModel Memory address of the LLM.
  */
-extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloadModel(JNIEnv* env, jobject thiz, jlong jModel) {
+extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloadModel(JNIEnv* /* env */, jobject /* thiz */, jlong jModel) {
     // Cast memory address of LLM from Java long to C++ pointer
     auto cppModel = reinterpret_cast<llama_model*>(jModel);
 
@@ -92,7 +92,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloa
  * @param jModel Memory address of the LLM.
  * @return Memory address of the context.
  */
-extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_loadCtx(JNIEnv* env, jobject thiz, jlong jModel) {
+extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_loadCtx(JNIEnv* /* env */, jobject /* thiz */, jlong jModel) {
     // Similar to loadModel
 
     // Cast memory address of the LLM from Java long to C++ pointer
@@ -125,7 +125,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_load
  * @param thiz Java object this function was called with.
  * @param jCtx Memory address of the context.
  */
-extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloadCtx(JNIEnv* env, jobject thiz, jlong jCtx) {
+extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloadCtx(JNIEnv* /* env */, jobject /* thiz */, jlong jCtx) {
     // Similar to unloadModel
 
     // Cast memory address of context from Java long to C++ pointer
@@ -147,7 +147,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloa
  * @param thiz Java object this function was called with.
  * @return Memory address of the sampler.
  */
-extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_loadSmpl(JNIEnv* env, jobject thiz) {
+extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_loadSmpl(JNIEnv* /* env */, jobject /* thiz */) {
     // Similar to loadModel
 
     // Initialize greedy sampler (no sampler chain needed when using only a single sampler)
@@ -174,7 +174,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_load
  * @param thiz Java object this function was called with.
  * @param jSmpl Memory address of the sampler.
  */
-extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloadSmpl(JNIEnv* env, jobject thiz, jlong jSmpl) {
+extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloadSmpl(JNIEnv* /* env */, jobject /* thiz */, jlong jSmpl) {
     // Similar to unloadModel
 
     // Cast memory address of sampler from Java long to C++ pointer
@@ -197,7 +197,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloa
  * @param jCtx Memory address of the context.
  * @return Tokenization as an array of token IDs.
  */
-extern "C" JNIEXPORT jintArray JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_tokenize(JNIEnv* env, jobject thiz, jstring jString, jlong jCtx) {
+extern "C" JNIEXPORT jintArray JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_tokenize(JNIEnv* env, jobject /* thiz */, jstring jString, jlong jCtx) {
     // Cast memory address of the context from Java long to C++ pointer
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
 
@@ -231,7 +231,7 @@ extern "C" JNIEXPORT jintArray JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_
  * @param jCtx Memory address of the context.
  * @return Detokenization as a string.
  */
-extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_detokenize(JNIEnv* env, jobject thiz, jintArray jTokens, jlong jCtx) {
+extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_detokenize(JNIEnv* env, jobject /* thiz */, jintArray jTokens, jlong jCtx) {
     // Cast memory address of the context from Java long to C++ pointer
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
 
@@ -261,7 +261,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_de
  * @param jModel Memory address of the LLM.
  * @return Boolean that is true if the token is special, false otherwise.
  */
-extern "C" JNIEXPORT jboolean JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_isSpecial(JNIEnv* env, jobject thiz, jint token, jlong jModel) {
+extern "C" JNIEXPORT jboolean JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_isSpecial(JNIEnv* /* env */, jobject /* thiz */, jint token, jlong jModel) {
     // Cast memory address of the LLM from Java long to C++ pointer
     auto cppModel = reinterpret_cast<llama_model*>(jModel);
 
@@ -290,7 +290,7 @@ extern "C" JNIEXPORT jboolean JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_i
  * @param jCtx Memory address of the context.
  * @return The logit matrix.
  */
-extern "C" JNIEXPORT jobjectArray JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_getLogits(JNIEnv* env, jobject thiz, jintArray jTokens, jlong jCtx) {
+extern "C" JNIEXPORT jobjectArray JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_getLogits(JNIEnv* env, jobject /* thiz */, jintArray jTokens, jlong jCtx) {
     // Cast memory addresses of context from Java long to C++ pointer
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
 
@@ -378,7 +378,7 @@ extern "C" JNIEXPORT jobjectArray JNICALL Java_org_vonderheidt_hips_utils_LlamaC
  * @param jSmpl Memory address of the sampler.
  * @return ID of the next token.
  */
-extern "C" JNIEXPORT jint JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_sample(JNIEnv* env, jobject thiz, jint lastToken, jlong jCtx, jlong jSmpl) {
+extern "C" JNIEXPORT jint JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_sample(JNIEnv* /* env */, jobject /* thiz */, jint lastToken, jlong jCtx, jlong jSmpl) {
     // Cast memory addresses of context and sampler from Java long to C++ pointers
     // Casting the last token ID from jint to llama_token is not necessary since both is just int32_t
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
