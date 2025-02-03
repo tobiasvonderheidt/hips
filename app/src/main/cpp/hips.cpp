@@ -214,10 +214,10 @@ extern "C" JNIEXPORT jintArray JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_
     env -> ReleaseStringUTFChars(jString, cppString);
 
     // Initialize Java int array to store token IDs
-    jintArray jTokens = env -> NewIntArray(cppTokens.size());
+    jintArray jTokens = env -> NewIntArray((int32_t) cppTokens.size());
 
     // Fill the Java array with token IDs and return it
-    env -> SetIntArrayRegion(jTokens, 0, cppTokens.size(), reinterpret_cast<const jint*>(cppTokens.data()));
+    env -> SetIntArrayRegion(jTokens, 0, (int32_t) cppTokens.size(), reinterpret_cast<const jint*>(cppTokens.data()));
 
     return jTokens;
 }
