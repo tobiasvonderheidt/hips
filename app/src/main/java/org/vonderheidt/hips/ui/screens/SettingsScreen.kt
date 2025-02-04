@@ -75,6 +75,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
     var isInMemory by rememberSaveable { mutableStateOf(LlamaCpp.isInMemory()) }
     var selectedConversionMode by rememberSaveable { mutableStateOf(Settings.conversionMode) }
     var systemPrompt by rememberSaveable { mutableStateOf(Settings.systemPrompt) }
+    var selectedNumberOfMessages by rememberSaveable { mutableIntStateOf(Settings.numberOfMessages) }
     var selectedSteganographyMode by rememberSaveable { mutableStateOf(Settings.steganographyMode) }
     var selectedTemperature by rememberSaveable { mutableFloatStateOf(Settings.temperature) }
     var selectedBlockSize by rememberSaveable { mutableIntStateOf(Settings.blockSize) }
@@ -345,6 +346,38 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                 ) {
                     Text(text = "Save")
                 }
+
+                Spacer(modifier = modifier.height(16.dp))
+
+                // Select number of messages
+                Text(text = "Select the number of prior messages to use as context.")
+
+                Spacer(modifier = modifier.height(16.dp))
+
+                Slider(
+                    value = selectedNumberOfMessages.toFloat(),
+                    onValueChange = {
+                        // Update state variable
+                        selectedNumberOfMessages = it.toInt()
+
+                        // Update DataStore
+                        Settings.numberOfMessages = it.toInt()
+                        coroutineScope.launch { HiPSDataStore.writeSettings() }
+                    },
+                    valueRange = 0f..10f,
+                    steps = 9
+                )
+
+                Spacer(modifier = modifier.height(8.dp))
+
+                Text(
+                    text = when (selectedNumberOfMessages) {
+                        0 -> "All messages"
+                        1 -> "1 message"
+                        else -> "$selectedNumberOfMessages messages"
+                    },
+                    modifier = modifier.align(Alignment.CenterHorizontally)
+                )
 
                 Spacer(modifier = modifier.height(16.dp))
 
