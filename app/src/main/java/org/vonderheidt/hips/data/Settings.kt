@@ -13,6 +13,7 @@ object Settings {
         Use phrases and abbreviations typical for chat messages.
         Be brief and casual, but friendly and engaging.
     """.trimIndent().replace("\n", " ")
+    var numberOfMessages = 0
     var steganographyMode = SteganographyMode.Arithmetic
     var temperature = 0.9f
     var blockSize = 3

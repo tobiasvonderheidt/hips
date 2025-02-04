@@ -24,6 +24,7 @@ object HiPSDataStore {
     // Define the data type of the values for each setting by declaring the corresponding keys
     private val conversionMode = stringPreferencesKey("conversionMode")
     private val systemPrompt = stringPreferencesKey("systemPrompt")
+    private val numberOfMessages = intPreferencesKey("numberOfMessages")
     private val steganographyMode = stringPreferencesKey("steganographyMode")
     private val temperature = floatPreferencesKey("temperature")
     private val blockSize = intPreferencesKey("blockSize")
@@ -64,6 +65,7 @@ object HiPSDataStore {
         instance!!.data.map { settings ->
             val conversionMode = settings[conversionMode]
             val systemPrompt = settings[systemPrompt]
+            val numberOfMessages = settings[numberOfMessages]
             val steganographyMode = settings[steganographyMode]
             val temperature = settings[temperature]
             val blockSize = settings[blockSize]
@@ -72,6 +74,7 @@ object HiPSDataStore {
             // See if any settings are currently stored by checking for null values
             val isInitialized = conversionMode != null
                     && systemPrompt != null
+                    && numberOfMessages != null
                     && steganographyMode != null
                     && temperature != null
                     && blockSize != null
@@ -82,6 +85,7 @@ object HiPSDataStore {
                 // Can be asserted not null because of check with isInitialized
                 Settings.conversionMode = ConversionMode.valueOf(conversionMode!!)
                 Settings.systemPrompt = systemPrompt!!
+                Settings.numberOfMessages = numberOfMessages!!
                 Settings.steganographyMode = SteganographyMode.valueOf(steganographyMode!!)
                 Settings.temperature = temperature!!
                 Settings.blockSize = blockSize!!
@@ -102,6 +106,7 @@ object HiPSDataStore {
         instance!!.edit { settings ->
             settings[conversionMode] = Settings.conversionMode.name
             settings[systemPrompt] = Settings.systemPrompt
+            settings[numberOfMessages] = Settings.numberOfMessages
             settings[steganographyMode] = Settings.steganographyMode.name
             settings[temperature] = Settings.temperature
             settings[blockSize] = Settings.blockSize
