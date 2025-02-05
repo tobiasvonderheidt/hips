@@ -162,7 +162,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
         Row {
             Button(
                 onClick = {
-                    if(!isDownloaded) {
+                    if (!isDownloaded) {
                         LLM.download(currentLocalContext)
                         isDownloaded = true
                     }
