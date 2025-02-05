@@ -354,6 +354,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
                 Spacer(modifier = modifier.height(16.dp))
 
+                // Slider only allows floats, do int conversion here to abstract it away from state variable
                 Slider(
                     value = selectedNumberOfMessages.toFloat(),
                     onValueChange = {
@@ -453,7 +454,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
                         Spacer(modifier = modifier.height(16.dp))
 
-                        // Slider only allows floats, do int conversion here to abstract it away from state variable
+                        // Again, do int conversion here as slider only allows floats
                         Slider(
                             value = selectedBlockSize.toFloat(),
                             onValueChange = {
