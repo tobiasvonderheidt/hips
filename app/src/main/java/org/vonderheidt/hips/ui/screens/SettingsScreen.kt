@@ -445,9 +445,12 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             steps = 19
                         )
 
-                        Spacer(modifier = modifier.height(16.dp))
+                        Spacer(modifier = modifier.height(8.dp))
 
-                        Text(text = "T = $selectedTemperature")
+                        Text(
+                            text = "$selectedTemperature",
+                            modifier = modifier.align(Alignment.CenterHorizontally)
+                        )
                     }
                     SteganographyMode.Bins -> {
                         Text(text = "Set the number of bins (higher is more efficient, but less coherent).")
@@ -469,9 +472,18 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             steps = 2
                         )
 
-                        Spacer(modifier = modifier.height(16.dp))
+                        Spacer(modifier = modifier.height(8.dp))
 
-                        Text(text = "n = 2^$selectedBlockSize bins")
+                        Text(
+                            text = "2" + when (selectedBlockSize) {
+                                1 -> "¹"
+                                2 -> "²"
+                                3 -> "³"
+                                4 -> "⁴"
+                                else -> throw IllegalStateException("Selected block size has to be between 1 and 4")
+                            } + " bins",
+                            modifier = modifier.align(Alignment.CenterHorizontally)
+                        )
                     }
                     SteganographyMode.Huffman -> {
                         Text(text = "Set the bits per token (higher is more efficient, but less coherent).")
@@ -493,9 +505,12 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             steps = 2
                         )
 
-                        Spacer(modifier = modifier.height(16.dp))
+                        Spacer(modifier = modifier.height(8.dp))
 
-                        Text(text = "n = $selectedBitsPerToken bits/token")
+                        Text(
+                            text = "$selectedBitsPerToken " + if (selectedBitsPerToken == 1) "bit/token" else "bits/token",
+                            modifier = modifier.align(Alignment.CenterHorizontally)
+                        )
                     }
                 }
             }
