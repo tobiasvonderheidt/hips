@@ -41,7 +41,7 @@ object LlamaCpp {
 
         // Otherwise, load the LLM and store its memory address
         // Synchronized allows only one thread to execute the code inside {...}, so other threads can't load the LLM simultaneously
-        synchronized(this) {
+        synchronized(lock = this) {
             if (!isInMemory()) {
                 model = loadModel()
                 ctx = loadCtx()
@@ -59,7 +59,7 @@ object LlamaCpp {
             return
         }
 
-        synchronized(this) {
+        synchronized(lock = this) {
             if (isInMemory()) {
                 unloadSmpl()
                 smpl = 0L
@@ -85,7 +85,7 @@ object LlamaCpp {
             return
         }
 
-        synchronized(this) {
+        synchronized(lock = this) {
             if (ctx != 0L) {
                 unloadCtx()
                 ctx = 0L
