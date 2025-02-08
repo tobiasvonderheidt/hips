@@ -410,3 +410,80 @@ extern "C" JNIEXPORT jint JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_sampl
 
     return nextToken;
 }
+
+/**
+ * Function to format a message as a llama.cpp chat message so that it can be added to a chat. This involves the following steps:
+ * 1. Prepend a special token for the desired role (`system`, `user` or `assistant`).
+ * 2. Append a special token to signal the end of the message.
+ * 3. If the message is the last in the chat, append the special token for the `assistant` role to signal the LLM that it should generate the next message.
+ *
+ * @param env The JNI environment.
+ * @param thiz Java object this function was called with.
+ * @param jRole Role the new chat message should be sent as (`system`, `user` or `assistant`).
+ * @param jContent Content of the new chat message.
+ * @param jAppendAssistant Boolean that is true if the special token for the `assistant` role is to be appended at the end, false otherwise.
+ * @param jModel Memory address of the LLM.
+ * @return The message formatted as llama.cpp chat message.
+ */
+extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_addMessage(JNIEnv* env, jobject /* thiz */, jstring jRole, jstring jContent, jboolean jAppendAssistant, jlong jModel) {
+    // Mostly follows https://github.com/ggerganov/llama.cpp/blob/master/examples/simple-chat/simple-chat.cpp
+
+    // Convert role and content of the message from Java strings to C++ strings using the JNI environment
+    jboolean isCopy = true;
+    const char* cppRole = env -> GetStringUTFChars(jRole, &isCopy);
+    const char* cppContent = env -> GetStringUTFChars(jContent, &isCopy);
+
+    // Cast appendAssistant boolean
+    // static_cast because casting booleans is type safe, unlike reinterpret_cast for casting C++ pointers to Java long
+    auto cppAppendAssistant = static_cast<jboolean>(jAppendAssistant);
+
+    // Cast memory addresses of the LLM from Java long to C++ pointers
+    auto cppModel = reinterpret_cast<llama_model*>(jModel);
+
+    // Create vector of chars to store the formatted chat
+    std::vector<char> formatted;
+    // "int prev_len = 0;" isn't overwritten in this implementation
+
+    // Get default chat template of the LLM
+    // Defines syntax the LLM uses to differentiate system prompt, user and assistant messages
+    const char* tmpl = llama_model_chat_template(cppModel, nullptr);
+
+    // Create chat message from role and content
+    llama_chat_message message = {cppRole, cppContent};
+
+    // Create vector of chat messages store the chat messages
+    std::vector<llama_chat_message> chat;
+
+    // Append the new message to the chat
+    chat.push_back(message);
+
+    // Apply chat template to messages to format them into a single prompt string
+    // Last parameter is current size of buffer for formatted string, return value is required size
+    int32_t new_len = llama_chat_apply_template(tmpl, chat.data(), chat.size(), cppAppendAssistant, formatted.data(), (int32_t) formatted.size());
+
+    // Check if current size of buffer is enough
+    if (new_len > (int) formatted.size()) {
+        // Resize buffer if needed
+        formatted.resize(new_len);
+
+        // Apply chat template again with resized buffer
+        new_len = llama_chat_apply_template(tmpl, chat.data(), chat.size(), cppAppendAssistant, formatted.data(), (int32_t) formatted.size());
+    }
+
+    // Check if resizing was successful
+    if (new_len < 0) {
+        LOGe("Java_org_vonderheidt_hips_utils_LlamaCpp_addMessage: new_len = %d < 0", new_len);
+    }
+
+    // Extract prompt to generate the response by removing previous messages
+    std::string cppPrompt(formatted.begin() /* + prev_len */, formatted.begin() + new_len);
+
+    // Release C++ strings for role and content from memory
+    env -> ReleaseStringUTFChars(jRole, cppRole);
+    env -> ReleaseStringUTFChars(jContent, cppContent);
+
+    // Convert prompt from C++ string to Java string and return it
+    jstring jPrompt = env -> NewStringUTF(cppPrompt.c_str());
+
+    return jPrompt;
+}

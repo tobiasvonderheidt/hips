@@ -229,4 +229,19 @@ object LlamaCpp {
      * @return ID of the next token.
      */
     external fun sample(lastToken: Int, ctx: Long = this.ctx, smpl: Long = this.smpl): Int
+
+    /**
+     * Wrapper for the `llama_chat_apply_template` function of llama.cpp. Formats a message as a llama.cpp chat message so that it can be added to a chat.
+     * This involves the following steps:
+     * 1. Prepend a special token for the desired role (`system`, `user` or `assistant`).
+     * 2. Append a special token to signal the end of the message.
+     * 3. If the message is the last in the chat, append the special token for the `assistant` role to signal the LLM that it should generate the next message.
+     *
+     * @param role Role the new chat message should be sent as (`system`, `user` or `assistant`).
+     * @param content Content of the new chat message.
+     * @param appendAssistant Boolean that is true if the special token for the `assistant` role is to be appended at the end, false otherwise.
+     * @param model Memory address of the LLM.
+     * @return The message formatted as llama.cpp chat message.
+     */
+    private external fun addMessage(role: String, content: String, appendAssistant: Boolean, model: Long = this.model): String
 }
