@@ -206,9 +206,8 @@ extern "C" JNIEXPORT jintArray JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_
     const char* cppString = env -> GetStringUTFChars(jString, &isCopy);
 
     // Tokenize string, save tokens as llama_tokens (equivalent to std::vector<llama_token>, with llama_token equivalent to int32_t)
-    // Hide special tokens to get clean input
-    // See common.cpp: common_tokenize(ctx, ...) calls common_tokenize(vocab, ...), which calls llama_tokenize
-    llama_tokens cppTokens = common_tokenize(cppCtx, cppString, false, false);
+    // See common.cpp: common_tokenize(ctx, ...) calls common_tokenize(vocab, ...), which calls llama_tokenize, always passing parameters {add,parse}_special through
+    llama_tokens cppTokens = common_tokenize(cppCtx, cppString, false, true);
 
     // Release C++ string from memory
     env -> ReleaseStringUTFChars(jString, cppString);
@@ -242,9 +241,9 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_de
 
     env -> GetIntArrayRegion(jTokens, 0, jTokensSize, reinterpret_cast<jint*>(cppTokens.data()));
 
-    // Detokenize array of tokens to C++ string, hide special tokens to get clean output
-    // See common.cpp: common_detokenize calls llama_detokenize
-    std::basic_string<char> cppString = common_detokenize(cppCtx, cppTokens, false);
+    // Detokenize array of tokens to C++ string
+    // See common.cpp: common_detokenize calls llama_detokenize, with parameters "remove_special = false" hard-coded and "unparse_special = special" passed through
+    std::basic_string<char> cppString = common_detokenize(cppCtx, cppTokens, true);
 
     // Convert C++ string to Java string and return it
     jstring jString = env -> NewStringUTF(cppString.c_str());
