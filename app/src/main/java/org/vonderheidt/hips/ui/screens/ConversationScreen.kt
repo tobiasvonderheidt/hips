@@ -41,8 +41,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,6 +77,9 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
     // Toasts
     val currentLocalContext = LocalContext.current
+
+    // Vibration
+    val hapticFeedback = LocalHapticFeedback.current
 
     // Query messages from database upon composition of this screen
     // Unit parameter allows query to be only run once
@@ -217,6 +222,9 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onLongPress = {
+                                        // Vibrate
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+
                                         // List of selected messages has to be sorted because list of messages is sorted, otherwise couldn't be compared to its end
                                         selectedMessages += message
                                         selectedMessages = selectedMessages.sortedBy { it.timestamp }
