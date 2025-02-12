@@ -61,6 +61,12 @@ import org.vonderheidt.hips.ui.theme.HiPSTheme
  */
 @Composable
 fun ConversationScreen(navController: NavController, modifier: Modifier) {
+    // State variables
+    var messages by rememberSaveable { mutableStateOf(listOf<Message>()) }
+    var selectedMessages by rememberSaveable { mutableStateOf(listOf<Message>()) }
+    var newMessageContent by rememberSaveable { mutableStateOf("") }
+    var isAlice by rememberSaveable { mutableStateOf(true) }
+
     // Database
     val db = HiPSDatabase.getInstance()
 
@@ -69,12 +75,6 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
     // Toasts
     val currentLocalContext = LocalContext.current
-
-    // State variables
-    var messages by rememberSaveable { mutableStateOf(listOf<Message>()) }
-    var selectedMessages by rememberSaveable { mutableStateOf(listOf<Message>()) }
-    var newMessageContent by rememberSaveable { mutableStateOf("") }
-    var isAlice by rememberSaveable { mutableStateOf(true) }
 
     // Query messages from database upon composition of this screen
     // Unit parameter allows query to be only run once
