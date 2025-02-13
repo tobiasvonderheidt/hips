@@ -274,31 +274,35 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
             // Colour corresponds to user a new message is being sent as
             IconButton(
                 onClick = {
-                    // Only send non-blank messages
-                    // Allows to switch user on button press
-                    if (newMessageContent.isNotBlank()) {
-                        // Create data objects for sender, receiver and message
-                        val newSender = if (isAlice) User.Alice else User.Bob
-                        val newReceiver = if (isAlice) User.Bob else User.Alice
+                    // Only send non-blank messages, allows to switch user on button press
+                    if (newMessageContent.isBlank()) {
+                        // Clear input field and change mode
+                        newMessageContent = ""
+                        isAlice = !isAlice
+                        return@IconButton
+                    }
 
-                        val newMessage = Message(
-                            senderID = newSender.id,
-                            receiverID = newReceiver.id,
-                            timestamp = System.currentTimeMillis(),
-                            content = newMessageContent
-                        )
+                    // Create data objects for sender, receiver and message
+                    val newSender = if (isAlice) User.Alice else User.Bob
+                    val newReceiver = if (isAlice) User.Bob else User.Alice
 
-                        // Update state variable
-                        messages += newMessage
+                    val newMessage = Message(
+                        senderID = newSender.id,
+                        receiverID = newReceiver.id,
+                        timestamp = System.currentTimeMillis(),
+                        content = newMessageContent
+                    )
 
-                        // Update database
-                        // Launch queries in coroutine so they can't block the UI in the main thread
-                        coroutineScope.launch {
-                            // Order is important to avoid violating foreign key relations
-                            db.userDao.upsertUser(newSender)
-                            db.userDao.upsertUser(newReceiver)
-                            db.messageDao.upsertMessage(newMessage)
-                        }
+                    // Update state variable
+                    messages += newMessage
+
+                    // Update database
+                    // Launch queries in coroutine so they can't block the UI in the main thread
+                    coroutineScope.launch {
+                        // Order is important to avoid violating foreign key relations
+                        db.userDao.upsertUser(newSender)
+                        db.userDao.upsertUser(newReceiver)
+                        db.messageDao.upsertMessage(newMessage)
                     }
 
                     // Clear input field and change mode
