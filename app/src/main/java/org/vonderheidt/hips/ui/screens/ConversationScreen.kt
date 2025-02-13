@@ -24,8 +24,10 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -69,6 +71,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
     var selectedMessages by rememberSaveable { mutableStateOf(listOf<Message>()) }
     var newMessageContent by rememberSaveable { mutableStateOf("") }
     var isAlice by rememberSaveable { mutableStateOf(true) }
+    var isPlainText by rememberSaveable { mutableStateOf(false) }
 
     // Database
     val db = HiPSDatabase.getInstance()
@@ -273,59 +276,89 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
             // Send button
             // Colour corresponds to user a new message is being sent as
-            IconButton(
-                onClick = {
-                    // Check if LLM is loaded
-                    if (!LlamaCpp.isInMemory()) {
-                        Toast.makeText(currentLocalContext, "Load LLM into memory first", Toast.LENGTH_LONG).show()
-                        return@IconButton
-                    }
-                    // Only send non-blank messages, allows to switch user on button press
-                    if (newMessageContent.isBlank()) {
-                        // Clear input field and change mode
-                        newMessageContent = ""
-                        isAlice = !isAlice
-                        return@IconButton
-                    }
+            Box {
+                IconButton(
+                    onClick = { /* See onTap of Icon */ },
+                    modifier = modifier
+                        .background(
+                            color = if (isAlice) Color(0xFF2E7D32) else Color(0xFFB71C1C),
+                            shape = CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.Send,
+                        contentDescription = "Send message",
+                        modifier = modifier.pointerInput(Unit) {
+                            detectTapGestures (
+                                onLongPress = {
+                                    // Vibrate
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
 
-                    // Create data objects for sender, receiver and message
-                    val newSender = if (isAlice) User.Alice else User.Bob
-                    val newReceiver = if (isAlice) User.Bob else User.Alice
+                                    // Toggle steganography on/off
+                                    isPlainText = !isPlainText
+                                },
+                                onTap = {
+                                    // Check if LLM is loaded
+                                    if (!LlamaCpp.isInMemory()) {
+                                        Toast.makeText(currentLocalContext, "Load LLM into memory first", Toast.LENGTH_LONG).show()
+                                        return@detectTapGestures
+                                    }
+                                    // Only send non-blank messages, allows to switch user on button press
+                                    if (newMessageContent.isBlank()) {
+                                        // Clear input field and change mode
+                                        newMessageContent = ""
+                                        isAlice = !isAlice
+                                        return@detectTapGestures
+                                    }
 
-                    val newMessage = Message(
-                        senderID = newSender.id,
-                        receiverID = newReceiver.id,
-                        timestamp = System.currentTimeMillis(),
-                        content = newMessageContent
+                                    // Create data objects for sender, receiver and message
+                                    val newSender = if (isAlice) User.Alice else User.Bob
+                                    val newReceiver = if (isAlice) User.Bob else User.Alice
+
+                                    val newMessage = Message(
+                                        senderID = newSender.id,
+                                        receiverID = newReceiver.id,
+                                        timestamp = System.currentTimeMillis(),
+                                        content = if (isPlainText) newMessageContent else "Cover text encoding $newMessageContent"
+                                    )
+
+                                    // Update state variable
+                                    messages += newMessage
+
+                                    // Update database
+                                    // Launch queries in coroutine so they can't block the UI in the main thread
+                                    coroutineScope.launch {
+                                        // Order is important to avoid violating foreign key relations
+                                        db.userDao.upsertUser(newSender)
+                                        db.userDao.upsertUser(newReceiver)
+                                        db.messageDao.upsertMessage(newMessage)
+                                    }
+
+                                    // Clear input field and change mode
+                                    newMessageContent = ""
+                                    isAlice = !isAlice
+                                }
+                            )
+                        },
+                        tint = Color.White
                     )
+                }
 
-                    // Update state variable
-                    messages += newMessage
-
-                    // Update database
-                    // Launch queries in coroutine so they can't block the UI in the main thread
-                    coroutineScope.launch {
-                        // Order is important to avoid violating foreign key relations
-                        db.userDao.upsertUser(newSender)
-                        db.userDao.upsertUser(newReceiver)
-                        db.messageDao.upsertMessage(newMessage)
+                if (!isPlainText) {
+                    Badge(
+                        modifier = modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(3.dp)
+                            .size(24.dp),
+                        containerColor = Color.Transparent
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Lock,
+                            contentDescription = "Send message",
+                            tint = Color.White
+                        )
                     }
-
-                    // Clear input field and change mode
-                    newMessageContent = ""
-                    isAlice = !isAlice
-                },
-                modifier = modifier
-                    .background(
-                        color = if (isAlice) Color(0xFF2E7D32) else Color(0xFFB71C1C),
-                        shape = CircleShape
-                    )
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.Send,
-                    contentDescription = "Send message",
-                    tint = Color.White
-                )
+                }
             }
         }
 
