@@ -57,6 +57,7 @@ import org.vonderheidt.hips.data.Message
 import org.vonderheidt.hips.data.User
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
+import org.vonderheidt.hips.utils.LlamaCpp
 
 /**
  * Function that defines the conversation screen.
@@ -274,6 +275,11 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
             // Colour corresponds to user a new message is being sent as
             IconButton(
                 onClick = {
+                    // Check if LLM is loaded
+                    if (!LlamaCpp.isInMemory()) {
+                        Toast.makeText(currentLocalContext, "Load LLM into memory first", Toast.LENGTH_LONG).show()
+                        return@IconButton
+                    }
                     // Only send non-blank messages, allows to switch user on button press
                     if (newMessageContent.isBlank()) {
                         // Clear input field and change mode
