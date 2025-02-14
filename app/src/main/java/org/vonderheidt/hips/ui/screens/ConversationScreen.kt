@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.Badge
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -53,6 +54,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.vonderheidt.hips.data.HiPSDatabase
 import org.vonderheidt.hips.data.Message
@@ -72,6 +74,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
     var newMessageContent by rememberSaveable { mutableStateOf("") }
     var isAlice by rememberSaveable { mutableStateOf(true) }
     var isPlainText by rememberSaveable { mutableStateOf(false) }
+    var isEncoding by rememberSaveable { mutableStateOf(false) }
 
     // Database
     val db = HiPSDatabase.getInstance()
@@ -285,66 +288,84 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                             shape = CircleShape
                         )
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.Send,
-                        contentDescription = "Send message",
-                        modifier = modifier.pointerInput(Unit) {
-                            detectTapGestures (
-                                onLongPress = {
-                                    // Vibrate
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    // Show loading animation while encoding
+                    if (isEncoding) {
+                        CircularProgressIndicator(
+                            modifier = modifier.size(32.dp),
+                            color = Color.White
+                        )
+                    }
+                    else {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.Send,
+                            contentDescription = "Send message",
+                            modifier = modifier.pointerInput(Unit) {
+                                detectTapGestures (
+                                    onLongPress = {
+                                        // Vibrate
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
 
-                                    // Toggle steganography on/off
-                                    isPlainText = !isPlainText
-                                },
-                                onTap = {
-                                    // Check if LLM is loaded
-                                    if (!LlamaCpp.isInMemory()) {
-                                        Toast.makeText(currentLocalContext, "Load LLM into memory first", Toast.LENGTH_LONG).show()
-                                        return@detectTapGestures
+                                        // Toggle steganography on/off
+                                        isPlainText = !isPlainText
+                                    },
+                                    onTap = {
+                                        // Check if LLM is loaded
+                                        if (!LlamaCpp.isInMemory()) {
+                                            Toast.makeText(currentLocalContext, "Load LLM into memory first", Toast.LENGTH_LONG).show()
+                                            return@detectTapGestures
+                                        }
+                                        // Only send non-blank messages, allows to switch user on button press
+                                        if (newMessageContent.isBlank()) {
+                                            // Clear input field and change mode
+                                            newMessageContent = ""
+                                            isAlice = !isAlice
+                                            return@detectTapGestures
+                                        }
+
+                                        isEncoding = true
+
+                                        // Create data objects for sender, receiver and message
+                                        val newSender = if (isAlice) User.Alice else User.Bob
+                                        val newReceiver = if (isAlice) User.Bob else User.Alice
+
+                                        // Update database
+                                        // Launch queries in coroutine so they can't block the UI in the main thread
+                                        coroutineScope.launch {
+                                            // Simulate encoding by waiting 5 seconds
+                                            if (!isPlainText) {
+                                                delay(5000)
+                                            }
+
+                                            val newMessage = Message(
+                                                senderID = newSender.id,
+                                                receiverID = newReceiver.id,
+                                                timestamp = System.currentTimeMillis(),
+                                                content = if (isPlainText) newMessageContent else "Cover text encoding $newMessageContent"
+                                            )
+
+                                            // Update state variable
+                                            messages += newMessage
+
+                                            // Order is important to avoid violating foreign key relations
+                                            db.userDao.upsertUser(newSender)
+                                            db.userDao.upsertUser(newReceiver)
+                                            db.messageDao.upsertMessage(newMessage)
+
+                                            // Clear input field and change mode
+                                            newMessageContent = ""
+                                            isAlice = !isAlice
+
+                                            isEncoding = false
+                                        }
                                     }
-                                    // Only send non-blank messages, allows to switch user on button press
-                                    if (newMessageContent.isBlank()) {
-                                        // Clear input field and change mode
-                                        newMessageContent = ""
-                                        isAlice = !isAlice
-                                        return@detectTapGestures
-                                    }
-
-                                    // Create data objects for sender, receiver and message
-                                    val newSender = if (isAlice) User.Alice else User.Bob
-                                    val newReceiver = if (isAlice) User.Bob else User.Alice
-
-                                    val newMessage = Message(
-                                        senderID = newSender.id,
-                                        receiverID = newReceiver.id,
-                                        timestamp = System.currentTimeMillis(),
-                                        content = if (isPlainText) newMessageContent else "Cover text encoding $newMessageContent"
-                                    )
-
-                                    // Update state variable
-                                    messages += newMessage
-
-                                    // Update database
-                                    // Launch queries in coroutine so they can't block the UI in the main thread
-                                    coroutineScope.launch {
-                                        // Order is important to avoid violating foreign key relations
-                                        db.userDao.upsertUser(newSender)
-                                        db.userDao.upsertUser(newReceiver)
-                                        db.messageDao.upsertMessage(newMessage)
-                                    }
-
-                                    // Clear input field and change mode
-                                    newMessageContent = ""
-                                    isAlice = !isAlice
-                                }
-                            )
-                        },
-                        tint = Color.White
-                    )
+                                )
+                            },
+                            tint = Color.White
+                        )
+                    }
                 }
 
-                if (!isPlainText) {
+                if (!isPlainText && !isEncoding) {
                     Badge(
                         modifier = modifier
                             .align(Alignment.BottomEnd)
