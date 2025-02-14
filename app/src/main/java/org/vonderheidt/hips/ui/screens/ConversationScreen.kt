@@ -159,7 +159,8 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                         else {
                             Toast.makeText(currentLocalContext, "Only 1 message can be decoded at a time", Toast.LENGTH_LONG).show()
                         }
-                    }
+                    },
+                    enabled = !isEncoding
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Visibility,
@@ -185,7 +186,8 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                         else {
                             Toast.makeText(currentLocalContext, "Only messages at the end can be deleted", Toast.LENGTH_LONG).show()
                         }
-                    }
+                    },
+                    enabled = !isEncoding
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Delete,
@@ -262,9 +264,10 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                 value = newMessageContent,
                 onValueChange = { newMessageContent = it },
                 modifier = modifier.weight(1f),
+                enabled = !isEncoding,
                 label = { Text(text = "New message") },
                 trailingIcon = {
-                    if (newMessageContent.isNotEmpty()) {
+                    if (newMessageContent.isNotEmpty() && !isEncoding) {
                         Icon(
                             imageVector = Icons.Outlined.Clear,
                             contentDescription = "Clear new message",
@@ -286,7 +289,8 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                         .background(
                             color = if (isAlice) Color(0xFF2E7D32) else Color(0xFFB71C1C),
                             shape = CircleShape
-                        )
+                        ),
+                    enabled = !isEncoding
                 ) {
                     // Show loading animation while encoding
                     if (isEncoding) {
