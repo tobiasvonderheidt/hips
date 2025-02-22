@@ -153,12 +153,12 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                 IconButton(
                     onClick = {
                         // Only 1 message can be decoded at a time
-                        if (selectedMessages.size == 1) {
-                            Toast.makeText(currentLocalContext, "Secret message encoded in ${selectedMessages[0].content}", Toast.LENGTH_LONG).show()
-                        }
-                        else {
+                        if (selectedMessages.size != 1) {
                             Toast.makeText(currentLocalContext, "Only 1 message can be decoded at a time", Toast.LENGTH_LONG).show()
+                            return@IconButton
                         }
+
+                        Toast.makeText(currentLocalContext, "Secret message encoded in ${selectedMessages[0].content}", Toast.LENGTH_LONG).show()
                     },
                     enabled = !isEncoding
                 ) {
