@@ -152,6 +152,11 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                 // Decode button
                 IconButton(
                     onClick = {
+                        // Check if LLM is loaded
+                        if (!LlamaCpp.isInMemory()) {
+                            Toast.makeText(currentLocalContext, "Load LLM into memory first", Toast.LENGTH_LONG).show()
+                            return@IconButton
+                        }
                         // Only 1 message can be decoded at a time
                         if (selectedMessages.size != 1) {
                             Toast.makeText(currentLocalContext, "Only 1 message can be decoded at a time", Toast.LENGTH_LONG).show()
