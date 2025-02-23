@@ -177,20 +177,20 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                 IconButton(
                     onClick = {
                         // Only last messages of the conversation can be deleted, otherwise context would be corrupted
-                        if (messages.takeLast(selectedMessages.size) == selectedMessages) {
-                            // Update database
-                            // Inverse encapsulation of loop vs coroutine causes messages to not be deleted
-                            for (selectedMessage in selectedMessages) {
-                                coroutineScope.launch { db.messageDao.deleteMessage(selectedMessage) }
-                            }
-
-                            // Update state variables
-                            messages = messages.dropLast(selectedMessages.size)
-                            selectedMessages = listOf()
-                        }
-                        else {
+                        if (messages.takeLast(selectedMessages.size) != selectedMessages) {
                             Toast.makeText(currentLocalContext, "Only messages at the end can be deleted", Toast.LENGTH_LONG).show()
+                            return@IconButton
                         }
+
+                        // Update database
+                        // Inverse encapsulation of loop vs coroutine causes messages to not be deleted
+                        for (selectedMessage in selectedMessages) {
+                            coroutineScope.launch { db.messageDao.deleteMessage(selectedMessage) }
+                        }
+
+                        // Update state variables
+                        messages = messages.dropLast(selectedMessages.size)
+                        selectedMessages = listOf()
                     },
                     enabled = !isEncoding
                 ) {
