@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Badge
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -54,6 +55,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.vonderheidt.hips.data.HiPSDatabase
@@ -75,6 +78,10 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
     var isAlice by rememberSaveable { mutableStateOf(true) }
     var isPlainText by rememberSaveable { mutableStateOf(false) }
     var isEncoding by rememberSaveable { mutableStateOf(false) }
+    var isDecoding by rememberSaveable { mutableStateOf(false) }
+    var isSecretMessageVisible by rememberSaveable { mutableStateOf(false) }
+    var messageToDecode by rememberSaveable { mutableStateOf<Message?>(null) }
+    var secretMessage by rememberSaveable { mutableStateOf("") }
 
     // Database
     val db = HiPSDatabase.getInstance()
@@ -152,23 +159,47 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                 // Decode button
                 IconButton(
                     onClick = {
-                        // Check if LLM is loaded
-                        if (!LlamaCpp.isInMemory()) {
-                            Toast.makeText(currentLocalContext, "Load LLM into memory first", Toast.LENGTH_LONG).show()
-                            return@IconButton
-                        }
-                        // Only 1 message can be decoded at a time
-                        if (selectedMessages.size != 1) {
-                            Toast.makeText(currentLocalContext, "Only 1 message can be decoded at a time", Toast.LENGTH_LONG).show()
-                            return@IconButton
-                        }
+                        if (!isSecretMessageVisible) {
+                            // Check if LLM is loaded
+                            if (!LlamaCpp.isInMemory()) {
+                                Toast.makeText(currentLocalContext, "Load LLM into memory first", Toast.LENGTH_LONG).show()
+                                return@IconButton
+                            }
+                            // Only 1 message can be decoded at a time
+                            if (selectedMessages.size != 1) {
+                                Toast.makeText(currentLocalContext, "Only 1 message can be decoded at a time", Toast.LENGTH_LONG).show()
+                                return@IconButton
+                            }
 
-                        Toast.makeText(currentLocalContext, "Secret message encoded in ${selectedMessages[0].content}", Toast.LENGTH_LONG).show()
+                            // Update state variables
+                            isDecoding = true
+                            messageToDecode = selectedMessages[0]
+
+                            CoroutineScope(Dispatchers.Default).launch {
+                                // Simulate decoding by waiting 5 seconds
+                                delay(5000)
+
+                                // Use placeholder string for secret message
+                                val coverText = messageToDecode!!.content
+                                secretMessage = "Secret message encoded in $coverText"
+
+                                // Update state variables
+                                isDecoding = false
+                                isSecretMessageVisible = true
+                            }
+                        }
+                        else {
+                            // Reset state variables
+                            isSecretMessageVisible = false
+                            secretMessage = ""
+                            messageToDecode = null
+                            selectedMessages = listOf()
+                        }
                     },
-                    enabled = !isEncoding
+                    enabled = !(isEncoding || isDecoding)
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Visibility,
+                        imageVector = if (isSecretMessageVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                         contentDescription = "Decode selected message"
                     )
                 }
@@ -192,7 +223,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                         messages = messages.dropLast(selectedMessages.size)
                         selectedMessages = listOf()
                     },
-                    enabled = !isEncoding
+                    enabled = !(isEncoding || isDecoding)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Delete,
@@ -249,10 +280,22 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                 )
                             }
                     ) {
-                        Text(
-                            text = message.content,
-                            color = Color.White
-                        )
+                        // Show loading animation while message is being decoded
+                        if (isDecoding && message == messageToDecode) {
+                            CircularProgressIndicator(
+                                modifier = modifier
+                                    .padding(8.dp)
+                                    .align(Alignment.Center),
+                                color = Color.White
+                            )
+                        }
+                        // Show cover text or, if decoding was successful, secret message
+                        else {
+                            Text(
+                                text = if (isSecretMessageVisible && message == messageToDecode) secretMessage else message.content,
+                                color = Color.White
+                            )
+                        }
                     }
                 }
 
@@ -269,10 +312,10 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                 value = newMessageContent,
                 onValueChange = { newMessageContent = it },
                 modifier = modifier.weight(1f),
-                enabled = !isEncoding,
+                enabled = !(isEncoding || isDecoding),
                 label = { Text(text = "New message") },
                 trailingIcon = {
-                    if (newMessageContent.isNotEmpty() && !isEncoding) {
+                    if (newMessageContent.isNotEmpty() && !(isEncoding || isDecoding)) {
                         Icon(
                             imageVector = Icons.Outlined.Clear,
                             contentDescription = "Clear new message",
@@ -295,7 +338,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                             color = if (isAlice) Color(0xFF2E7D32) else Color(0xFFB71C1C),
                             shape = CircleShape
                         ),
-                    enabled = !isEncoding
+                    enabled = !(isEncoding || isDecoding)
                 ) {
                     // Show loading animation while encoding
                     if (isEncoding) {
