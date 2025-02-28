@@ -113,6 +113,13 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
         ) {
             IconButton(
                 onClick = {
+                    // Reset state variables, just like when decode button is hidden, otherwise app crashes when pressing the back button while a secret message is visible
+                    // Only "messageToDecode = null" is actually needed, but reset others too for consistency
+                    isSecretMessageVisible = false
+                    secretMessage = ""
+                    messageToDecode = null
+                    selectedMessages = listOf()
+
                     // Navigate back to home screen
                     navController.navigate(Screen.Home.route) {
                         // Empty back stack, including home screen
@@ -222,6 +229,12 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                         // Update state variables
                         messages = messages.dropLast(selectedMessages.size)
                         selectedMessages = listOf()
+
+                        // Reset state variables, just like when decode button is hidden, otherwise secretMessage is still visible after deleting other messages
+                        isSecretMessageVisible = false
+                        secretMessage = ""
+                        messageToDecode = null
+                        // "selectedMessages = listOf()" is redundant
                     },
                     enabled = !(isEncoding || isDecoding)
                 ) {
@@ -276,6 +289,14 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                     },
                                     onTap = {
                                         selectedMessages -= message
+
+                                        // Reset state variables, just like when decode button is hidden, otherwise secret message is still visible when last message is unselected
+                                        if (selectedMessages.isEmpty()) {
+                                            isSecretMessageVisible = false
+                                            secretMessage = ""
+                                            messageToDecode = null
+                                            // "selectedMessages = listOf()" is redundant
+                                        }
                                     }
                                 )
                             }
@@ -375,6 +396,14 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                         }
 
                                         isEncoding = true
+
+                                        // Reset state variables, just like when decode button is hidden, otherwise secret message is still visible after send button is pressed
+                                        if (selectedMessages.isNotEmpty()) {
+                                            isSecretMessageVisible = false
+                                            secretMessage = ""
+                                            messageToDecode = null
+                                            selectedMessages = listOf()
+                                        }
 
                                         // Create data objects for sender, receiver and message
                                         val newSender = if (isAlice) User.Alice else User.Bob
