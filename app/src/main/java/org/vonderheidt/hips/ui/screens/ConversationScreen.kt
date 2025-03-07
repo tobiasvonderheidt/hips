@@ -75,7 +75,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
     // State variables
     var messages by rememberSaveable { mutableStateOf(listOf<Message>()) }
     var selectedMessages by rememberSaveable { mutableStateOf(listOf<Message>()) }
-    var newMessageContent by rememberSaveable { mutableStateOf("") }
+    var newSecretMessage by rememberSaveable { mutableStateOf("") }
     var isAlice by rememberSaveable { mutableStateOf(true) }
     var isPlainText by rememberSaveable { mutableStateOf(false) }
     var isEncoding by rememberSaveable { mutableStateOf(false) }
@@ -343,17 +343,17 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
         ) {
             // Input field for new message
             OutlinedTextField(
-                value = newMessageContent,
-                onValueChange = { newMessageContent = it },
+                value = newSecretMessage,
+                onValueChange = { newSecretMessage = it },
                 modifier = modifier.weight(1f),
                 enabled = !(isEncoding || isDecoding),
                 label = { Text(text = "New message") },
                 trailingIcon = {
-                    if (newMessageContent.isNotEmpty() && !(isEncoding || isDecoding)) {
+                    if (newSecretMessage.isNotEmpty() && !(isEncoding || isDecoding)) {
                         Icon(
                             imageVector = Icons.Outlined.Clear,
                             contentDescription = "Clear new message",
-                            modifier = modifier.clickable { newMessageContent = "" }
+                            modifier = modifier.clickable { newSecretMessage = "" }
                         )
                     }
                 },
@@ -401,9 +401,9 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                             return@detectTapGestures
                                         }
                                         // Only send non-blank messages, allows to switch user on button press
-                                        if (newMessageContent.isBlank()) {
+                                        if (newSecretMessage.isBlank()) {
                                             // Clear input field and change mode
-                                            newMessageContent = ""
+                                            newSecretMessage = ""
                                             isAlice = !isAlice
                                             return@detectTapGestures
                                         }
@@ -432,7 +432,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                             val context = LlamaCpp.formatChat(messages, isAlice)
 
                                             // Generate cover text and write it into chat history
-                                            val newCoverText = if (isPlainText) newMessageContent else Steganography.encode(context, newMessageContent)
+                                            val newCoverText = if (isPlainText) newSecretMessage else Steganography.encode(context, newSecretMessage)
 
                                             val newMessage = Message(
                                                 senderID = newSender.id,
@@ -450,7 +450,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                             db.messageDao.upsertMessage(newMessage)
 
                                             // Clear input field and change mode
-                                            newMessageContent = ""
+                                            newSecretMessage = ""
                                             isAlice = !isAlice
 
                                             isEncoding = false
