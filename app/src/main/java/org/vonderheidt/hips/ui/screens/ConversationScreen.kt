@@ -279,7 +279,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                         modifier = modifier
                             .fillMaxWidth(0.9f)
                             .background(
-                                color = if (message.senderID == User.Alice.id) Color(0xFF2E7D32) else Color(0xFFB71C1C),
+                                color = if (message.senderID == User.Alice.id) Color(0xFF00695C) else Color(0xFFAD1457),
                                 shape = RoundedCornerShape(4.dp)
                             )
                             .graphicsLayer(
@@ -369,7 +369,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                     onClick = { /* See onTap of Icon */ },
                     modifier = modifier
                         .background(
-                            color = if (isAlice) Color(0xFF2E7D32) else Color(0xFFB71C1C),
+                            color = if (isAlice) Color(0xFF00695C) else Color(0xFFAD1457),
                             shape = CircleShape
                         ),
                     enabled = !(isEncoding || isDecoding)
