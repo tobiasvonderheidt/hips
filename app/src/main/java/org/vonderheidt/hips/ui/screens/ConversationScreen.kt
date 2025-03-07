@@ -57,14 +57,15 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.vonderheidt.hips.data.HiPSDatabase
 import org.vonderheidt.hips.data.Message
 import org.vonderheidt.hips.data.User
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 import org.vonderheidt.hips.utils.LlamaCpp
+import org.vonderheidt.hips.utils.Steganography
 
 /**
  * Function that defines the conversation screen.
@@ -183,12 +184,24 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                             messageToDecode = selectedMessages[0]
 
                             CoroutineScope(Dispatchers.Default).launch {
-                                // Simulate decoding by waiting 5 seconds
-                                delay(5000)
+                                // Reset LLM for reproducible results
+                                LlamaCpp.resetInstance()
 
-                                // Use placeholder string for secret message
+                                // Decoding needs to reproduce the state the message was encoded in
+                                val priorMessages = messages.subList(fromIndex = 0, toIndex = messages.indexOf(messageToDecode))    // Start inclusive, end exclusive
+
+                                val context = LlamaCpp.formatChat(priorMessages, isAlice = messageToDecode!!.senderID == User.Alice.id)
                                 val coverText = messageToDecode!!.content
-                                secretMessage = "Secret message encoded in $coverText"
+
+                                // See if message can be decoded, show toast otherwise
+                                try {
+                                    secretMessage = Steganography.decode(context, coverText)
+                                }
+                                catch (exception: Exception) {
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(currentLocalContext, "Message couldn't be decoded", Toast.LENGTH_LONG).show()
+                                    }
+                                }
 
                                 // Update state variables
                                 isDecoding = false
@@ -411,17 +424,21 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
                                         // Update database
                                         // Launch queries in coroutine so they can't block the UI in the main thread
-                                        coroutineScope.launch {
-                                            // Simulate encoding by waiting 5 seconds
-                                            if (!isPlainText) {
-                                                delay(5000)
-                                            }
+                                        CoroutineScope(Dispatchers.Default).launch {
+                                            // Reset LLM for reproducible results
+                                            LlamaCpp.resetInstance()
+
+                                            // Apply chat template to system prompt and prior messages
+                                            val context = LlamaCpp.formatChat(messages, isAlice)
+
+                                            // Generate cover text and write it into chat history
+                                            val newCoverText = if (isPlainText) newMessageContent else Steganography.encode(context, newMessageContent)
 
                                             val newMessage = Message(
                                                 senderID = newSender.id,
                                                 receiverID = newReceiver.id,
                                                 timestamp = System.currentTimeMillis(),
-                                                content = if (isPlainText) newMessageContent else "Cover text encoding $newMessageContent"
+                                                content = newCoverText
                                             )
 
                                             // Update state variable
