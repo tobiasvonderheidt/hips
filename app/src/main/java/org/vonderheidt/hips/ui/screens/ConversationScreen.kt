@@ -283,11 +283,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                 shape = RoundedCornerShape(4.dp)
                             )
                             .graphicsLayer(
-                                alpha = if (selectedMessages.isEmpty()) { 1f }
-                                        else {
-                                            if (message in selectedMessages) { 1f }
-                                            else { 0.25f }
-                                        }
+                                alpha = if (selectedMessages.isEmpty() || message in selectedMessages) { 1f } else { 0.25f }
                             )
                             .padding(8.dp)
                             .pointerInput(Unit) {
