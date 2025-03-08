@@ -347,7 +347,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                 onValueChange = { newSecretMessage = it },
                 modifier = modifier.weight(1f),
                 enabled = !(isEncoding || isDecoding),
-                label = { Text(text = "New message") },
+                label = { Text(text = if (isPlainText) "New plain text" else "New secret message") },
                 trailingIcon = {
                     if (newSecretMessage.isNotEmpty() && !(isEncoding || isDecoding)) {
                         Icon(
