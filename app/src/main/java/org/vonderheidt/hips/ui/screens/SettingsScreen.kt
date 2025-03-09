@@ -2,6 +2,7 @@ package org.vonderheidt.hips.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Pause
@@ -29,6 +31,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -71,6 +74,8 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
     var isDownloaded by rememberSaveable { mutableStateOf(LLM.isDownloaded()) }
     var isInMemory by rememberSaveable { mutableStateOf(LlamaCpp.isInMemory()) }
     var selectedConversionMode by rememberSaveable { mutableStateOf(Settings.conversionMode) }
+    var systemPrompt by rememberSaveable { mutableStateOf(Settings.systemPrompt) }
+    var selectedNumberOfMessages by rememberSaveable { mutableIntStateOf(Settings.numberOfMessages) }
     var selectedSteganographyMode by rememberSaveable { mutableStateOf(Settings.steganographyMode) }
     var selectedTemperature by rememberSaveable { mutableFloatStateOf(Settings.temperature) }
     var selectedBlockSize by rememberSaveable { mutableIntStateOf(Settings.blockSize) }
@@ -157,7 +162,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
         Row {
             Button(
                 onClick = {
-                    if(!isDownloaded) {
+                    if (!isDownloaded) {
                         LLM.download(currentLocalContext)
                         isDownloaded = true
                     }
@@ -213,20 +218,20 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
             Spacer(modifier = modifier.height(16.dp))
         }
 
-        // Steganography settings
+        // Conversion settings
         Row(
             modifier = modifier.fillMaxWidth(0.9f)
         ) {
             Icon(
                 imageVector = Icons.Outlined.Key,
-                contentDescription = "Steganography settings"
+                contentDescription = "Conversion settings"
             )
 
             Spacer(modifier = modifier.width(16.dp))
 
             Column {
                 Text(
-                    text = "Steganography",
+                    text = "Conversion",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -275,6 +280,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
         Spacer(modifier = modifier.height(16.dp))
 
+        // Steganography settings
         Row(
             modifier = modifier.fillMaxWidth(0.9f)
         ) {
@@ -286,6 +292,96 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
             Spacer(modifier = modifier.width(16.dp))
 
             Column {
+                Text(
+                    text = "Steganography",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                // Set system prompt
+                Text(text = "Set the system prompt to define the role the LLM takes in a conversation.")
+
+                Spacer(modifier = modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = systemPrompt,
+                    onValueChange = {
+                        // Update state variable
+                        systemPrompt = it
+                    },
+                    modifier = modifier.fillMaxWidth(),
+                    label = { Text(text = "System prompt") },
+                    trailingIcon = {
+                        if (systemPrompt.isNotEmpty()) {
+                            Icon(
+                                imageVector = Icons.Outlined.Clear,
+                                contentDescription = "Clear system prompt",
+                                modifier = modifier.clickable {
+                                    // Update state variable
+                                    systemPrompt = ""
+                                }
+                            )
+                        }
+                    },
+                    maxLines = 5
+                )
+
+                Spacer(modifier = modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        if (systemPrompt.isBlank()) {
+                            Toast.makeText(currentLocalContext, "System prompt can't be blank", Toast.LENGTH_LONG).show()
+                            return@Button
+                        }
+
+                        // Update DataStore
+                        Settings.systemPrompt = systemPrompt
+                        coroutineScope.launch { HiPSDataStore.writeSettings() }
+
+                        Toast.makeText(currentLocalContext, "System prompt saved", Toast.LENGTH_LONG).show()
+                    },
+                    modifier = modifier.align(Alignment.End),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(text = "Save")
+                }
+
+                Spacer(modifier = modifier.height(16.dp))
+
+                // Select number of messages
+                Text(text = "Select the number of prior messages to use as context.")
+
+                Spacer(modifier = modifier.height(16.dp))
+
+                // Slider only allows floats, do int conversion here to abstract it away from state variable
+                Slider(
+                    value = selectedNumberOfMessages.toFloat(),
+                    onValueChange = {
+                        // Update state variable
+                        selectedNumberOfMessages = it.toInt()
+
+                        // Update DataStore
+                        Settings.numberOfMessages = it.toInt()
+                        coroutineScope.launch { HiPSDataStore.writeSettings() }
+                    },
+                    valueRange = 0f..10f,
+                    steps = 9
+                )
+
+                Spacer(modifier = modifier.height(8.dp))
+
+                Text(
+                    text = when (selectedNumberOfMessages) {
+                        0 -> "All messages"
+                        1 -> "1 message"
+                        else -> "$selectedNumberOfMessages messages"
+                    },
+                    modifier = modifier.align(Alignment.CenterHorizontally)
+                )
+
+                Spacer(modifier = modifier.height(16.dp))
+
                 Text(text = "Select how to encode the secret message into a cover text.")
 
                 Spacer(modifier = modifier.height(16.dp))
@@ -349,16 +445,19 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             steps = 19
                         )
 
-                        Spacer(modifier = modifier.height(16.dp))
+                        Spacer(modifier = modifier.height(8.dp))
 
-                        Text(text = "T = $selectedTemperature")
+                        Text(
+                            text = "$selectedTemperature",
+                            modifier = modifier.align(Alignment.CenterHorizontally)
+                        )
                     }
                     SteganographyMode.Bins -> {
                         Text(text = "Set the number of bins (higher is more efficient, but less coherent).")
 
                         Spacer(modifier = modifier.height(16.dp))
 
-                        // Slider only allows floats, do int conversion here to abstract it away from state variable
+                        // Again, do int conversion here as slider only allows floats
                         Slider(
                             value = selectedBlockSize.toFloat(),
                             onValueChange = {
@@ -373,9 +472,18 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             steps = 2
                         )
 
-                        Spacer(modifier = modifier.height(16.dp))
+                        Spacer(modifier = modifier.height(8.dp))
 
-                        Text(text = "n = 2^$selectedBlockSize bins")
+                        Text(
+                            text = "2" + when (selectedBlockSize) {
+                                1 -> "¹"
+                                2 -> "²"
+                                3 -> "³"
+                                4 -> "⁴"
+                                else -> throw IllegalStateException("Selected block size has to be between 1 and 4")
+                            } + " bins",
+                            modifier = modifier.align(Alignment.CenterHorizontally)
+                        )
                     }
                     SteganographyMode.Huffman -> {
                         Text(text = "Set the bits per token (higher is more efficient, but less coherent).")
@@ -397,9 +505,12 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             steps = 2
                         )
 
-                        Spacer(modifier = modifier.height(16.dp))
+                        Spacer(modifier = modifier.height(8.dp))
 
-                        Text(text = "n = $selectedBitsPerToken bits/token")
+                        Text(
+                            text = "$selectedBitsPerToken " + if (selectedBitsPerToken == 1) "bit/token" else "bits/token",
+                            modifier = modifier.align(Alignment.CenterHorizontally)
+                        )
                     }
                 }
             }

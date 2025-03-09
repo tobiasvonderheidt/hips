@@ -34,16 +34,16 @@ object Huffman {
 
         // Sample tokens until all of bits of secret message are encoded and last sentence is finished
         while (i < cipherBitString.length || !isLastSentenceFinished) {
+            // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp:
+            // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
+            // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
+            val logits = LlamaCpp.getLogits(if (isFirstRun) contextTokens else intArrayOf(sampledToken)).last()
+
+            // Suppress special tokens to avoid early termination before all bits of secret message are encoded
+            LlamaCpp.suppressSpecialTokens(logits)
+
             // Huffman sampling to encode bits of secret message into tokens
             if (i < cipherBitString.length) {
-                // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp:
-                // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
-                // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
-                val logits = LlamaCpp.getLogits(if (isFirstRun) contextTokens else intArrayOf(sampledToken)).last()
-
-                // Suppress special tokens to avoid early termination before all bits of secret message are encoded
-                LlamaCpp.suppressSpecialTokens(logits)
-
                 // Get top 2^bitsPerToken logits for last token of prompt (= height of Huffman tree)
                 val topLogits = getTopLogits(logits)
 
@@ -81,9 +81,8 @@ object Huffman {
             }
             // Greedy sampling to pick most likely token until last sentence is finished
             else {
-                // llama.cpp greedy sampler is used for efficiency instead of manually sorting logits descending and picking the first one
-                // Input is only last sampled token similar to else case of getLogits input above, as greedy sampling only over gets called after Huffman sampling
-                sampledToken = LlamaCpp.sample(sampledToken)
+                // Get most likely token by sampling top 2^0 = 1 tokens
+                sampledToken = getTopLogits(logits, 0).keys.first()
 
                 // Update flag
                 isLastSentenceFinished = LlamaCpp.isEndOfSentence(sampledToken)

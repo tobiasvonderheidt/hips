@@ -13,4 +13,16 @@ import androidx.room.PrimaryKey
 data class User(
     @PrimaryKey val id: Int,
     val name: String
-)
+) {
+    companion object {
+        /**
+         * Sample user for the conversation screen.
+         */
+        val Alice = User(0, "Alice")
+
+        /**
+         * Sample user for the conversation screen.
+         */
+        val Bob = User(1, "Bob")
+    }
+}

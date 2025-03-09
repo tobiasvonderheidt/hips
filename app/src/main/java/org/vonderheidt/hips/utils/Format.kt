@@ -23,8 +23,14 @@ object Format {
      *
      * @param bitString A bit string.
      * @return The ByteArray.
+     * @throws IllegalArgumentException If `bitString` contains anything other than 1s and 0s.
      */
     fun asByteArray(bitString: String): ByteArray {
+        // Check integrity of the bit string
+        if (!isBitString(bitString)) {
+            throw IllegalArgumentException("Bit string can only contain 0 and 1")
+        }
+
         // Don't assert string length to be a multiple of 8, causes error in Huffman encoding with 3 bits/token
         val byteArray = ByteArray(size = bitString.length / 8) { index ->
             val byteString = bitString.substring(startIndex = index * 8, endIndex = (index + 1) * 8)
@@ -34,5 +40,15 @@ object Format {
         }
 
         return byteArray
+    }
+
+    /**
+     * Function to check integrity of a bit string, i.e. if it only contains 1s and 0s.
+     *
+     * @param bitString A bit string.
+     * @return Boolean that is true if `bitString` only contains 1s and 0s, false otherwise.
+     */
+    private fun isBitString(bitString: String): Boolean {
+        return bitString.all { bit -> bit == '0' || bit == '1' }
     }
 }

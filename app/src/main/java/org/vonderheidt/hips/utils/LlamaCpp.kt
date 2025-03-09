@@ -1,5 +1,9 @@
 package org.vonderheidt.hips.utils
 
+import org.vonderheidt.hips.data.Message
+import org.vonderheidt.hips.data.Settings
+import org.vonderheidt.hips.data.User
+
 /**
  * Object (i.e. singleton class) to declare Kotlin external functions corresponding to llama.cpp functions.
  */
@@ -41,7 +45,7 @@ object LlamaCpp {
 
         // Otherwise, load the LLM and store its memory address
         // Synchronized allows only one thread to execute the code inside {...}, so other threads can't load the LLM simultaneously
-        synchronized(this) {
+        synchronized(lock = this) {
             if (!isInMemory()) {
                 model = loadModel()
                 ctx = loadCtx()
@@ -59,7 +63,7 @@ object LlamaCpp {
             return
         }
 
-        synchronized(this) {
+        synchronized(lock = this) {
             if (isInMemory()) {
                 unloadSmpl()
                 smpl = 0L
@@ -85,7 +89,7 @@ object LlamaCpp {
             return
         }
 
-        synchronized(this) {
+        synchronized(lock = this) {
             if (ctx != 0L) {
                 unloadCtx()
                 ctx = 0L
@@ -131,6 +135,49 @@ object LlamaCpp {
                 || detokenization.endsWith("?")
 
         return isSentenceFinished
+    }
+
+    /**
+     * Function to format a list of messages as a llama.cpp chat (i.e. apply the chat template of the LLM).
+     * Creates the context needed to do steganography encoding/decoding in a conversation.
+     *
+     * Closely related to the demo implementation of a conversation between Alice and Bob, as roles are assigned to messages based on the `isAlice` parameter:
+     * - When encoding, this means the LLM always takes on the role of the user to generate a cover text for.
+     * - When decoding, this means the state right before/during encoding is reproduced.
+     *
+     * Effectively, the roles are constantly switched to make the LLM talk to itself without knowing it.
+     * Roles don't need to be strictly alternating, multiple consecutive messages from the same role are fine.
+     *
+     * @param priorMessages The list of messages prior to the one being encoded/decoded.
+     * @param isAlice Boolean that is true if the LLM takes on the role of Alice, false otherwise.
+     * @param numberOfMessages Number of messages from `priorMessages` to use as context. Determined by Settings object.
+     * @return Context string for steganography encoding/decoding containing the messages formatted as chat.
+     */
+    fun formatChat(priorMessages: List<Message>, isAlice: Boolean, numberOfMessages: Int = if (Settings.numberOfMessages > 0) Settings.numberOfMessages else priorMessages.size): String {
+        // Always add system prompt to chat first
+        // Append special token for the assistant role if there are no other messages yet
+        var context = addMessage(role = Role.System.name, content = Settings.systemPrompt, appendAssistant = priorMessages.isEmpty())
+
+        // Only use the last numberOfMessages messages as context
+        for (priorMessage in priorMessages.takeLast(numberOfMessages)) {
+            // Assign assistant/user roles to messages based on isAlice
+            val priorMessageRole = if (isAlice) {
+                // Alice is assistant, Bob is user
+                if (priorMessage.senderID == User.Alice.id) { Role.Assistant.name }
+                else { Role.User.name }
+            }
+            else {
+                // Alice is user, Bob is assistant
+                if (priorMessage.senderID == User.Alice.id) { Role.User.name }
+                else { Role.Assistant.name }
+            }
+
+            // Add message to chat
+            // Append special token for the assistant role if current message is end of the context
+            context += addMessage(role = priorMessageRole, content = priorMessage.content, appendAssistant = priorMessage == priorMessages.last())
+        }
+
+        return context
     }
 
     // Declare the native methods called via JNI as Kotlin external functions
@@ -213,13 +260,13 @@ object LlamaCpp {
     external fun getLogits(tokens: IntArray, ctx: Long = this.ctx): Array<FloatArray>
 
     /**
-     * Wrapper for the `llama_token_is_eog` and `llama_token_is_control` functions of llama.cpp. Checks if a token is a special token.
+     * Wrapper for the `llama_vocab_is_eog` and `llama_vocab_is_control` functions of llama.cpp. Checks if a token is a special token.
      *
      * @param token Token ID to check.
-     * @param ctx Memory address of the context.
-     * @return Boolean that is true if the token special, false otherwise.
+     * @param model Memory address of the LLM.
+     * @return Boolean that is true if the token is special, false otherwise.
      */
-    private external fun isSpecial(token: Int, ctx: Long = this.ctx): Boolean
+    private external fun isSpecial(token: Int, model: Long = this.model): Boolean
 
     /**
      * Wrapper for the `llama_sampler_sample` function of llama.cpp. Samples the next token based on the last one.
@@ -229,4 +276,19 @@ object LlamaCpp {
      * @return ID of the next token.
      */
     external fun sample(lastToken: Int, ctx: Long = this.ctx, smpl: Long = this.smpl): Int
+
+    /**
+     * Wrapper for the `llama_chat_apply_template` function of llama.cpp. Formats a message as a llama.cpp chat message so that it can be added to a chat.
+     * This involves the following steps:
+     * 1. Prepend a special token for the desired role (`system`, `user` or `assistant`).
+     * 2. Append a special token to signal the end of the message.
+     * 3. If the message is the last in the chat, append the special token for the `assistant` role to signal the LLM that it should generate the next message.
+     *
+     * @param role Role the new chat message should be sent as (`system`, `user` or `assistant`).
+     * @param content Content of the new chat message.
+     * @param appendAssistant Boolean that is true if the special token for the `assistant` role is to be appended at the end, false otherwise.
+     * @param model Memory address of the LLM.
+     * @return The message formatted as llama.cpp chat message.
+     */
+    private external fun addMessage(role: String, content: String, appendAssistant: Boolean, model: Long = this.model): String
 }
