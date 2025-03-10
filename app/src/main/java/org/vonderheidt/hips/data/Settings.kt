@@ -16,6 +16,8 @@ object Settings {
     var numberOfMessages = 0
     var steganographyMode = SteganographyMode.Arithmetic
     var temperature = 0.9f
+    var topK = 0             // Only used if LLM is not in memory
+    var precision = 0        // Only used if LLM is not in memory
     var blockSize = 3
     var bitsPerToken = 3
 }

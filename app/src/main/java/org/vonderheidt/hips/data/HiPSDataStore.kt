@@ -27,6 +27,8 @@ object HiPSDataStore {
     private val numberOfMessages = intPreferencesKey("numberOfMessages")
     private val steganographyMode = stringPreferencesKey("steganographyMode")
     private val temperature = floatPreferencesKey("temperature")
+    private val topK = intPreferencesKey("topK")
+    private val precision = intPreferencesKey("precision")
     private val blockSize = intPreferencesKey("blockSize")
     private val bitsPerToken = intPreferencesKey("bitsPerToken")
 
@@ -68,6 +70,8 @@ object HiPSDataStore {
             val numberOfMessages = settings[numberOfMessages]
             val steganographyMode = settings[steganographyMode]
             val temperature = settings[temperature]
+            val topK = settings[topK]
+            val precision = settings[precision]
             val blockSize = settings[blockSize]
             val bitsPerToken = settings[bitsPerToken]
 
@@ -77,6 +81,8 @@ object HiPSDataStore {
                     && numberOfMessages != null
                     && steganographyMode != null
                     && temperature != null
+                    && topK != null
+                    && precision != null
                     && blockSize != null
                     && bitsPerToken != null
 
@@ -88,6 +94,8 @@ object HiPSDataStore {
                 Settings.numberOfMessages = numberOfMessages!!
                 Settings.steganographyMode = SteganographyMode.valueOf(steganographyMode!!)
                 Settings.temperature = temperature!!
+                Settings.topK = topK!!
+                Settings.precision = precision!!
                 Settings.blockSize = blockSize!!
                 Settings.bitsPerToken = bitsPerToken!!
             }
@@ -109,6 +117,8 @@ object HiPSDataStore {
             settings[numberOfMessages] = Settings.numberOfMessages
             settings[steganographyMode] = Settings.steganographyMode.name
             settings[temperature] = Settings.temperature
+            settings[topK] = Settings.topK
+            settings[precision] = Settings.precision
             settings[blockSize] = Settings.blockSize
             settings[bitsPerToken] = Settings.bitsPerToken
         }
