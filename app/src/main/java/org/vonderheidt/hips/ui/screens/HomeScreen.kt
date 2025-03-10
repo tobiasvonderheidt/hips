@@ -256,6 +256,19 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                         Toast.makeText(currentLocalContext, "Load LLM into memory first", Toast.LENGTH_LONG).show()
                         return@Button
                     }
+                    // Check inputs
+                    if (context.isBlank()) {
+                        Toast.makeText(currentLocalContext, "Context can't be blank", Toast.LENGTH_LONG).show()
+                        return@Button
+                    }
+                    if (selectedMode == 0 && secretMessage.isBlank()) {
+                        Toast.makeText(currentLocalContext, "Secret message can't be blank", Toast.LENGTH_LONG).show()
+                        return@Button
+                    }
+                    if (selectedMode == 1 && coverText.isBlank()) {
+                        Toast.makeText(currentLocalContext, "Cover text can't be blank", Toast.LENGTH_LONG).show()
+                        return@Button
+                    }
 
                     // Hide old output when start button is pressed again, show loading animation
                     isOutputVisible = false
