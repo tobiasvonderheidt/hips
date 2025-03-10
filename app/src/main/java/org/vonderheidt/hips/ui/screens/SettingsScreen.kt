@@ -74,6 +74,9 @@ import kotlin.math.roundToInt
 
 /**
  * Function that defines the settings screen.
+ *
+ * @param navController The navController from NavGraph setup.
+ * @param modifier The modifier from MainActivity.
  */
 @Composable
 fun SettingsScreen(navController: NavController, modifier: Modifier) {

@@ -62,6 +62,9 @@ import org.vonderheidt.hips.utils.Steganography
 
 /**
  * Function that defines the home screen.
+ *
+ * @param navController The navController from NavGraph setup.
+ * @param modifier The modifier from MainActivity.
  */
 @Composable
 fun HomeScreen(navController: NavController, modifier: Modifier) {

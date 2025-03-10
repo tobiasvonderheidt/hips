@@ -69,6 +69,9 @@ import org.vonderheidt.hips.utils.Steganography
 
 /**
  * Function that defines the conversation screen.
+ *
+ * @param navController The navController from NavGraph setup.
+ * @param modifier The modifier from MainActivity.
  */
 @Composable
 fun ConversationScreen(navController: NavController, modifier: Modifier) {
