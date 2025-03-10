@@ -436,12 +436,15 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                         Slider(
                             value = selectedTemperature * 10,
                             onValueChange = {
-                                // Update state variable
-                                selectedTemperature = it.roundToInt() / 10f
+                                // Temperature can't be 0 because logits are scaled with 1/temperature
+                                if (it > 0f) {
+                                    // Update state variable
+                                    selectedTemperature = it.roundToInt() / 10f
 
-                                // Update DataStore
-                                Settings.temperature = it.roundToInt() / 10f
-                                coroutineScope.launch { HiPSDataStore.writeSettings() }
+                                    // Update DataStore
+                                    Settings.temperature = it.roundToInt() / 10f
+                                    coroutineScope.launch { HiPSDataStore.writeSettings() }
+                                }
                             },
                             valueRange = 0f..20f,
                             steps = 19
