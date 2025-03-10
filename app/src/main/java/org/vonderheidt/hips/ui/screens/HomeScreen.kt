@@ -153,14 +153,15 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                 )
             },
             trailingIcon = {
-                if (context != "") {
+                if (context.isNotEmpty()) {
                     Icon(
                         imageVector = Icons.Outlined.Clear,
                         contentDescription = "Clear context",
                         modifier = modifier.clickable { context = "" }
                     )
                 }
-            }
+            },
+            maxLines = 5
         )
 
         Spacer(modifier = modifier.height(32.dp))
@@ -179,14 +180,15 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                     )
                 },
                 trailingIcon = {
-                    if (secretMessage != "") {
+                    if (secretMessage.isNotEmpty()) {
                         Icon(
                             imageVector = Icons.Outlined.Clear,
                             contentDescription = "Clear secret message",
                             modifier = modifier.clickable { secretMessage = "" }
                         )
                     }
-                }
+                },
+                maxLines = 5
             )
         }
         else {
