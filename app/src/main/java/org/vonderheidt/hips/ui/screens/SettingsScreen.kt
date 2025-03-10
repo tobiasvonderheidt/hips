@@ -1,7 +1,6 @@
 package org.vonderheidt.hips.ui.screens
 
 import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
@@ -530,7 +530,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                 .clickable(
                     onClick = {
                         // Open email app and create draft with subject "HiPS"
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("mailto:tobias@vonderheidt.org?subject=HiPS"))
+                        val intent = Intent(Intent.ACTION_VIEW, "mailto:tobias@vonderheidt.org?subject=HiPS".toUri())
                         currentLocalContext.startActivity(intent)
                     }
                 )
@@ -562,7 +562,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                 .clickable(
                     onClick = {
                         // Open the repo website
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/tobiasvonderheidt/hips"))
+                        val intent = Intent(Intent.ACTION_VIEW, "https://github.com/tobiasvonderheidt/hips".toUri())
                         currentLocalContext.startActivity(intent)
                     }
                 )
