@@ -189,6 +189,25 @@ extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloa
 }
 
 /**
+ * Function to get the vocabulary size `n_vocab` of the LLM (i.e. the number of available tokens).
+ *
+ * @param env The JNI environment.
+ * @param thiz Java object this function was called with.
+ * @param jModel Memory address of the LLM.
+ * @return Vocabulary size of the LLM.
+ */
+extern "C" JNIEXPORT jint JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_getVocabSize(JNIEnv* /* env */, jobject /* thiz */, jlong jModel) {
+    // Cast memory address of LLM from Java long to C++ pointer
+    auto cppModel = reinterpret_cast<llama_model*>(jModel);
+
+    // Get vocabulary size and return it, no cast needed as jint is int32_t
+    const llama_vocab* vocab = llama_model_get_vocab(cppModel);
+    int32_t n_vocab = llama_vocab_n_tokens(vocab);
+
+    return n_vocab;
+}
+
+/**
  * Function to tokenize a string into an array of token IDs.
  *
  * @param env The JNI environment.

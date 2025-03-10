@@ -231,6 +231,14 @@ object LlamaCpp {
     // Parameter ctx is optional since it has a default value, put it at the end to avoid conflicts
 
     /**
+     * Wrapper for the `llama_vocab_n_tokens` function of llama.cpp. Gets the vocabulary size `n_vocab` of the LLM (i.e. the number of available tokens).
+     *
+     * @param model Memory address of the LLM.
+     * @return Vocabulary size of the LLM.
+     */
+    external fun getVocabSize(model: Long = this.model): Int
+
+    /**
      * Wrapper for the `common_tokenize` function of llama.cpp. Tokenizes a string into an array of token IDs.
      *
      * @param string String to be tokenized.
