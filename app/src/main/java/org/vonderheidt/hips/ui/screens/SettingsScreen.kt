@@ -24,21 +24,27 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MultiChoiceSegmentedButtonRow
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -81,6 +87,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
     var selectedTemperature by rememberSaveable { mutableFloatStateOf(Settings.temperature) }
     var selectedBlockSize by rememberSaveable { mutableIntStateOf(Settings.blockSize) }
     var selectedBitsPerToken by rememberSaveable { mutableIntStateOf(Settings.bitsPerToken) }
+    val selectedResetModes = remember { mutableStateListOf(0, 1) }
 
     // Scrolling
     val scrollState = rememberScrollState()
@@ -90,6 +97,9 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
     // Coroutines
     val coroutineScope = rememberCoroutineScope()
+
+    // Reset button
+    val resetModes = listOf("General", "LLM")
 
     // UI components
     Column(
@@ -516,6 +526,95 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             text = "$selectedBitsPerToken " + if (selectedBitsPerToken == 1) "bit/token" else "bits/token",
                             modifier = modifier.align(Alignment.CenterHorizontally)
                         )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = modifier.height(16.dp))
+
+        // Reset settings
+        Row(
+            modifier = modifier.fillMaxWidth(0.9f)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Restore,
+                contentDescription = "Reset settings to defaults"
+            )
+
+            Spacer(modifier = modifier.width(16.dp))
+
+            Column {
+                Text(
+                    text = "Reset settings",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(text = "Reset settings to their default values.")
+
+                Spacer(modifier = modifier.height(16.dp))
+
+                Text(text = "If the LLM is in memory, this finds reasonable values for the settings that are specific to it.")
+
+                Spacer(modifier = modifier.height(16.dp))
+
+                Row(
+                    modifier = modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Reset mode
+                    MultiChoiceSegmentedButtonRow(
+                        // Ensure minimal distance to reset button in portrait orientation
+                        modifier = modifier.width(180.dp)
+                    ) {
+                        // Mostly follows example given in docs
+                        resetModes.forEachIndexed { index, _ ->
+                            SegmentedButton(
+                                checked = index in selectedResetModes,
+                                onCheckedChange = {
+                                    if (index in selectedResetModes) {
+                                        selectedResetModes.remove(index)
+                                    }
+                                    else {
+                                        selectedResetModes.add(index)
+                                    }
+                                },
+                                shape = SegmentedButtonDefaults.itemShape(
+                                    index = index,
+                                    count = resetModes.size,
+                                    baseShape = RoundedCornerShape(4.dp)
+                                ),
+                                label = { Text(text = resetModes[index]) }
+                            )
+                        }
+                    }
+
+                    // Reset button
+                    Button(
+                        onClick = {
+                            // Check if anything is selected
+                            if (!(0 in selectedResetModes || 1 in selectedResetModes)) {
+                                Toast.makeText(currentLocalContext, "There was nothing to reset", Toast.LENGTH_LONG).show()
+                                return@Button
+                            }
+
+                            // Update DataStore
+                            Settings.reset(general = 0 in selectedResetModes, llm = 1 in selectedResetModes)
+                            coroutineScope.launch { HiPSDataStore.writeSettings() }
+
+                            // Update state variables
+                            selectedConversionMode = Settings.conversionMode
+                            systemPrompt = Settings.systemPrompt
+                            selectedNumberOfMessages = Settings.numberOfMessages
+                            selectedSteganographyMode = Settings.steganographyMode
+                            selectedTemperature = Settings.temperature
+                            selectedBlockSize = Settings.blockSize
+                            selectedBitsPerToken = Settings.bitsPerToken
+                        },
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(text = "Reset")
                     }
                 }
             }
