@@ -204,14 +204,15 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                     )
                 },
                 trailingIcon = {
-                    if (coverText != "") {
+                    if (coverText.isNotEmpty()) {
                         Icon(
                             imageVector = Icons.Outlined.Clear,
                             contentDescription = "Clear cover text",
                             modifier = modifier.clickable { coverText = "" }
                         )
                     }
-                }
+                },
+                maxLines = 5
             )
         }
 
