@@ -251,6 +251,12 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
             // Start button
             Button(
                 onClick = {
+                    // Check if LLM is loaded
+                    if (!LlamaCpp.isInMemory()) {
+                        Toast.makeText(currentLocalContext, "Load LLM into memory first", Toast.LENGTH_LONG).show()
+                        return@Button
+                    }
+
                     // Hide old output when start button is pressed again, show loading animation
                     isOutputVisible = false
                     isLoading = true
