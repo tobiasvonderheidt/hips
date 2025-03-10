@@ -69,11 +69,13 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
     val isDownloaded by rememberSaveable { mutableStateOf(LLM.isDownloaded()) }
     var context by rememberSaveable { mutableStateOf("") }
     var secretMessage by rememberSaveable { mutableStateOf("") }
-    val modes = listOf("Encode", "Decode")
     var selectedMode by rememberSaveable { mutableIntStateOf(0) }
     var isOutputVisible by rememberSaveable { mutableStateOf(false) }
     var isLoading by rememberSaveable { mutableStateOf(false) }
     var coverText by rememberSaveable { mutableStateOf("") }
+
+    // Start button
+    val modes = listOf("Encode", "Decode")
 
     // Scrolling
     val scrollState = rememberScrollState()
