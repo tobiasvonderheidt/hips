@@ -17,11 +17,11 @@ object Settings {
     """.trimIndent().replace("\n", " ")
     private val defaultNumberOfMessages = 0
     private val defaultSteganographyMode = SteganographyMode.Arithmetic
-    private val defaultTemperature = 0.9f
+    private val defaultTemperature = 1.0f
     private val defaultTopK = 0             // Only used if LLM is not in memory
     private val defaultPrecision = 0        // Only used if LLM is not in memory
     private val defaultBlockSize = 3
-    private val defaultBitsPerToken = 3
+    private val defaultBitsPerToken = 2
 
     // Initialize current values with defaults
     var conversionMode = defaultConversionMode
