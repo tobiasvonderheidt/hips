@@ -401,12 +401,13 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                         }
                                         // Only send non-blank messages, allows to switch user on button press
                                         if (newSecretMessage.isBlank()) {
-                                            // Clear input field and change mode
+                                            // Clear input field and change role
                                             newSecretMessage = ""
                                             isAlice = !isAlice
                                             return@detectTapGestures
                                         }
 
+                                        // Update state variable
                                         isEncoding = true
 
                                         // Reset state variables, just like when decode button is hidden, otherwise secret message is still visible after send button is pressed
@@ -417,12 +418,11 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                             selectedMessages = listOf()
                                         }
 
-                                        // Create data objects for sender, receiver and message
+                                        // Determine sender and receiver
                                         val newSender = if (isAlice) User.Alice else User.Bob
                                         val newReceiver = if (isAlice) User.Bob else User.Alice
 
-                                        // Update database
-                                        // Launch queries in coroutine so they can't block the UI in the main thread
+                                        // Launch coroutine so UI in main thread isn't blocked
                                         CoroutineScope(Dispatchers.Default).launch {
                                             // Reset LLM for reproducible results
                                             LlamaCpp.resetInstance()
@@ -430,7 +430,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                             // Apply chat template to system prompt and prior messages
                                             val context = LlamaCpp.formatChat(messages, isAlice)
 
-                                            // Generate cover text and write it into chat history
+                                            // Generate cover text and update database
                                             val newCoverText = if (isPlainText) newSecretMessage else Steganography.encode(context, newSecretMessage)
 
                                             val newMessage = Message(
@@ -440,18 +440,15 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                                 content = newCoverText
                                             )
 
-                                            // Update state variable
-                                            messages += newMessage
-
                                             // Order is important to avoid violating foreign key relations
                                             db.userDao.upsertUser(newSender)
                                             db.userDao.upsertUser(newReceiver)
                                             db.messageDao.upsertMessage(newMessage)
 
-                                            // Clear input field and change mode
+                                            // Update state variables
+                                            messages += newMessage
                                             newSecretMessage = ""
                                             isAlice = !isAlice
-
                                             isEncoding = false
                                         }
                                     }
