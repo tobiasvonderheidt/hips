@@ -62,6 +62,9 @@ import org.vonderheidt.hips.utils.Steganography
 
 /**
  * Function that defines the home screen.
+ *
+ * @param navController The navController from NavGraph setup.
+ * @param modifier The modifier from MainActivity.
  */
 @Composable
 fun HomeScreen(navController: NavController, modifier: Modifier) {
@@ -69,11 +72,13 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
     val isDownloaded by rememberSaveable { mutableStateOf(LLM.isDownloaded()) }
     var context by rememberSaveable { mutableStateOf("") }
     var secretMessage by rememberSaveable { mutableStateOf("") }
-    val modes = listOf("Encode", "Decode")
     var selectedMode by rememberSaveable { mutableIntStateOf(0) }
     var isOutputVisible by rememberSaveable { mutableStateOf(false) }
     var isLoading by rememberSaveable { mutableStateOf(false) }
     var coverText by rememberSaveable { mutableStateOf("") }
+
+    // Start button
+    val modes = listOf("Encode", "Decode")
 
     // Scrolling
     val scrollState = rememberScrollState()
@@ -151,14 +156,15 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                 )
             },
             trailingIcon = {
-                if (context != "") {
+                if (context.isNotEmpty()) {
                     Icon(
                         imageVector = Icons.Outlined.Clear,
                         contentDescription = "Clear context",
                         modifier = modifier.clickable { context = "" }
                     )
                 }
-            }
+            },
+            maxLines = 5
         )
 
         Spacer(modifier = modifier.height(32.dp))
@@ -177,14 +183,15 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                     )
                 },
                 trailingIcon = {
-                    if (secretMessage != "") {
+                    if (secretMessage.isNotEmpty()) {
                         Icon(
                             imageVector = Icons.Outlined.Clear,
                             contentDescription = "Clear secret message",
                             modifier = modifier.clickable { secretMessage = "" }
                         )
                     }
-                }
+                },
+                maxLines = 5
             )
         }
         else {
@@ -200,14 +207,15 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                     )
                 },
                 trailingIcon = {
-                    if (coverText != "") {
+                    if (coverText.isNotEmpty()) {
                         Icon(
                             imageVector = Icons.Outlined.Clear,
                             contentDescription = "Clear cover text",
                             modifier = modifier.clickable { coverText = "" }
                         )
                     }
-                }
+                },
+                maxLines = 5
             )
         }
 
@@ -247,6 +255,25 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
             // Start button
             Button(
                 onClick = {
+                    // Check if LLM is loaded
+                    if (!LlamaCpp.isInMemory()) {
+                        Toast.makeText(currentLocalContext, "Load LLM into memory first", Toast.LENGTH_LONG).show()
+                        return@Button
+                    }
+                    // Check inputs
+                    if (context.isBlank()) {
+                        Toast.makeText(currentLocalContext, "Context can't be blank", Toast.LENGTH_LONG).show()
+                        return@Button
+                    }
+                    if (selectedMode == 0 && secretMessage.isBlank()) {
+                        Toast.makeText(currentLocalContext, "Secret message can't be blank", Toast.LENGTH_LONG).show()
+                        return@Button
+                    }
+                    if (selectedMode == 1 && coverText.isBlank()) {
+                        Toast.makeText(currentLocalContext, "Cover text can't be blank", Toast.LENGTH_LONG).show()
+                        return@Button
+                    }
+
                     // Hide old output when start button is pressed again, show loading animation
                     isOutputVisible = false
                     isLoading = true

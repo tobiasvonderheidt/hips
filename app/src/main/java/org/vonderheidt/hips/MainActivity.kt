@@ -13,7 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.vonderheidt.hips.data.HiPSDataStore
 import org.vonderheidt.hips.data.HiPSDatabase
-import org.vonderheidt.hips.navigation.SetupNavGraph
+import org.vonderheidt.hips.navigation.NavGraph
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 import org.vonderheidt.hips.utils.LLM
 import org.vonderheidt.hips.utils.LlamaCpp
@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
                     val modifier: Modifier = Modifier.padding(innerPadding)
 
                     // Initialize navigation
-                    SetupNavGraph(modifier)
+                    NavGraph.Setup(modifier)
                 }
             }
         }
