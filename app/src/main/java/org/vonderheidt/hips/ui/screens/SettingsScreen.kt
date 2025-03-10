@@ -64,6 +64,7 @@ import org.vonderheidt.hips.utils.ConversionMode
 import org.vonderheidt.hips.utils.LLM
 import org.vonderheidt.hips.utils.LlamaCpp
 import org.vonderheidt.hips.utils.SteganographyMode
+import kotlin.math.roundToInt
 
 /**
  * Function that defines the settings screen.
@@ -431,17 +432,18 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
                         Spacer(modifier = modifier.height(16.dp))
 
+                        // Scale up, round and scale down again to fix float artefacts (e.g. 1.299998 instead of 1.3)
                         Slider(
-                            value = selectedTemperature,
+                            value = selectedTemperature * 10,
                             onValueChange = {
                                 // Update state variable
-                                selectedTemperature = it
+                                selectedTemperature = it.roundToInt() / 10f
 
                                 // Update DataStore
-                                Settings.temperature = it
+                                Settings.temperature = it.roundToInt() / 10f
                                 coroutineScope.launch { HiPSDataStore.writeSettings() }
                             },
-                            valueRange = 0f..2f,
+                            valueRange = 0f..20f,
                             steps = 19
                         )
 
