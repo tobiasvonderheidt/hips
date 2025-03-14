@@ -138,6 +138,24 @@ object LlamaCpp {
     }
 
     /**
+     * Function to get the end-of-generation (eog) token of the LLM.
+     * If the LLM has multiple eog tokens, the first one is returned.
+     *
+     * @return ID of the eog token.
+     */
+    fun getEndOfGeneration(): Int {
+        var eogTokens = intArrayOf()
+
+        for (token in 0 until getVocabSize()) {
+            if (isEndOfGeneration(token)) {
+                eogTokens += token
+            }
+        }
+
+        return eogTokens.first()
+    }
+
+    /**
      * Function to format a list of messages as a llama.cpp chat (i.e. apply the chat template of the LLM).
      * Creates the context needed to do steganography encoding/decoding in a conversation.
      *
