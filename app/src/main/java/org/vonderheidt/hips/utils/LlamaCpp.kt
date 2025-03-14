@@ -277,6 +277,15 @@ object LlamaCpp {
     private external fun isSpecial(token: Int, model: Long = this.model): Boolean
 
     /**
+     * Wrapper for the `llama_vocab_is_eog` function of llama.cpp. Checks if a token is an end-of-generation (eog) token.
+     *
+     * @param token Token ID to check.
+     * @param model Memory address of the LLM.
+     * @return Boolean that is true if the token is an eog token, false otherwise.
+     */
+    private external fun isEndOfGeneration(token: Int, model: Long = this.model): Boolean
+
+    /**
      * Wrapper for the `llama_sampler_sample` function of llama.cpp. Samples the next token based on the last one.
      *
      * @param lastToken ID of the last token.
