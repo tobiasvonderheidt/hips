@@ -257,17 +257,6 @@ object LlamaCpp {
     external fun detokenize(tokens: IntArray, ctx: Long = this.ctx): String
 
     /**
-     * Wrapper for the `llama_get_logits` function of llama.cpp. Calculates the logit matrix (i.e. predictions for every token in the prompt).
-     *
-     * Only the last row of the `n_tokens` x `n_vocab` matrix is actually needed as it contains the logits corresponding to the last token of the prompt.
-     *
-     * @param tokens Token IDs from tokenization of the prompt.
-     * @param ctx Memory address of the context.
-     * @return The logit matrix.
-     */
-    external fun getLogits(tokens: IntArray, ctx: Long = this.ctx): Array<FloatArray>
-
-    /**
      * Wrapper for the `llama_vocab_is_eog` and `llama_vocab_is_control` functions of llama.cpp. Checks if a token is a special token.
      *
      * @param token Token ID to check.
@@ -284,6 +273,17 @@ object LlamaCpp {
      * @return Boolean that is true if the token is an eog token, false otherwise.
      */
     private external fun isEndOfGeneration(token: Int, model: Long = this.model): Boolean
+
+    /**
+     * Wrapper for the `llama_get_logits` function of llama.cpp. Calculates the logit matrix (i.e. predictions for every token in the prompt).
+     *
+     * Only the last row of the `n_tokens` x `n_vocab` matrix is actually needed as it contains the logits corresponding to the last token of the prompt.
+     *
+     * @param tokens Token IDs from tokenization of the prompt.
+     * @param ctx Memory address of the context.
+     * @return The logit matrix.
+     */
+    external fun getLogits(tokens: IntArray, ctx: Long = this.ctx): Array<FloatArray>
 
     /**
      * Wrapper for the `llama_sampler_sample` function of llama.cpp. Samples the next token based on the last one.
