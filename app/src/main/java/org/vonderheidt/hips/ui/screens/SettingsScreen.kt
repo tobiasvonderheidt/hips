@@ -90,6 +90,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
     var selectedSteganographyMode by rememberSaveable { mutableStateOf(Settings.steganographyMode) }
     var selectedTemperature by rememberSaveable { mutableFloatStateOf(Settings.temperature) }
     var selectedTopK by rememberSaveable { mutableIntStateOf(Settings.topK) }
+    var selectedPrecision by remember { mutableIntStateOf(Settings.precision) }
     var selectedBlockSize by rememberSaveable { mutableIntStateOf(Settings.blockSize) }
     var selectedBitsPerToken by rememberSaveable { mutableIntStateOf(Settings.bitsPerToken) }
     val selectedResetModes = remember { mutableStateListOf(0, 1) }
@@ -503,6 +504,35 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                                 text = "${(selectedTopK.toFloat() / LlamaCpp.getVocabSize() * 100).toInt()}% of the vocabulary",
                                 modifier = modifier.align(Alignment.CenterHorizontally)
                             )
+
+                            Spacer(modifier = modifier.height(16.dp))
+
+                            // Precision
+                            Text(text = "Set the precision for token sampling.")
+
+                            Spacer(modifier = modifier.height(16.dp))
+
+                            // Again, do int conversion here as slider only allows floats
+                            Slider(
+                                value = selectedPrecision.toFloat(),
+                                onValueChange = {
+                                    // Update state variable
+                                    selectedPrecision = it.toInt()
+
+                                    // Update DataStore
+                                    Settings.precision = it.toInt()
+                                    coroutineScope.launch { HiPSDataStore.writeSettings() }
+                                },
+                                valueRange = 0f..32f,
+                                steps = 31
+                            )
+
+                            Spacer(modifier = modifier.height(8.dp))
+
+                            Text(
+                                text = "$selectedPrecision " + if (selectedPrecision == 1) "bit" else "bits",
+                                modifier = modifier.align(Alignment.CenterHorizontally)
+                            )
                         }
                         else {
                             Text(
@@ -653,6 +683,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             selectedNumberOfMessages = Settings.numberOfMessages
                             selectedSteganographyMode = Settings.steganographyMode
                             selectedTemperature = Settings.temperature
+                            selectedPrecision = Settings.precision
                             selectedTopK = Settings.topK
                             selectedBlockSize = Settings.blockSize
                             selectedBitsPerToken = Settings.bitsPerToken
