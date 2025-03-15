@@ -51,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -88,6 +89,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
     var selectedNumberOfMessages by rememberSaveable { mutableIntStateOf(Settings.numberOfMessages) }
     var selectedSteganographyMode by rememberSaveable { mutableStateOf(Settings.steganographyMode) }
     var selectedTemperature by rememberSaveable { mutableFloatStateOf(Settings.temperature) }
+    var selectedTopK by rememberSaveable { mutableIntStateOf(Settings.topK) }
     var selectedBlockSize by rememberSaveable { mutableIntStateOf(Settings.blockSize) }
     var selectedBitsPerToken by rememberSaveable { mutableIntStateOf(Settings.bitsPerToken) }
     val selectedResetModes = remember { mutableStateListOf(0, 1) }
@@ -469,6 +471,45 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             text = "$selectedTemperature",
                             modifier = modifier.align(Alignment.CenterHorizontally)
                         )
+
+                        Spacer(modifier = modifier.height(16.dp))
+
+                        // Show settings specific to LLM only when it is in memory
+                        if (isInMemory) {
+                            // Top k
+                            Text(text = "Set the top k for token sampling.")
+
+                            Spacer(modifier = modifier.height(16.dp))
+
+                            // Again, do int conversion here as slider only allows floats
+                            // Display top k in %, but store absolute number internally
+                            Slider(
+                                value = (selectedTopK.toFloat() / LlamaCpp.getVocabSize() * 100),
+                                onValueChange = {
+                                    // Update state variable
+                                    selectedTopK = (it / 100 * LlamaCpp.getVocabSize()).toInt()
+
+                                    // Update DataStore
+                                    Settings.topK = (it / 100 * LlamaCpp.getVocabSize()).toInt()
+                                    coroutineScope.launch { HiPSDataStore.writeSettings() }
+                                },
+                                valueRange = 0f..100f,
+                                steps = 99
+                            )
+
+                            Spacer(modifier = modifier.height(8.dp))
+
+                            Text(
+                                text = "${(selectedTopK.toFloat() / LlamaCpp.getVocabSize() * 100).toInt()}% of the vocabulary",
+                                modifier = modifier.align(Alignment.CenterHorizontally)
+                            )
+                        }
+                        else {
+                            Text(
+                                text = "Load the LLM into memory to see more settings here.",
+                                fontStyle = FontStyle.Italic
+                            )
+                        }
                     }
                     SteganographyMode.Bins -> {
                         Text(text = "Set the number of bins (higher is more efficient, but less coherent).")
@@ -612,6 +653,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             selectedNumberOfMessages = Settings.numberOfMessages
                             selectedSteganographyMode = Settings.steganographyMode
                             selectedTemperature = Settings.temperature
+                            selectedTopK = Settings.topK
                             selectedBlockSize = Settings.blockSize
                             selectedBitsPerToken = Settings.bitsPerToken
                         },
