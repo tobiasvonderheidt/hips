@@ -318,7 +318,14 @@ object Arithmetic {
             if (overfillIndex.isNotEmpty()) {
                 cumProbs = cumProbs.dropLast(overfillIndex.size).toMutableList()
                 // Reassignment of k is new in decode, but not used here as possible BPE errors are ignored below
-                // Would be "k = overfillIndex.size"
+                // Logic of Stegasuras is somewhat inverted again
+                // Stegasuras: overfill_index[0] = Index of first token with cumulated probability > cur_int_range
+                //             = Number of tokens with cumulated probability <= cur_int_range
+                //             = Size of cum_probs after it was overwritten there
+                // HiPS: overfillIndex = List of tokens with cumulated probability > curIntRange
+                //       != Size of cumProbs after it was overwritten here
+                // Now "if (rank >= k) { ... }" from BPE fixes below makes sense
+                // k = cumProbs.size
             }
 
             // Stegasuras: "Add any mass to the top if removing/rounding causes the total prob to be too small"
