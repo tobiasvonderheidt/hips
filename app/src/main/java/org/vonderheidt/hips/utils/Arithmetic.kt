@@ -88,6 +88,11 @@ object Arithmetic {
 
                 // Minimum ensures that k doesn't exceed topK
                 // Maximum ensures that at least the tokens with the top 2 probabilities are considered
+                // => Maximum is relevant if next token is practically certain (e.g. "Albert Einstein was a renowned theoretical" will be continued with " physicist" with > 99.5% probability)
+                //    Probability of second most likely token will already be rounded to 0
+                // => Loop can go through runs that don't encode any information (i.e. secret message bits) because a token is certain, but next token won't be certain and will encode information again
+                //    Not possible with Huffman, where every token encodes bitsPerToken bits of information
+                // => Matches entropy: Events that are certain don't contain any information (<=> Events that are very uncertain contain a lot of information)
                 val k = min(
                     max(
                         2,
