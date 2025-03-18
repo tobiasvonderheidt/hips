@@ -172,6 +172,9 @@ object Arithmetic {
                     messageBits += "0".repeat(i + precision - cipherBitString.length)
                 }
 
+                // Convert portion of cipher bits to integer for comparison with cumulated probabilities
+                // Find position of first token with cumulated probability larger than this integer, i.e. find relevant sub-interval of current interval
+                // => sampledToken is already determined here, next steps only calculate new interval
                 val messageIdx = Format.asInteger(messageBits)                                 // Stegasuras would reverse messageBits, shouldn't be necessary here
                 val selection = cumProbs.indexOfFirst { it.second > messageIdx }
 
@@ -196,7 +199,7 @@ object Arithmetic {
                 curInterval[0] = Format.asInteger(newIntBottomBits)                            // Again, reversing shouldn't be necessary here
                 curInterval[1] = Format.asInteger(newIntTopBits) + 1                           // Stegasuras: "+1 here because upper bound is exclusive"
 
-                // Sample token
+                // Sample token as determined above
                 sampledToken = cumProbs[selection].first
 
                 // </Logic specific to arithmetic coding>
