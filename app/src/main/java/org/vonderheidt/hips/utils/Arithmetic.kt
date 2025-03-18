@@ -158,6 +158,7 @@ object Arithmetic {
                 }.toMutableList()
 
                 // Stegasuras: "Get selected index based on binary fraction from message bits"
+                // Process cipher bits in portions of size precision
                 // Unlike Python, Kotlin doesn't handle "cipherBitString.substring(startIndex = i, endIndex = i + precision)" gracefully if i + precision is too large
                 var messageBits = if (i + precision < cipherBitString.length) {
                     cipherBitString.substring(startIndex = i, endIndex = i + precision)
@@ -166,6 +167,7 @@ object Arithmetic {
                     cipherBitString.substring(startIndex = i)
                 }
 
+                // Append 0s to last cipher bits to make last portion of size precision as well
                 if (i + precision > cipherBitString.length) {
                     messageBits += "0".repeat(i + precision - cipherBitString.length)
                 }
