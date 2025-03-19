@@ -179,12 +179,15 @@ object Arithmetic {
                 val selection = cumProbs.indexOfFirst { it.second > messageIdx }
 
                 // Stegasuras: "Calculate new range as ints"
+                // Calculate bottom and top of relevant sub-interval for next iteration
+                // New bottom (inclusive) is top of preceding sub-interval (exclusive there) if relevant one is not the first one, old bottom otherwise
+                // New top (exclusive) is top of relevant sub-interval
                 val newIntBottom = if (selection > 0) cumProbs[selection-1].second else curInterval[0]
                 val newIntTop = cumProbs[selection].second
 
                 // Stegasuras: "Convert range to bits"
                 val newIntBottomBitsInc = Format.asBitString(newIntBottom, precision)          // Again, reversing shouldn't be necessary here
-                val newIntTopBitsInc = Format.asBitString(newIntTop - 1, precision)     // Stegasuras: "-1 here because upper bound is exclusive"
+                val newIntTopBitsInc = Format.asBitString(newIntTop - 1, precision)     // Stegasuras: "-1 here because upper bound is exclusive" (i.e. newIntTopBitsInc is inclusive)
 
                 // Stegasuras: "Consume most significant bits which are now fixed and update interval"
                 // Arithmetic coding encodes data into a number by iteratively narrowing initial interval defined earlier
@@ -193,6 +196,8 @@ object Arithmetic {
                 i += numBitsEncoded
 
                 // New interval is determined by setting unfixed bits to 0 for bottom end, to 1 for top end
+                // Interval boundaries can jump around because first numBitsEncoded bits are already processed and therefore cut off
+                // Next portion of cipher bits in general doesn't narrow the interval
                 val newIntBottomBits = newIntBottomBitsInc.substring(startIndex = numBitsEncoded) + "0".repeat(numBitsEncoded)
                 val newIntTopBits = newIntTopBitsInc.substring(startIndex = numBitsEncoded) + "1".repeat(numBitsEncoded)
 
