@@ -55,6 +55,9 @@ import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.vonderheidt.hips.data.Message
+import org.vonderheidt.hips.data.User
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 import org.vonderheidt.hips.utils.LLM
@@ -305,11 +308,53 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                         // Might be desirable to use it with Dispatchers.IO as it is presumably I/O-bound, but seems negligible
                         LlamaCpp.resetInstance()
 
+                        // If conversation switch is set, context needs to be formatted as chat
+                        // Avoid overwriting state variable for context, otherwise formatting is shown in text input field
+                        var formattedContext = context
+
+                        // System prompt is added transparently, roles are assumed to be strictly alternating, number of messages used as context is 1
+                        if (isConversation) {
+                            // Alice encodes her secret message with Bob's last message as context
+                            if (selectedMode == 0) {
+                                val priorMessages = listOf(
+                                    Message(
+                                        senderID = User.Bob.id,
+                                        receiverID = User.Alice.id,
+                                        timestamp = System.currentTimeMillis(),
+                                        content = context
+                                    )
+                                )
+
+                                formattedContext = LlamaCpp.formatChat(priorMessages, isAlice = true, numberOfMessages = 1)
+                            }
+                            // Alice decodes Bob's cover text with her last message as context
+                            else {
+                                val priorMessages = listOf(
+                                    Message(
+                                        senderID = User.Alice.id,
+                                        receiverID = User.Bob.id,
+                                        timestamp = System.currentTimeMillis(),
+                                        content = context
+                                    )
+                                )
+
+                                formattedContext = LlamaCpp.formatChat(priorMessages, isAlice = false, numberOfMessages = 1)
+                            }
+                        }
+
                         if (selectedMode == 0) {
-                            coverText = Steganography.encode(context, secretMessage)
+                            coverText = Steganography.encode(formattedContext, secretMessage)
                         }
                         else {
-                            secretMessage = Steganography.decode(context, coverText)
+                            // Try-catch should only be necessary when conversation switch is set
+                            try {
+                                secretMessage = Steganography.decode(formattedContext, coverText)
+                            }
+                            catch (exception: Exception) {
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(currentLocalContext, "Cover text couldn't be decoded", Toast.LENGTH_LONG).show()
+                                }
+                            }
                         }
 
                         // Hide loading animation, show new output only when encode or decode is finished
