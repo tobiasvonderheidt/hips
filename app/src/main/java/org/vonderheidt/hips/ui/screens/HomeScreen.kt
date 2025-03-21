@@ -34,6 +34,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -72,6 +73,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
     val isDownloaded by rememberSaveable { mutableStateOf(LLM.isDownloaded()) }
     var context by rememberSaveable { mutableStateOf("") }
     var secretMessage by rememberSaveable { mutableStateOf("") }
+    var isConversation by rememberSaveable { mutableStateOf(true) }
     var selectedMode by rememberSaveable { mutableIntStateOf(0) }
     var isOutputVisible by rememberSaveable { mutableStateOf(false) }
     var isLoading by rememberSaveable { mutableStateOf(false) }
@@ -219,7 +221,23 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
             )
         }
 
-        Spacer(modifier = modifier.height(32.dp))
+        Spacer(modifier = modifier.height(16.dp))
+
+        // Switch for conversation vs completion
+        Row(
+            modifier = modifier.fillMaxWidth(0.8f),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = "Conversation")
+
+            Switch(
+                checked = isConversation,
+                onCheckedChange = { isConversation = !isConversation },
+            )
+        }
+
+        Spacer(modifier = modifier.height(16.dp))
 
         Row(
             modifier = modifier.fillMaxWidth(0.8f),
