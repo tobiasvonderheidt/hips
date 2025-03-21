@@ -298,6 +298,31 @@ extern "C" JNIEXPORT jboolean JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_i
 }
 
 /**
+ * Function to check if a token is an end-of-generation (eog) token.
+ *
+ * @param env The JNI environment.
+ * @param thiz Java object this function was called with.
+ * @param token Token ID to check.
+ * @param jModel Memory address of the LLM.
+ * @return Boolean that is true if the token is an eog token, false otherwise.
+ */
+extern "C" JNIEXPORT jboolean JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_isEndOfGeneration(JNIEnv* /* env */, jobject /* thiz */, jint token, jlong jModel) {
+    // Cast memory address of LLM from Java long to C++ pointer
+    auto cppModel = reinterpret_cast<llama_model*>(jModel);
+
+    // Check if token is eog token
+    // Token ID doesn't need casting because jint and llama_token are both just int32_t
+    const llama_vocab* vocab = llama_model_get_vocab(cppModel);
+    bool cppIsEog = llama_vocab_is_eog(vocab, token);
+
+    // Cast boolean to return it
+    // static_cast because casting booleans is type safe, unlike reinterpret_cast for casting C++ pointers to Java long
+    auto jIsEog = static_cast<jboolean>(cppIsEog);
+
+    return jIsEog;
+}
+
+/**
  * Function to calculate the logit matrix (i.e. predictions for every token in the prompt).
  *
  * Only the last row of the `n_tokens` x `n_vocab` matrix is actually needed as it contains the logits corresponding to the last token of the prompt.
