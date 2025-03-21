@@ -34,6 +34,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -54,6 +55,9 @@ import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.vonderheidt.hips.data.Message
+import org.vonderheidt.hips.data.User
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 import org.vonderheidt.hips.utils.LLM
@@ -72,6 +76,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
     val isDownloaded by rememberSaveable { mutableStateOf(LLM.isDownloaded()) }
     var context by rememberSaveable { mutableStateOf("") }
     var secretMessage by rememberSaveable { mutableStateOf("") }
+    var isConversation by rememberSaveable { mutableStateOf(true) }
     var selectedMode by rememberSaveable { mutableIntStateOf(0) }
     var isOutputVisible by rememberSaveable { mutableStateOf(false) }
     var isLoading by rememberSaveable { mutableStateOf(false) }
@@ -219,7 +224,23 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
             )
         }
 
-        Spacer(modifier = modifier.height(32.dp))
+        Spacer(modifier = modifier.height(16.dp))
+
+        // Switch for conversation vs completion
+        Row(
+            modifier = modifier.fillMaxWidth(0.8f),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = "Conversation")
+
+            Switch(
+                checked = isConversation,
+                onCheckedChange = { isConversation = !isConversation },
+            )
+        }
+
+        Spacer(modifier = modifier.height(16.dp))
 
         Row(
             modifier = modifier.fillMaxWidth(0.8f),
@@ -287,11 +308,53 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                         // Might be desirable to use it with Dispatchers.IO as it is presumably I/O-bound, but seems negligible
                         LlamaCpp.resetInstance()
 
+                        // If conversation switch is set, context needs to be formatted as chat
+                        // Avoid overwriting state variable for context, otherwise formatting is shown in text input field
+                        var formattedContext = context
+
+                        // System prompt is added transparently, roles are assumed to be strictly alternating, number of messages used as context is 1
+                        if (isConversation) {
+                            // Alice encodes her secret message with Bob's last message as context
+                            if (selectedMode == 0) {
+                                val priorMessages = listOf(
+                                    Message(
+                                        senderID = User.Bob.id,
+                                        receiverID = User.Alice.id,
+                                        timestamp = System.currentTimeMillis(),
+                                        content = context
+                                    )
+                                )
+
+                                formattedContext = LlamaCpp.formatChat(priorMessages, isAlice = true, numberOfMessages = 1)
+                            }
+                            // Alice decodes Bob's cover text with her last message as context
+                            else {
+                                val priorMessages = listOf(
+                                    Message(
+                                        senderID = User.Alice.id,
+                                        receiverID = User.Bob.id,
+                                        timestamp = System.currentTimeMillis(),
+                                        content = context
+                                    )
+                                )
+
+                                formattedContext = LlamaCpp.formatChat(priorMessages, isAlice = false, numberOfMessages = 1)
+                            }
+                        }
+
                         if (selectedMode == 0) {
-                            coverText = Steganography.encode(context, secretMessage)
+                            coverText = Steganography.encode(formattedContext, secretMessage)
                         }
                         else {
-                            secretMessage = Steganography.decode(context, coverText)
+                            // Try-catch should only be necessary when conversation switch is set
+                            try {
+                                secretMessage = Steganography.decode(formattedContext, coverText)
+                            }
+                            catch (exception: Exception) {
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(currentLocalContext, "Cover text couldn't be decoded", Toast.LENGTH_LONG).show()
+                                }
+                            }
                         }
 
                         // Hide loading animation, show new output only when encode or decode is finished
