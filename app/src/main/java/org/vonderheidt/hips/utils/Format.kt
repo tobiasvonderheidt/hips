@@ -53,9 +53,7 @@ object Format {
      */
     fun asBitStringWithoutPadding(byteArray: ByteArray): String {
         // Convert ByteArray to bit string as is
-        val paddedBitString = byteArray.joinToString(separator = "") { byte ->
-            String.format(format = "%8s", Integer.toBinaryString(byte.toInt() and 0xFF)).replace(oldChar = ' ', newChar = '0')
-        }
+        val paddedBitString = asBitString(byteArray)
 
         // Remove padding length and padding from bit string
         val paddingLength = paddedBitString.substring(startIndex = 0, endIndex = 8).toInt(radix = 2)
