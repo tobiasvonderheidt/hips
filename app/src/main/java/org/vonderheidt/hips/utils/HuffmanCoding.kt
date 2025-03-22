@@ -3,29 +3,54 @@ package org.vonderheidt.hips.utils
 import java.util.PriorityQueue
 
 /**
- * Class that represents the Huffman coding of a set of token IDs based on their logits.
+ * Class that represents the Huffman coding of a set of elements based on their frequencies.
  *
- * Corresponds to Stegasuras class `HuffmanCoding` and its method `__init__` in `huffman.py`. Attribute `heap` was renamed to `huffmanTree`, `codes` to `huffmanCodes`. `reverse_mapping` was dropped.
+ * Corresponds to Stegasuras class `HuffmanCoding` and its method `__init__` in `huffman.py`. Attribute `heap` was renamed to `huffmanTree`, `codes` to `huffmanCodes` and `reverse_mapping` to `inverseHuffmanCodes`.
  *
  * @param huffmanTree A Huffman tree. Initialized as an empty Java PriorityQueue by default.
- * @param huffmanCodes Mapping of token IDs to the corresponding Huffman codes. Initialized as an empty map by default.
+ * @param huffmanCodes Mapping of elements to the corresponding Huffman codes. Initialized as an empty map by default.
+ * @param inverseHuffmanCodes Inverse mapping of Huffman codes to the corresponding elements. Initialized as an empty map by default.
  */
-class HuffmanCoding(
-    private var huffmanTree: PriorityQueue<HuffmanNode> = PriorityQueue(),
-    var huffmanCodes: MutableMap<Int, String> = mutableMapOf()
+class HuffmanCoding<Element, Frequency : Number>(
+    private var huffmanTree: PriorityQueue<HuffmanNode<Element, Frequency>> = PriorityQueue(),
+    var huffmanCodes: MutableMap<Element, String> = mutableMapOf(),
+    var inverseHuffmanCodes: MutableMap<String, Element> = mutableMapOf()
 ) {
     /**
-     * Function to build the Huffman tree, given a map of token IDs and their logits.
+     * Function to count the frequency of each character in a given string.
      *
-     * Corresponds to Stegasuras method `make_heap` of class `HuffmanCoding` in `huffman.py`. Parameter `frequency` was renamed to `tokenLogits`.
+     * Corresponds to method `make_frequency_dict` in huffman.py of [github.com/bhrigu123/huffman-coding](https://github.com/bhrigu123/huffman-coding), which Stegasuras references.
+     * Only needed for binary conversion, therefore not generic.
      *
-     * @param tokenLogits Map of token IDs and their logits.
+     * @param string A string whose characters are to be counted.
+     * @return A map of each character and its frequency in the string.
      */
-    fun buildHuffmanTree(tokenLogits: Map<Int, Float>) {
+    fun countCharFrequencies(string: String): MutableMap<Char, Int> {
+        val charFrequencies = mutableMapOf<Char, Int>()
+
+        for (char in string) {
+            if (char !in charFrequencies) {
+                charFrequencies[char] = 0
+            }
+
+            charFrequencies[char] = charFrequencies[char]!! + 1
+        }
+
+        return charFrequencies
+    }
+
+    /**
+     * Function to build the Huffman tree, given a map of elements and their frequencies.
+     *
+     * Corresponds to Stegasuras method `make_heap` of class `HuffmanCoding` in `huffman.py`. Parameter `frequency` was renamed to `elementFrequencies`.
+     *
+     * @param elementFrequencies Map of elements and their frequencies.
+     */
+    fun buildHuffmanTree(elementFrequencies: Map<Element, Frequency>) {
         // Loop through the map
-        for ((token, logit) in tokenLogits) {
+        for ((element, frequency) in elementFrequencies) {
             // Create a new node for every entry
-            val huffmanNode = HuffmanNode(token, logit)
+            val huffmanNode = HuffmanNode(element, frequency)
 
             // Insert it into the Huffman tree
             huffmanTree.offer(huffmanNode)
@@ -44,8 +69,8 @@ class HuffmanCoding(
             val left = huffmanTree.poll()
             val right = huffmanTree.poll()
 
-            // Create a new parent node for them, combining their logits
-            val mergedHuffmanNode = HuffmanNode(null, left!!.logit + right!!.logit, left, right)
+            // Create a new parent node for them, combining their frequencies
+            val mergedHuffmanNode = HuffmanNode(null, (left!!.frequency.toDouble() + right!!.frequency.toDouble()) as Frequency, left, right)
 
             // Insert the new node into the Huffman tree
             huffmanTree.offer(mergedHuffmanNode)
@@ -59,7 +84,7 @@ class HuffmanCoding(
      *
      * @return Root node of the Huffman tree.
      */
-    fun generateHuffmanCodes(): HuffmanNode {
+    fun generateHuffmanCodes(): HuffmanNode<Element, Frequency> {
         // Poll the Huffman tree once to get the root node
         val root = huffmanTree.poll()
 
@@ -81,15 +106,16 @@ class HuffmanCoding(
      * @param currentHuffmanNode Initially, root node of the Huffman tree. In recursive calls, left and right child nodes of itself.
      * @param currentHuffmanCode Huffman code of the current Huffman node.
      */
-    private fun generateHuffmanCodesRecursively(currentHuffmanNode: HuffmanNode?, currentHuffmanCode: String) {
+    private fun generateHuffmanCodesRecursively(currentHuffmanNode: HuffmanNode<Element, Frequency>?, currentHuffmanCode: String) {
         // If the current node doesn't exist, there is nothing to do (i.e. recursion ends at the bottom of the Huffman tree)
         if (currentHuffmanNode == null) {
             return
         }
 
-        // If the current node exists and has a token (i.e. is not one of the nodes inserted during merging), set its Huffman code to the current Huffman code
-        if (currentHuffmanNode.token != null) {
-            huffmanCodes[currentHuffmanNode.token] = currentHuffmanCode
+        // If the current node exists and has an element (i.e. is not one of the nodes inserted during merging), set its Huffman code to the current Huffman code
+        if (currentHuffmanNode.element != null) {
+            huffmanCodes[currentHuffmanNode.element] = currentHuffmanCode
+            inverseHuffmanCodes[currentHuffmanCode] = currentHuffmanNode.element
 
             return
         }
@@ -97,5 +123,50 @@ class HuffmanCoding(
         // Traverse left and right subtrees of the current node, appending 0 or 1 respectively to set Huffman codes there
         generateHuffmanCodesRecursively(currentHuffmanNode.left, currentHuffmanCode + "0")
         generateHuffmanCodesRecursively(currentHuffmanNode.right, currentHuffmanCode + "1")
+    }
+
+    /**
+     * Function to compress a string using Huffman encoding.
+     *
+     * Corresponds to Stegasuras method `get_encoded_tokens` of class `HuffmanCoding` in `huffman.py`. Parameter `token_list` was renamed to `string`.
+     * Only needed for binary conversion, therefore not generic.
+     *
+     * @param string A string to be compressed.
+     * @return Huffman encoding of the string.
+     */
+    fun compress(string: String): String {
+        var bitString = ""
+
+        for (char in string) {
+            bitString += huffmanCodes[char as Element]
+        }
+
+        return bitString
+    }
+
+    /**
+     * Function to decompress a bit string using Huffman decoding.
+     *
+     * Corresponds to Stegasuras method `decode_text` (not `decompress`) of class `HuffmanCoding` in `huffman.py`. Parameter `encoded_text` was renamed to `bitString`.
+     * Only needed for binary conversion, therefore not generic.
+     *
+     * @param bitString A bit string compressed with Huffman encoding.
+     * @return Huffman decoding of the bit string.
+     */
+    fun decompress(bitString: String): String {
+        var currentHoffmanCode = ""
+        var string = ""
+
+        for (bit in bitString) {
+            currentHoffmanCode += bit
+
+            if (currentHoffmanCode in inverseHuffmanCodes) {
+                val char = inverseHuffmanCodes[currentHoffmanCode]
+                string += char
+                currentHoffmanCode = ""
+            }
+        }
+
+        return string
     }
 }

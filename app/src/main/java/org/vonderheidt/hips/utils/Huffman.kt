@@ -48,7 +48,7 @@ object Huffman {
                 val topLogits = getTopLogits(logits)
 
                 // Construct Huffman tree from top logits
-                val huffmanCoding = HuffmanCoding()
+                val huffmanCoding = HuffmanCoding<Int, Float>()
                 huffmanCoding.buildHuffmanTree(topLogits)
                 huffmanCoding.mergeHuffmanNodes()
                 val root = huffmanCoding.generateHuffmanCodes()
@@ -57,7 +57,7 @@ object Huffman {
                 var currentNode = root
 
                 // First nodes won't have a token as they were created during the merge step
-                while (currentNode.token == null) {
+                while (currentNode.element == null) {
                     // First condition is needed in case (length of cipher bits) % (bits per token) != 0
                     // In last loop of outer while, inner while can cause i to exceed cipherBitString.length
                     // Second condition is only checked if first condition is false, so IndexOutOfBoundsException can't happen
@@ -74,7 +74,7 @@ object Huffman {
                 }
 
                 // Token containing the right bitsPerToken bits of information in its path is now found
-                sampledToken = currentNode.token!!
+                sampledToken = currentNode.element
 
                 // Update flag
                 isFirstRun = false
@@ -133,7 +133,7 @@ object Huffman {
             val topLogits = getTopLogits(logits)
 
             // Construct Huffman tree
-            val huffmanCoding = HuffmanCoding()
+            val huffmanCoding = HuffmanCoding<Int, Float>()
             huffmanCoding.buildHuffmanTree(topLogits)
             huffmanCoding.mergeHuffmanNodes()
             huffmanCoding.generateHuffmanCodes()        // Return value (root) is not needed here as Huffman tree is not traversed manually
