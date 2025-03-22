@@ -167,7 +167,7 @@ object Huffman {
         val topLogits = logits
             .mapIndexed{ token, logit -> token to logit }   // Convert to List<Pair<Int, Float>> so token IDs won't get lost
             .sortedByDescending { it.second }               // Sort pairs descending based on logits
-            .take(1 shl bitsPerToken)                    // Take top 2^bitsPerToken pairs
+            .take(1 shl bitsPerToken)                       // Take top 2^bitsPerToken pairs
             .toMap()                                        // Convert to Map<Int, Float> for Huffman tree (ensures there can't be any duplicate token IDs)
 
         return topLogits
