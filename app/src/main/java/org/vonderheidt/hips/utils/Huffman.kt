@@ -32,7 +32,7 @@ object Huffman {
         var isFirstRun = true                   // llama.cpp batch needs to store context tokens in first run, but only last sampled token in subsequent runs
         var sampledToken = -1                   // Will always be overwritten with last cover text token
 
-        // Sample tokens until all of bits of secret message are encoded and last sentence is finished
+        // Sample tokens until all bits of secret message are encoded and last sentence is finished
         while (i < cipherBitString.length || !isLastSentenceFinished) {
             // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp:
             // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
