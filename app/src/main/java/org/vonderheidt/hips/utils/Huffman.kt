@@ -6,8 +6,20 @@ import org.vonderheidt.hips.data.Settings
  * Object (i.e. singleton class) that represents steganography using Huffman encoding.
  */
 object Huffman {
+    private var lastInverseHuffmanCodes: MutableMap<String, Char>? = null
+
+    /**
+     * Function to get the inverse Huffman codes generated during compression of the last secret message (i.e. during last call of method `compress` of object `Huffman`).
+     *
+     * @return Inverse Huffman codes generated during compression of the last secret message.
+     */
+    fun getLastInverseHuffmanCodes(): MutableMap<String, Char> {
+        return lastInverseHuffmanCodes!!
+    }
+
     /**
      * Function to compress the secret message using Huffman encoding. Wrapper for function `compress` (and others) of class `HuffmanCoding`.
+     * As a side effect, the inverse Huffman codes are stored in the corresponding attribute of the `Huffman` object.
      *
      * @param preparedSecretMessage A prepared secret message.
      * @return The compressed, 0-padded binary representation of the prepared secret message.
@@ -23,6 +35,9 @@ object Huffman {
         huffmanCoding.buildHuffmanTree(charFrequencies)
         huffmanCoding.mergeHuffmanNodes()
         huffmanCoding.generateHuffmanCodes()        // Return value (root) is not needed here as Huffman tree is not traversed manually
+
+        // Store inverse Huffman codes in attribute
+        lastInverseHuffmanCodes = huffmanCoding.inverseHuffmanCodes
 
         // Compress secret message with Huffman codes
         val plainBitString = huffmanCoding.compress(preparedSecretMessage)
