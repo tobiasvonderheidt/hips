@@ -7,6 +7,56 @@ import org.vonderheidt.hips.data.Settings
  */
 object Huffman {
     /**
+     * Function to compress the secret message using Huffman encoding. Wrapper for function `compress` (and others) of class `HuffmanCoding`.
+     *
+     * @param preparedSecretMessage A prepared secret message.
+     * @return The compressed, 0-padded binary representation of the prepared secret message.
+     */
+    fun compress(preparedSecretMessage: String): ByteArray {
+        // Initialize Huffman coding
+        val huffmanCoding = HuffmanCoding<Char, Int>()
+
+        // Count characters in secret message
+        val charFrequencies = huffmanCoding.countCharFrequencies(preparedSecretMessage)
+
+        // Construct Huffman tree
+        huffmanCoding.buildHuffmanTree(charFrequencies)
+        huffmanCoding.mergeHuffmanNodes()
+        huffmanCoding.generateHuffmanCodes()        // Return value (root) is not needed here as Huffman tree is not traversed manually
+
+        // Compress secret message with Huffman codes
+        val plainBitString = huffmanCoding.compress(preparedSecretMessage)
+
+        // Add padding for ByteArray
+        val paddedPlainBits = Format.asByteArrayWithPadding(plainBitString)
+
+        return paddedPlainBits
+    }
+
+    /**
+     * Function to decompress the secret message using Huffman decoding. Wrapper for function `decompress` of class `HuffmanCoding`.
+     *
+     * @param paddedPlainBits The compressed, 0-padded binary representation of a prepared secret message.
+     * @param inverseHuffmanCodes Inverse mapping of Huffman codes to the corresponding characters.
+     * @return The prepared secret message.
+     */
+    fun decompress(paddedPlainBits: ByteArray, inverseHuffmanCodes: MutableMap<String, Char>): String {
+        // Remove padding of ByteArray
+        val plainBitString = Format.asBitStringWithoutPadding(paddedPlainBits)
+
+        // Initialize new Huffman coding
+        val huffmanCoding = HuffmanCoding<Char, Int>()
+
+        // Set inverse Huffman codes
+        huffmanCoding.inverseHuffmanCodes = inverseHuffmanCodes
+
+        // Decompress secret message with inverse Huffman codes
+        val preparedSecretMessage = huffmanCoding.decompress(plainBitString)
+
+        return preparedSecretMessage
+    }
+
+    /**
      * Function to encode (the encrypted binary representation of) the secret message into a cover text using Huffman encoding.
      *
      * Corresponds to Stegasuras method `encode_huffman` in `huffman_baseline.py`. Parameter `finish_sent` was removed (<=> is now hard coded to true).
