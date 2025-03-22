@@ -57,9 +57,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.vonderheidt.hips.data.Message
+import org.vonderheidt.hips.data.Settings
 import org.vonderheidt.hips.data.User
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
+import org.vonderheidt.hips.utils.ConversionMode
 import org.vonderheidt.hips.utils.LLM
 import org.vonderheidt.hips.utils.LlamaCpp
 import org.vonderheidt.hips.utils.Steganography
@@ -279,6 +281,11 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                     // Check if LLM is loaded
                     if (!LlamaCpp.isInMemory()) {
                         Toast.makeText(currentLocalContext, "Load LLM into memory first", Toast.LENGTH_LONG).show()
+                        return@Button
+                    }
+                    // Check settings
+                    if (Settings.conversionMode == ConversionMode.Huffman) {
+                        Toast.makeText(currentLocalContext, "Huffman compression can't be used here", Toast.LENGTH_LONG).show()
                         return@Button
                     }
                     // Check inputs
