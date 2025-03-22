@@ -26,7 +26,7 @@ object Steganography {
 
         // Step 1: Convert secret message to a (compressed) binary representation
         val plainBits = when (conversionMode) {
-            ConversionMode.Arithmetic -> { Arithmetic.decode("", preparedSecretMessage) }   // Stegasuras: Arithmetic binary conversion is just decoding with empty context
+            ConversionMode.Arithmetic -> { Arithmetic.compress(preparedSecretMessage) }
             ConversionMode.Huffman -> { Huffman.compress(preparedSecretMessage) }
             ConversionMode.UTF8 -> { UTF8.encode(preparedSecretMessage) }
         }
@@ -73,7 +73,7 @@ object Steganography {
 
         // Invert step 1
         val preparedSecretMessage = when (conversionMode) {
-            ConversionMode.Arithmetic -> { Arithmetic.encode("", plainBits) }   // Stegasuras: Arithmetic string conversion is just encoding with empty context
+            ConversionMode.Arithmetic -> { Arithmetic.decompress(plainBits) }
             ConversionMode.Huffman -> { Huffman.decompress(plainBits, inverseHuffmanCodes!!) }
             ConversionMode.UTF8 -> { UTF8.decode(plainBits) }
         }

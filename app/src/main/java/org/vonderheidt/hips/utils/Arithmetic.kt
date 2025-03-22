@@ -10,6 +10,28 @@ import kotlin.math.roundToInt
  */
 object Arithmetic {
     /**
+     * Function to compress the secret message using arithmetic *decoding*. Wrapper for function `decode` of object `Arithmetic`.
+     *
+     * @param preparedSecretMessage A prepared secret message.
+     * @return The compressed, 0-padded binary representation of the prepared secret message.
+     */
+    fun compress(preparedSecretMessage: String): ByteArray {
+        // Stegasuras: Arithmetic binary conversion is just decoding with empty context
+        return decode(context = "", coverText = preparedSecretMessage)
+    }
+
+    /**
+     * Function to decompress the secret message using arithmetic *encoding*. Wrapper for function `encode` of object `Arithmetic`.
+     *
+     * @param paddedPlainBits The compressed, 0-padded binary representation of a prepared secret message.
+     * @return The prepared secret message.
+     */
+    fun decompress(paddedPlainBits: ByteArray): String {
+        // Stegasuras: Arithmetic string conversion is just encoding with empty context
+        return encode(context = "", cipherBits = paddedPlainBits)
+    }
+
+    /**
      * Function to encode (the encrypted binary representation of) the secret message into a cover text using arithmetic encoding.
      *
      * Corresponds to Stegasuras method `encode_arithmetic` in `arithmetic.py`. Parameter `finish_sent` was removed (<=> is now hard coded to true).
