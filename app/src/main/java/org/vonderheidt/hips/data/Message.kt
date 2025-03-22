@@ -10,8 +10,8 @@ import androidx.room.ForeignKey.Companion.CASCADE
  *
  * @param senderID User ID of the message's sender.
  * @param receiverID User ID of the message's receiver.
- * @param timestamp Time the message was sent at (milliseconds since Unix epoch, i.e. 1970-01-01 00:00).
  * @param content Content of the message.
+ * @param timestamp Time the message was sent at (milliseconds since Unix epoch, i.e. 1970-01-01 00:00).
  */
 @Entity(
     primaryKeys = ["sender_id", "receiver_id", "timestamp"],
@@ -23,19 +23,19 @@ import androidx.room.ForeignKey.Companion.CASCADE
 data class Message (
     @ColumnInfo(name = "sender_id") val senderID: Int,
     @ColumnInfo(name = "receiver_id") val receiverID: Int,
-    val timestamp: Long,
-    val content: String
+    val content: String,
+    val timestamp: Long = System.currentTimeMillis()
 ) {
     companion object {
         /**
          * Some sample messages for the conversation screen.
          */
         val Samples = listOf(
-            Message(User.Bob.id, User.Alice.id, System.currentTimeMillis() - 5982341, "Oi, Lionel! What a match today! I honestly thought we were done for at halftime being 2-0 down, but that second half was brilliant! We really pulled it together, didn’t we?"),
-            Message(User.Alice.id, User.Bob.id, System.currentTimeMillis() - 4553793, "Absolutely, Cristiano! That comeback was mental! Your goal really got everyone buzzing. And that assist I had? Proper chuffed to finally chip in like that! But can we talk about the ref? What a wanker!"),
-            Message(User.Bob.id, User.Alice.id, System.currentTimeMillis() - 3163455, "Right? I mean, some of those calls were ridiculous! I thought he was going to cost us the game. Thank goodness we managed to turn it around despite him!"),
-            Message(User.Alice.id, User.Bob.id, System.currentTimeMillis() - 2398574, "No doubt about it! I reckon we’re finally starting to gel as a team, but we need to work on our communication a bit. I lost track of you a couple of times out there!"),
-            Message(User.Bob.id, User.Alice.id, System.currentTimeMillis() - 1637465, "Totally agree! Let’s sort out a practice this week to work on that. And afterwards, we should grab a bite and find a pub that shows the highlights! What do you reckon?")
+            Message(User.Bob.id, User.Alice.id, "Oi, Lionel! What a match today! I honestly thought we were done for at halftime being 2-0 down, but that second half was brilliant! We really pulled it together, didn’t we?", System.currentTimeMillis() - 5982341),
+            Message(User.Alice.id, User.Bob.id, "Absolutely, Cristiano! That comeback was mental! Your goal really got everyone buzzing. And that assist I had? Proper chuffed to finally chip in like that! But can we talk about the ref? What a wanker!", System.currentTimeMillis() - 4553793),
+            Message(User.Bob.id, User.Alice.id, "Right? I mean, some of those calls were ridiculous! I thought he was going to cost us the game. Thank goodness we managed to turn it around despite him!", System.currentTimeMillis() - 3163455),
+            Message(User.Alice.id, User.Bob.id, "No doubt about it! I reckon we’re finally starting to gel as a team, but we need to work on our communication a bit. I lost track of you a couple of times out there!", System.currentTimeMillis() - 2398574),
+            Message(User.Bob.id, User.Alice.id, "Totally agree! Let’s sort out a practice this week to work on that. And afterwards, we should grab a bite and find a pub that shows the highlights! What do you reckon?", System.currentTimeMillis() - 1637465)
         )
     }
 }

@@ -432,13 +432,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
                                             // Generate cover text and update database
                                             val newCoverText = if (isPlainText) newSecretMessage else Steganography.encode(context, newSecretMessage)
-
-                                            val newMessage = Message(
-                                                senderID = newSender.id,
-                                                receiverID = newReceiver.id,
-                                                timestamp = System.currentTimeMillis(),
-                                                content = newCoverText
-                                            )
+                                            val newMessage = Message(newSender.id, newReceiver.id, newCoverText)
 
                                             // Order is important to avoid violating foreign key relations
                                             db.userDao.upsertUser(newSender)

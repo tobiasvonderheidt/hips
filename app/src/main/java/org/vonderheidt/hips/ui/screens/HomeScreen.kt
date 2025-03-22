@@ -317,12 +317,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                             // Alice encodes her secret message with Bob's last message as context
                             if (selectedMode == 0) {
                                 val priorMessages = listOf(
-                                    Message(
-                                        senderID = User.Bob.id,
-                                        receiverID = User.Alice.id,
-                                        timestamp = System.currentTimeMillis(),
-                                        content = context
-                                    )
+                                    Message(senderID = User.Bob.id, receiverID = User.Alice.id, content = context)
                                 )
 
                                 formattedContext = LlamaCpp.formatChat(priorMessages, isAlice = true, numberOfMessages = 1)
@@ -330,12 +325,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                             // Alice decodes Bob's cover text with her last message as context
                             else {
                                 val priorMessages = listOf(
-                                    Message(
-                                        senderID = User.Alice.id,
-                                        receiverID = User.Bob.id,
-                                        timestamp = System.currentTimeMillis(),
-                                        content = context
-                                    )
+                                    Message(senderID = User.Alice.id, receiverID = User.Bob.id, content = context)
                                 )
 
                                 formattedContext = LlamaCpp.formatChat(priorMessages, isAlice = false, numberOfMessages = 1)
