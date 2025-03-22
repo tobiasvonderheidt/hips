@@ -6,6 +6,7 @@ package org.vonderheidt.hips.utils
 object Format {
     /**
      * Function to format a ByteArray as a bit string.
+     * Doesn't remove any padding, so length of bit string will be multiple of 8.
      *
      * @param byteArray A ByteArray.
      * @return The bit string.
@@ -20,6 +21,7 @@ object Format {
 
     /**
      * Function to reverse formatting of a ByteArray as a bit string (i.e. to reverse `Format.asBitString(ByteArray)`).
+     * Doesn't add any padding, assumes that length of bit string already is multiple of 8.
      *
      * @param bitString A bit string.
      * @return The ByteArray.
@@ -37,6 +39,56 @@ object Format {
             val byte = byteString.toInt(radix = 2).toByte()
 
             byte
+        }
+
+        return byteArray
+    }
+
+    /**
+     * Function to format a ByteArray as a bit string. Assumes that the ByteArray is 0-padded and that the first byte stores the length of the padding in bits.
+     * Removes both the padding length and the padding.
+     *
+     * @param byteArray A ByteArray, 0-padded with length of padding in bits stored in first byte.
+     * @return The bit string, with padding removed.
+     */
+    fun asBitStringWithoutPadding(byteArray: ByteArray): String {
+        // Convert ByteArray to bit string as is
+        val paddedBitString = asBitString(byteArray)
+
+        // Remove padding length and padding from bit string
+        val paddingLength = paddedBitString.substring(startIndex = 0, endIndex = 8).toInt(radix = 2)
+        val bitString = paddedBitString.substring(startIndex = 8 + paddingLength)   // Add 8 to not forget padding length itself
+
+        return bitString
+    }
+
+    /**
+     * Function to reverse formatting of a padded ByteArray as a bit string (i.e. to reverse `Format.asBitStringWithoutPadding(ByteArray)`).
+     * Adds 0-padding at the start so that length of bit string is multiple of 8. Prepends a byte that stores length of padding in bits.
+     *
+     * @param bitString A bit string.
+     * @return The ByteArray, 0-padded with length of padding in bits stored in first byte.
+     * @throws IllegalArgumentException If `bitString` contains anything other than 1s and 0s.
+     */
+    fun asByteArrayWithPadding(bitString: String): ByteArray {
+        // Check integrity of the bit string
+        if (!isBitString(bitString)) {
+            throw IllegalArgumentException("Bit string can only contain 0 and 1")
+        }
+
+        // Pad bit string to length multiple of 8
+        val paddingLength = (8 - (bitString.length % 8)) % 8    // Outer % is for case that length of bit string is already multiple of 8
+        val paddedBitString = bitString.padStart(bitString.length + paddingLength, '0')
+
+        // Create ByteArray with extra byte
+        val byteArray = ByteArray(size = 1 + (paddedBitString.length / 8)).apply {
+            // First byte stores padding length
+            this[0] = paddingLength.toByte()
+
+            // Subsequent bytes store bytes from padded bit string
+            for (i in 0 until paddedBitString.length / 8) {
+                this[i + 1] = paddedBitString.substring(startIndex = i * 8, endIndex = (i + 1) * 8).toInt(radix = 2).toByte()   // toByte(radix = 2) apparently is not equivalent
+            }
         }
 
         return byteArray

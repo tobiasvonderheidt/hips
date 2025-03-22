@@ -59,11 +59,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import org.vonderheidt.hips.data.HiPSDatabase
 import org.vonderheidt.hips.data.Message
+import org.vonderheidt.hips.data.Settings
 import org.vonderheidt.hips.data.User
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
+import org.vonderheidt.hips.utils.ConversionMode
+import org.vonderheidt.hips.utils.Huffman
 import org.vonderheidt.hips.utils.LlamaCpp
 import org.vonderheidt.hips.utils.Steganography
 
@@ -195,10 +199,11 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
                                 val context = LlamaCpp.formatChat(priorMessages, isAlice = messageToDecode!!.senderID == User.Alice.id)
                                 val coverText = messageToDecode!!.content
+                                val inverseHuffmanCodes = if (messageToDecode!!.inverseHuffmanCodes != null) Json.decodeFromString<MutableMap<String, Char>>(messageToDecode!!.inverseHuffmanCodes!!) else null
 
                                 // See if message can be decoded, show toast otherwise
                                 try {
-                                    secretMessage = Steganography.decode(context, coverText)
+                                    secretMessage = Steganography.decode(context, coverText, inverseHuffmanCodes)
                                 }
                                 catch (exception: Exception) {
                                     withContext(Dispatchers.Main) {
@@ -432,13 +437,9 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
                                             // Generate cover text and update database
                                             val newCoverText = if (isPlainText) newSecretMessage else Steganography.encode(context, newSecretMessage)
+                                            val newInverseHuffmanCodes = if (!isPlainText && Settings.conversionMode == ConversionMode.Huffman) Json.encodeToString(Huffman.getLastInverseHuffmanCodes()) else null
 
-                                            val newMessage = Message(
-                                                senderID = newSender.id,
-                                                receiverID = newReceiver.id,
-                                                timestamp = System.currentTimeMillis(),
-                                                content = newCoverText
-                                            )
+                                            val newMessage = Message(newSender.id, newReceiver.id, newCoverText, newInverseHuffmanCodes)
 
                                             // Order is important to avoid violating foreign key relations
                                             db.userDao.upsertUser(newSender)

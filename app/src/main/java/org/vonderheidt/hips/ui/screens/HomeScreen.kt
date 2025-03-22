@@ -57,9 +57,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.vonderheidt.hips.data.Message
+import org.vonderheidt.hips.data.Settings
 import org.vonderheidt.hips.data.User
 import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.ui.theme.HiPSTheme
+import org.vonderheidt.hips.utils.ConversionMode
 import org.vonderheidt.hips.utils.LLM
 import org.vonderheidt.hips.utils.LlamaCpp
 import org.vonderheidt.hips.utils.Steganography
@@ -281,6 +283,11 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                         Toast.makeText(currentLocalContext, "Load LLM into memory first", Toast.LENGTH_LONG).show()
                         return@Button
                     }
+                    // Check settings
+                    if (Settings.conversionMode == ConversionMode.Huffman) {
+                        Toast.makeText(currentLocalContext, "Huffman compression can't be used here", Toast.LENGTH_LONG).show()
+                        return@Button
+                    }
                     // Check inputs
                     if (context.isBlank()) {
                         Toast.makeText(currentLocalContext, "Context can't be blank", Toast.LENGTH_LONG).show()
@@ -317,12 +324,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                             // Alice encodes her secret message with Bob's last message as context
                             if (selectedMode == 0) {
                                 val priorMessages = listOf(
-                                    Message(
-                                        senderID = User.Bob.id,
-                                        receiverID = User.Alice.id,
-                                        timestamp = System.currentTimeMillis(),
-                                        content = context
-                                    )
+                                    Message(senderID = User.Bob.id, receiverID = User.Alice.id, content = context)
                                 )
 
                                 formattedContext = LlamaCpp.formatChat(priorMessages, isAlice = true, numberOfMessages = 1)
@@ -330,12 +332,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                             // Alice decodes Bob's cover text with her last message as context
                             else {
                                 val priorMessages = listOf(
-                                    Message(
-                                        senderID = User.Alice.id,
-                                        receiverID = User.Bob.id,
-                                        timestamp = System.currentTimeMillis(),
-                                        content = context
-                                    )
+                                    Message(senderID = User.Alice.id, receiverID = User.Bob.id, content = context)
                                 )
 
                                 formattedContext = LlamaCpp.formatChat(priorMessages, isAlice = false, numberOfMessages = 1)

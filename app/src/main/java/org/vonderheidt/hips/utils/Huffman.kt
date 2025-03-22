@@ -6,6 +6,71 @@ import org.vonderheidt.hips.data.Settings
  * Object (i.e. singleton class) that represents steganography using Huffman encoding.
  */
 object Huffman {
+    private var lastInverseHuffmanCodes: MutableMap<String, Char>? = null
+
+    /**
+     * Function to get the inverse Huffman codes generated during compression of the last secret message (i.e. during last call of method `compress` of object `Huffman`).
+     *
+     * @return Inverse Huffman codes generated during compression of the last secret message.
+     */
+    fun getLastInverseHuffmanCodes(): MutableMap<String, Char> {
+        return lastInverseHuffmanCodes!!
+    }
+
+    /**
+     * Function to compress the secret message using Huffman encoding. Wrapper for function `compress` (and others) of class `HuffmanCoding`.
+     * As a side effect, the inverse Huffman codes are stored in the corresponding attribute of the `Huffman` object.
+     *
+     * @param preparedSecretMessage A prepared secret message.
+     * @return The compressed, 0-padded binary representation of the prepared secret message.
+     */
+    fun compress(preparedSecretMessage: String): ByteArray {
+        // Initialize Huffman coding
+        val huffmanCoding = HuffmanCoding<Char, Int>()
+
+        // Count characters in secret message
+        val charFrequencies = huffmanCoding.countCharFrequencies(preparedSecretMessage)
+
+        // Construct Huffman tree
+        huffmanCoding.buildHuffmanTree(charFrequencies)
+        huffmanCoding.mergeHuffmanNodes()
+        huffmanCoding.generateHuffmanCodes()        // Return value (root) is not needed here as Huffman tree is not traversed manually
+
+        // Store inverse Huffman codes in attribute
+        lastInverseHuffmanCodes = huffmanCoding.inverseHuffmanCodes
+
+        // Compress secret message with Huffman codes
+        val plainBitString = huffmanCoding.compress(preparedSecretMessage)
+
+        // Add padding for ByteArray
+        val paddedPlainBits = Format.asByteArrayWithPadding(plainBitString)
+
+        return paddedPlainBits
+    }
+
+    /**
+     * Function to decompress the secret message using Huffman decoding. Wrapper for function `decompress` of class `HuffmanCoding`.
+     *
+     * @param paddedPlainBits The compressed, 0-padded binary representation of a prepared secret message.
+     * @param inverseHuffmanCodes Inverse mapping of Huffman codes to the corresponding characters.
+     * @return The prepared secret message.
+     */
+    fun decompress(paddedPlainBits: ByteArray, inverseHuffmanCodes: MutableMap<String, Char>): String {
+        // Remove padding of ByteArray
+        val plainBitString = Format.asBitStringWithoutPadding(paddedPlainBits)
+
+        // Initialize new Huffman coding
+        val huffmanCoding = HuffmanCoding<Char, Int>()
+
+        // Set inverse Huffman codes
+        huffmanCoding.inverseHuffmanCodes = inverseHuffmanCodes
+
+        // Decompress secret message with inverse Huffman codes
+        val preparedSecretMessage = huffmanCoding.decompress(plainBitString)
+
+        return preparedSecretMessage
+    }
+
     /**
      * Function to encode (the encrypted binary representation of) the secret message into a cover text using Huffman encoding.
      *
@@ -32,7 +97,7 @@ object Huffman {
         var isFirstRun = true                   // llama.cpp batch needs to store context tokens in first run, but only last sampled token in subsequent runs
         var sampledToken = -1                   // Will always be overwritten with last cover text token
 
-        // Sample tokens until all of bits of secret message are encoded and last sentence is finished
+        // Sample tokens until all bits of secret message are encoded and last sentence is finished
         while (i < cipherBitString.length || !isLastSentenceFinished) {
             // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp:
             // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
@@ -48,7 +113,7 @@ object Huffman {
                 val topLogits = getTopLogits(logits)
 
                 // Construct Huffman tree from top logits
-                val huffmanCoding = HuffmanCoding()
+                val huffmanCoding = HuffmanCoding<Int, Float>()
                 huffmanCoding.buildHuffmanTree(topLogits)
                 huffmanCoding.mergeHuffmanNodes()
                 val root = huffmanCoding.generateHuffmanCodes()
@@ -57,7 +122,7 @@ object Huffman {
                 var currentNode = root
 
                 // First nodes won't have a token as they were created during the merge step
-                while (currentNode.token == null) {
+                while (currentNode.element == null) {
                     // First condition is needed in case (length of cipher bits) % (bits per token) != 0
                     // In last loop of outer while, inner while can cause i to exceed cipherBitString.length
                     // Second condition is only checked if first condition is false, so IndexOutOfBoundsException can't happen
@@ -74,7 +139,7 @@ object Huffman {
                 }
 
                 // Token containing the right bitsPerToken bits of information in its path is now found
-                sampledToken = currentNode.token!!
+                sampledToken = currentNode.element
 
                 // Update flag
                 isFirstRun = false
@@ -115,11 +180,11 @@ object Huffman {
         // Initialize string to store cipher bits
         var cipherBitString = ""
 
-        // Initialize variables and flags for loop (similar to encode)
+        // Initialize variables and flags for loop
         var i = 0
 
         var isFirstRun = true
-        var coverTextToken = -1     // Will always be overwritten with last cover text token
+        var coverTextToken = -1
 
         // Decode every cover text token into bitsPerToken bits
         while (i < coverTextTokens.size) {
@@ -133,7 +198,7 @@ object Huffman {
             val topLogits = getTopLogits(logits)
 
             // Construct Huffman tree
-            val huffmanCoding = HuffmanCoding()
+            val huffmanCoding = HuffmanCoding<Int, Float>()
             huffmanCoding.buildHuffmanTree(topLogits)
             huffmanCoding.mergeHuffmanNodes()
             huffmanCoding.generateHuffmanCodes()        // Return value (root) is not needed here as Huffman tree is not traversed manually
@@ -167,7 +232,7 @@ object Huffman {
         val topLogits = logits
             .mapIndexed{ token, logit -> token to logit }   // Convert to List<Pair<Int, Float>> so token IDs won't get lost
             .sortedByDescending { it.second }               // Sort pairs descending based on logits
-            .take(1 shl bitsPerToken)                    // Take top 2^bitsPerToken pairs
+            .take(1 shl bitsPerToken)                       // Take top 2^bitsPerToken pairs
             .toMap()                                        // Convert to Map<Int, Float> for Huffman tree (ensures there can't be any duplicate token IDs)
 
         return topLogits
