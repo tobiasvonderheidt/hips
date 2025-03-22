@@ -115,11 +115,11 @@ object Huffman {
         // Initialize string to store cipher bits
         var cipherBitString = ""
 
-        // Initialize variables and flags for loop (similar to encode)
+        // Initialize variables and flags for loop
         var i = 0
 
         var isFirstRun = true
-        var coverTextToken = -1     // Will always be overwritten with last cover text token
+        var coverTextToken = -1
 
         // Decode every cover text token into bitsPerToken bits
         while (i < coverTextTokens.size) {
