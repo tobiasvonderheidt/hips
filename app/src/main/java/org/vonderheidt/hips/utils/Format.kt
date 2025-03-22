@@ -6,6 +6,7 @@ package org.vonderheidt.hips.utils
 object Format {
     /**
      * Function to format a ByteArray as a bit string.
+     * Doesn't remove any padding, so length of bit string will be multiple of 8.
      *
      * @param byteArray A ByteArray.
      * @return The bit string.
@@ -20,6 +21,7 @@ object Format {
 
     /**
      * Function to reverse formatting of a ByteArray as a bit string (i.e. to reverse `Format.asBitString(ByteArray)`).
+     * Doesn't add any padding, assumes that length of bit string already is multiple of 8.
      *
      * @param bitString A bit string.
      * @return The ByteArray.
