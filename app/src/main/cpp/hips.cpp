@@ -241,15 +241,15 @@ extern "C" JNIEXPORT jintArray JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_
 }
 
 /**
- * Function to detokenize an array of token IDs into a string.
+ * Function to detokenize an array of token IDs into a byte array storing a UTF-8 encoded string.
  *
  * @param env The JNI environment.
  * @param thiz Java object this function was called with.
  * @param jTokens Array of token IDs to be detokenized.
  * @param jCtx Memory address of the context.
- * @return Detokenization as a string.
+ * @return Detokenization as a byte array storing a UTF-8 encoded string.
  */
-extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_detokenize(JNIEnv* env, jobject /* thiz */, jintArray jTokens, jlong jCtx) {
+extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_detokenize(JNIEnv* env, jobject /* thiz */, jintArray jTokens, jlong jCtx) {
     // Cast memory address of the context from Java long to C++ pointer
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
 
@@ -264,10 +264,20 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_de
     // See common.cpp: common_detokenize calls llama_detokenize, with parameters "remove_special = false" hard-coded and "unparse_special = special" passed through
     std::basic_string<char> cppString = common_detokenize(cppCtx, cppTokens, true);
 
-    // Convert C++ string to Java string and return it
-    jstring jString = env -> NewStringUTF(cppString.c_str());
+    // Initial solution was to convert cppString to a jstring object using the NewStringUTF function before returning it
+    // JNI docs for NewStringUTF say: "Constructs a new java.lang.String object from an array of characters in modified UTF-8 encoding."
+    // This crashes when the system prompt tells the LLM to generate emojis
+    // Alternatively there is the NewString function, about which JNI docs say: "Constructs a new java.lang.String object from an array of Unicode characters."
+    // Looks like it removes need for wrapper function on Kotlin side, but requires conversion on C++ side
+    // See https://stackoverflow.com/questions/32205446/getting-true-utf-8-characters-in-java-jni for details
 
-    return jString;
+    // Initialize Java byte array to store UTF-8 encoding of the C++ string
+    jbyteArray jByteArray = env -> NewByteArray((int32_t) cppString.size());
+
+    // Fill the Java array with the bytes of the C++ string and return it
+    env -> SetByteArrayRegion(jByteArray, 0, (int32_t) cppString.size(), reinterpret_cast<const jbyte*>(cppString.data()));
+
+    return jByteArray;
 }
 
 /**
