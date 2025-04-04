@@ -100,6 +100,22 @@ object LlamaCpp {
     }
 
     /**
+     * Wrapper for the `common_detokenize` function of llama.cpp. Detokenizes an array of token IDs into a string.
+     *
+     * @param tokens Array of token IDs.
+     * @return Detokenization as a string.
+     */
+    fun detokenize(tokens: IntArray): String {
+        // Detokenize tokens into byte array storing UTF-8 encoded string first to bypass JNI errors
+        val byteArray = detokenize(tokens, ctx)
+
+        // Convert UTF-8 encoded string to Java/Kotlin string
+        val string = String(bytes = byteArray, charset = Charsets.UTF_8)
+
+        return string
+    }
+
+    /**
      * Function to suppress special tokens, i.e. eog (end-of-generation) and control tokens.
      *
      * Suppressing eog tokens is needed to avoid early termination when generating a cover text.
@@ -266,13 +282,15 @@ object LlamaCpp {
     external fun tokenize(string: String, ctx: Long = this.ctx): IntArray
 
     /**
-     * Wrapper for the `common_detokenize` function of llama.cpp. Detokenizes an array of token IDs into a string.
+     * Wrapper for the `common_detokenize` function of llama.cpp. Detokenizes an array of token IDs into a byte array storing a UTF-8 encoded string.
+     *
+     * Helper for the public `detokenize` function returning a string. Bypasses JNI errors caused by different character encodings.
      *
      * @param tokens Array of token IDs.
      * @param ctx Memory address of the context.
-     * @return Detokenization as a string.
+     * @return Detokenization as a byte array storing a UTF-8 encoded string.
      */
-    external fun detokenize(tokens: IntArray, ctx: Long = this.ctx): String
+    private external fun detokenize(tokens: IntArray, ctx: Long = this.ctx): ByteArray
 
     /**
      * Wrapper for the `llama_vocab_is_eog` and `llama_vocab_is_control` functions of llama.cpp. Checks if a token is a special token.
