@@ -140,17 +140,32 @@ object LlamaCpp {
      * Corresponds to Stegasuras method `is_sent_finish` in `utils.py`.
      *
      * @param token Token ID to check.
-     * @return Boolean that is true if the token ends with `.`, `?` or `!`, false otherwise.
+     * @return Boolean that is true if the token ends with `.`, `!` or `?` or an emoji, false otherwise.
      */
     fun isEndOfSentence(token: Int): Boolean {
-        // Detokenize the token and check if it ends with a punctuation mark (covers "?" vs " ?" etc)
+        // Detokenize the token and check if it ends with a punctuation mark or an emoji (covers "?" vs " ?" etc)
         val detokenization = detokenize(intArrayOf(token))
 
         val isSentenceFinished = detokenization.endsWith(".")
                 || detokenization.endsWith("!")
                 || detokenization.endsWith("?")
+                || detokenization.endsWithEmoji()
 
         return isSentenceFinished
+    }
+
+    /**
+     * Function to check if `this` string ends with an emoji.
+     *
+     * Helper for the `isEndOfSentence` function. May miss some emojis as it relies on a regular expression.
+     *
+     * @return Boolean that is true if `this` string ends with an emoji, false otherwise.
+     */
+    private fun String.endsWithEmoji(): Boolean {
+        // Most emojis are classified as "Symbols, other" (So) in Unicode, try to find them via regular expression
+        val endsWithEmoji = this.isNotEmpty() && Regex("\\p{So}").containsMatchIn(this.takeLast(1))
+
+        return endsWithEmoji
     }
 
     /**
