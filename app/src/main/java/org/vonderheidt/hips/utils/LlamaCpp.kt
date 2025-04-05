@@ -149,7 +149,7 @@ object LlamaCpp {
         val isSentenceFinished = detokenization.endsWith(".")
                 || detokenization.endsWith("!")
                 || detokenization.endsWith("?")
-                || detokenization.endsWithEmoji()
+                // || detokenization.endsWithEmoji()
 
         return isSentenceFinished
     }
@@ -163,6 +163,7 @@ object LlamaCpp {
      */
     private fun String.endsWithEmoji(): Boolean {
         // Most emojis are classified as "Symbols, other" (So) in Unicode, try to find them via regular expression
+        // TODO This pattern corrupts cover texts
         val endsWithEmoji = this.isNotEmpty() && Regex("\\p{So}").containsMatchIn(this.takeLast(1))
 
         return endsWithEmoji
