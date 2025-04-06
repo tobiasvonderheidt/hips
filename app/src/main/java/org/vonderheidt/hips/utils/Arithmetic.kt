@@ -227,7 +227,7 @@ object Arithmetic {
 
                 // Stegasuras: "Convert range to bits"
                 val newIntBottomBitsInc = Format.asBitString(newIntBottom, precision)          // Again, reversing shouldn't be necessary here
-                val newIntTopBitsInc = Format.asBitString(newIntTop - 1, precision)     // Stegasuras: "-1 here because upper bound is exclusive" (i.e. newIntTopBitsInc is inclusive)
+                val newIntTopBitsInc = Format.asBitString(newIntTop - 1, precision)            // Stegasuras: "-1 here because upper bound is exclusive" (i.e. newIntTopBitsInc is inclusive)
 
                 // Stegasuras: "Consume most significant bits which are now fixed and update interval"
                 // Arithmetic coding encodes data into a number by iteratively narrowing initial interval defined earlier
