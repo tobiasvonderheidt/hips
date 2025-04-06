@@ -1,6 +1,8 @@
 package org.vonderheidt.hips.utils
 
 import org.vonderheidt.hips.data.Settings
+import kotlin.math.ceil
+import kotlin.math.log2
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -16,8 +18,16 @@ object Arithmetic {
      * @return The compressed, 0-padded binary representation of the prepared secret message.
      */
     fun compress(preparedSecretMessage: String): ByteArray {
-        // Stegasuras: Arithmetic binary conversion is just decoding with empty context
-        return decode(context = "", coverText = preparedSecretMessage)
+        // Stegasuras:
+        // Arithmetic compression is just decoding with empty context
+        // Parameters temperature, topK and precision are not taken from settings, but hard-coded to use the unmodulated LLM
+        return decode(
+            context = "",
+            coverText = preparedSecretMessage,
+            temperature = 1.0f,
+            topK = LlamaCpp.getVocabSize(),
+            precision = ceil(log2(LlamaCpp.getVocabSize().toFloat())).toInt()
+        )
     }
 
     /**
@@ -27,8 +37,16 @@ object Arithmetic {
      * @return The prepared secret message.
      */
     fun decompress(paddedPlainBits: ByteArray): String {
-        // Stegasuras: Arithmetic string conversion is just encoding with empty context
-        return encode(context = "", cipherBits = paddedPlainBits)
+        // Stegasuras:
+        // Arithmetic decompression is just encoding with empty context
+        // Parameters temperature, topK and precision are not taken from settings, but hard-coded to use the unmodulated LLM
+        return encode(
+            context = "",
+            cipherBits = paddedPlainBits,
+            temperature = 1.0f,
+            topK = LlamaCpp.getVocabSize(),
+            precision = ceil(log2(LlamaCpp.getVocabSize().toFloat())).toInt(),
+        )
     }
 
     /**
