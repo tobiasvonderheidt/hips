@@ -37,7 +37,7 @@ object Steganography {
         // Step 3: Encode encrypted binary representation of secret message into cover text
         val coverText = when (steganographyMode) {
             SteganographyMode.Arithmetic -> { Arithmetic.encode(context, cipherBits) }
-            SteganographyMode.Bins -> { Bins.encode(context, cipherBits) }
+            /* SteganographyMode.Bins -> { Bins.encode(context, cipherBits) } */
             SteganographyMode.Huffman -> { Huffman.encode(context, cipherBits) }
         }
 
@@ -64,7 +64,7 @@ object Steganography {
         // Invert step 3
         val cipherBits = when (steganographyMode) {
             SteganographyMode.Arithmetic -> { Arithmetic.decode(context, coverText) }
-            SteganographyMode.Bins -> { Bins.decode(context, coverText) }
+            /* SteganographyMode.Bins -> { Bins.decode(context, coverText) } */
             SteganographyMode.Huffman -> { Huffman.decode(context, coverText) }
         }
 
