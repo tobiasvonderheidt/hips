@@ -332,7 +332,7 @@ object Arithmetic {
             val curIntRange = curInterval[1] - curInterval[0]
             val curThreshold = 1.0f / curIntRange
 
-            val k = min(
+            var k = min(
                 max(
                     2,
                     probsTemp.filter { it.second >= curThreshold }.size
@@ -380,7 +380,7 @@ object Arithmetic {
                 // HiPS: overfillIndex = List of tokens with cumulated probability > curIntRange
                 //       != Size of cumProbs after it was overwritten here
                 // Now "if (rank >= k) { ... }" from BPE fixes below makes sense
-                // k = cumProbs.size
+                k = cumProbs.size
             }
 
             // Stegasuras: "Add any mass to the top if removing/rounding causes the total prob to be too small"
@@ -394,15 +394,48 @@ object Arithmetic {
             }.toMutableList()
 
             // Stegasuras: n/a
-            // Skip fix of BPE errors and therefore rank variable
-            // TODO
-            //  Only steganography encoding/decoding works, binary conversion still crashes
-            //  LLM would have to predict tokens in secret message (passed via cover text parameter) to convert them into bits via Arithmetic.decode
-            //  Not obvious why it should do that when context is only an eog token
-            //  Why is probsTemp (equivalent to indices in Stegasuras), containing all tokens, used here when cumProbs, containing only top k tokens, is queried later?
-            //  Next step causes IndexOutOfBoundsException in first iteration of binary conversion
-            //  Can happen during any later iteration as well if user input is unpredictable for LLM
-            val selection = probsTemp.indexOfFirst { it.first == coverTextTokens[i] }
+            // Determine rank of predicted token amongst all tokens based on its probability
+            var rank = probsTemp.indexOfFirst { it.first == coverTextTokens[i] }
+
+            // Stegasuras: "Handle most errors that could happen because of BPE with heuristic"
+            // Rank can't exceed cumProbs indices
+            if (rank >= k) {
+                // Actual cover text token i
+                val trueTokenText = LlamaCpp.detokenize(intArrayOf(coverTextTokens[i]))
+
+                // Loop through predicted tokens
+                for (rankIdx in 0 until k) {
+                    // Predicted cover text token i
+                    val propTokenText = LlamaCpp.detokenize(intArrayOf(probsTemp[rankIdx].first))
+
+                    // Stegasuras: "Is there a more likely prefix token that could be the actual token generated?"
+                    // E.g. secret message "Albert Einstein was a renowned theoretical physicist" is tokenized to ["Albert", " Einstein", ...], but "A" is more likely prefix to "Albert"
+                    // Tokenization should therefore changed to e.g. ["A", "lbert", ...], i.e. split unlikely tokens into more likely tokens
+                    // => Relevant when decode is called for compression as first tokens of secret message are hard to predict
+                    if (propTokenText.length <= trueTokenText.length && propTokenText == trueTokenText.substring(startIndex = 0, endIndex = propTokenText.length)) {
+                        // Update rank, i.e. token to be sampled
+                        rank = rankIdx
+
+                        // Tokenize suffix, e.g. "lbert" into ["l", "bert"]
+                        val suffix = trueTokenText.substring(startIndex = propTokenText.length)
+                        val suffixTokens = LlamaCpp.tokenize(suffix)
+
+                        // Replace unlikely cover text token with its more likely prefix
+                        coverTextTokens[i] = probsTemp[rankIdx].first
+
+                        // Insert suffix after prefix to restore cover text
+                        coverTextTokens = coverTextTokens
+                            .toMutableList()
+                            .apply { addAll(i + 1, suffixTokens.toMutableList()) } // Stegasuras: "Insert suffix tokens into list"
+                            .toIntArray()
+
+                        break
+                    }
+                }
+            }
+
+            // Sample token at (corrected) rank
+            val selection = rank
 
             // Stegasuras: "Calculate new range as ints"
             val newIntBottom = if (selection > 0) cumProbs[selection-1].second else curInterval[0]
