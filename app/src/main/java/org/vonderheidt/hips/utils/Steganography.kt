@@ -22,7 +22,8 @@ object Steganography {
         steganographyMode: SteganographyMode = Settings.steganographyMode
     ): String {
         // Step 0: Prepare secret message by appending ASCII NUL character
-        val preparedSecretMessage = prepare(secretMessage)
+        // TODO Not predicted by Arithmetic compression
+        val preparedSecretMessage = if (conversionMode == ConversionMode.Arithmetic) secretMessage else prepare(secretMessage)
 
         // Step 1: Convert secret message to a (compressed) binary representation
         val plainBits = when (conversionMode) {
