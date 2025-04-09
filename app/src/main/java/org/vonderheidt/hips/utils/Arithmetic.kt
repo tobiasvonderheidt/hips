@@ -99,23 +99,27 @@ object Arithmetic {
 
         // Sample tokens until all bits of secret message are encoded and last sentence is finished
         while (i < cipherBitString.length || !isLastSentenceFinished) {
+            // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp:
+            // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
+            // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
+            val logits = LlamaCpp.getLogits(if (isFirstRun) contextTokens else intArrayOf(sampledToken)).last()
+
+            // Suppress special tokens to avoid early termination before all bits of secret message are encoded
+            LlamaCpp.suppressSpecialTokens(logits)
+
+            // <Logic specific to arithmetic coding>
+
+            // Normalize logits to probabilities
+            val probabilities = Statistics.softmax(logits)
+
+            // </Logic specific to arithmetic coding>
+
             // Arithmetic sampling to encode bits of secret message into tokens
             if (i < cipherBitString.length) {
-                // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp:
-                // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
-                // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
-                val logits = LlamaCpp.getLogits(if (isFirstRun) contextTokens else intArrayOf(sampledToken)).last()
-
-                // Suppress special tokens to avoid early termination before all bits of secret message are encoded
-                LlamaCpp.suppressSpecialTokens(logits)
-
                 // <Logic specific to arithmetic coding>
 
-                // Normalize logits to probabilities
-                val probs = Statistics.softmax(logits)
-
                 // Scale probabilities with 1/temperature and sort descending
-                val probsTemp = probs
+                val probsTemp = probabilities
                     .mapIndexed { token, probability -> token to probability/temperature }
                     .sortedByDescending { it.second }
 
@@ -256,9 +260,8 @@ object Arithmetic {
             }
             // Greedy sampling to pick most likely token until last sentence is finished
             else {
-                // llama.cpp greedy sampler is used for efficiency instead of manually sorting logits descending and picking the first one
-                // Input is only last sampled token similar to else case of getLogits input above, as greedy sampling only over gets called after arithmetic sampling
-                sampledToken = LlamaCpp.sample(sampledToken)
+                // Get most likely token
+                sampledToken = getTopProbability(probabilities)
 
                 // Update flag
                 isLastSentenceFinished = LlamaCpp.isEndOfSentence(sampledToken)
@@ -517,5 +520,20 @@ object Arithmetic {
         }
 
         return numSameFromBeg
+    }
+
+    /**
+     * Function to get the top probability for the last token of the prompt.
+     *
+     * @param probabilities Probabilities for the last token of the prompt (= last row of logits matrix after normalization).
+     * @return ID of the most likely token.
+     */
+    private fun getTopProbability(probabilities: FloatArray): Int {
+        val sampledToken = probabilities
+            .mapIndexed { token, logit -> token to logit }  // Convert to List<Pair<Int, Float>> so token IDs won't get lost
+            .sortedByDescending { it.second }               // Sort pairs descending based on probabilities
+            .first().first                                  // Get ID of most likely token
+
+        return sampledToken
     }
 }
