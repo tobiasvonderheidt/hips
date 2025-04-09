@@ -313,6 +313,15 @@ object Arithmetic {
 
         // Decode every cover text token
         while (i < coverTextTokens.size) {
+            // <Logic specific to arithmetic coding>
+
+            // End loop when eog token appended to secret message (passed via cover text parameter) above is reached
+            if (coverTextTokens[i] == LlamaCpp.getEndOfGeneration()) {
+                break
+            }
+
+            // </Logic specific to arithmetic coding>
+
             // Calculate the logit matrix again initially from context tokens, then from last cover text token, and get last row
             val logits = LlamaCpp.getLogits(if (isFirstRun) contextTokens else intArrayOf(coverTextToken)).last()
 
