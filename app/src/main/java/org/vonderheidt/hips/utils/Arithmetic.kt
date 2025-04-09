@@ -66,7 +66,9 @@ object Arithmetic {
         var contextTokens = LlamaCpp.tokenize(context)
 
         // Convert cipher bits to bit string
-        val cipherBitString = Format.asBitString(cipherBits)
+        val isDecompression = contextTokens.isEmpty()
+
+        val cipherBitString = if (isDecompression) Format.asBitStringWithoutPadding(cipherBits) else Format.asBitString(cipherBits)
 
         // Initialize array to store cover text tokens
         var coverTextTokens = intArrayOf()
@@ -77,7 +79,7 @@ object Arithmetic {
         // Similarly, an eog token also is appended to the secret message (passed via cover text parameter)
         // llama.cpp crashes with empty context anyway
         // UI doesn't allow empty context for steganography, so no collision possible when calling Arithmetic.{decode,encode} for binary conversion
-        if (contextTokens.isEmpty()) {
+        if (isDecompression) {
             contextTokens += LlamaCpp.getEndOfGeneration()
             coverTextTokens += LlamaCpp.getEndOfGeneration()
         }
@@ -292,7 +294,9 @@ object Arithmetic {
         // <Logic specific to arithmetic coding>
 
         // Similar to encode
-        if (contextTokens.isEmpty()) {
+        val isCompression = contextTokens.isEmpty()
+
+        if (isCompression) {
             contextTokens += LlamaCpp.getEndOfGeneration()
             coverTextTokens += LlamaCpp.getEndOfGeneration()
         }
@@ -481,7 +485,7 @@ object Arithmetic {
         }
 
         // Create ByteArray from bit string to return cipher bits
-        val cipherBits = Format.asByteArray(cipherBitString)
+        val cipherBits = if (isCompression) Format.asByteArrayWithPadding(cipherBitString) else Format.asByteArray(cipherBitString)
 
         return cipherBits
     }
