@@ -81,7 +81,6 @@ object Arithmetic {
         // UI doesn't allow empty context for steganography, so no collision possible when calling Arithmetic.{decode,encode} for binary conversion
         if (isDecompression) {
             contextTokens += LlamaCpp.getEndOfGeneration()
-            coverTextTokens += LlamaCpp.getEndOfGeneration()
         }
 
         // Define initial interval as [0, maxVal) = [0, 2^precision)
