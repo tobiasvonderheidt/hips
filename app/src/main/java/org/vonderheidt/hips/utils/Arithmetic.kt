@@ -419,6 +419,9 @@ object Arithmetic {
                 // Actual cover text token i
                 val trueTokenText = LlamaCpp.detokenize(intArrayOf(coverTextTokens[i]))
 
+                // Python control flow with else outside loop after if inside loop is not possible in Kotlin, introduce flag instead
+                var isBpeFixed = false
+
                 // Loop through predicted tokens
                 for (rankIdx in 0 until k) {
                     // Predicted cover text token i
@@ -445,8 +448,13 @@ object Arithmetic {
                             .apply { addAll(i + 1, suffixTokens.toMutableList()) } // Stegasuras: "Insert suffix tokens into list"
                             .toIntArray()
 
+                        isBpeFixed = true
                         break
                     }
+                }
+                // Stegasuras: "Unable to fix BPE error"
+                if (!isBpeFixed) {
+                    rank = 0
                 }
             }
 
