@@ -26,6 +26,8 @@ object Steganography {
         val preparedSecretMessage = if (conversionMode == ConversionMode.Arithmetic) secretMessage else prepare(secretMessage)
 
         // Step 1: Convert secret message to a (compressed) binary representation
+        LlamaCpp.resetInstance()
+
         val plainBits = when (conversionMode) {
             ConversionMode.Arithmetic -> { Arithmetic.compress(preparedSecretMessage) }
             ConversionMode.Huffman -> { Huffman.compress(preparedSecretMessage) }
@@ -36,6 +38,8 @@ object Steganography {
         val cipherBits = Crypto.encrypt(plainBits)
 
         // Step 3: Encode encrypted binary representation of secret message into cover text
+        LlamaCpp.resetInstance()
+
         val coverText = when (steganographyMode) {
             SteganographyMode.Arithmetic -> { Arithmetic.encode(context, cipherBits) }
             /* SteganographyMode.Bins -> { Bins.encode(context, cipherBits) } */
@@ -63,6 +67,8 @@ object Steganography {
         steganographyMode: SteganographyMode = Settings.steganographyMode
     ): String {
         // Invert step 3
+        LlamaCpp.resetInstance()
+
         val cipherBits = when (steganographyMode) {
             SteganographyMode.Arithmetic -> { Arithmetic.decode(context, coverText) }
             /* SteganographyMode.Bins -> { Bins.decode(context, coverText) } */
@@ -73,6 +79,8 @@ object Steganography {
         val plainBits = Crypto.decrypt(cipherBits)
 
         // Invert step 1
+        LlamaCpp.resetInstance()
+
         val preparedSecretMessage = when (conversionMode) {
             ConversionMode.Arithmetic -> { Arithmetic.decompress(plainBits) }
             ConversionMode.Huffman -> { Huffman.decompress(plainBits, inverseHuffmanCodes!!) }

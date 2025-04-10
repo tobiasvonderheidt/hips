@@ -191,9 +191,6 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                             messageToDecode = selectedMessages[0]
 
                             CoroutineScope(Dispatchers.Default).launch {
-                                // Reset LLM for reproducible results
-                                LlamaCpp.resetInstance()
-
                                 // Decoding needs to reproduce the state the message was encoded in
                                 val priorMessages = messages.subList(fromIndex = 0, toIndex = messages.indexOf(messageToDecode))    // Start inclusive, end exclusive
 
@@ -429,9 +426,6 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
                                         // Launch coroutine so UI in main thread isn't blocked
                                         CoroutineScope(Dispatchers.Default).launch {
-                                            // Reset LLM for reproducible results
-                                            LlamaCpp.resetInstance()
-
                                             // Apply chat template to system prompt and prior messages
                                             val context = LlamaCpp.formatChat(messages, isAlice)
 
