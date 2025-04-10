@@ -76,7 +76,6 @@ object Arithmetic {
         // <Logic specific to arithmetic coding>
 
         // Stegasuras paper says that binary conversion happens with empty context, but code actually uses a single end-of-generation (eog) token as context
-        // Similarly, an eog token also is appended to the secret message (passed via cover text parameter)
         // llama.cpp crashes with empty context anyway
         // UI doesn't allow empty context for steganography, so no collision possible when calling Arithmetic.{decode,encode} for binary conversion
         if (isDecompression) {
