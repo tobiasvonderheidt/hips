@@ -314,7 +314,9 @@ object Arithmetic {
 
         if (isCompression) {
             contextTokens += LlamaCpp.getEndOfGeneration()
-            coverTextTokens += LlamaCpp.getEndOfGeneration()
+
+            // During compression, Stegasuras appends eog token ('<eos>') to secret message passed via cover text parameter
+            // Not done here as ASCII NUL is used instead (see translation of "partial" variable in encode)
         }
 
         val maxVal = 1 shl precision
@@ -333,15 +335,6 @@ object Arithmetic {
 
         // Decode every cover text token
         while (i < coverTextTokens.size) {
-            // <Logic specific to arithmetic coding>
-
-            // End loop when eog token appended to secret message (passed via cover text parameter) above is reached
-            if (coverTextTokens[i] == LlamaCpp.getEndOfGeneration()) {
-                break
-            }
-
-            // </Logic specific to arithmetic coding>
-
             // Calculate the logit matrix again initially from context tokens, then from last cover text token, and get last row
             val logits = LlamaCpp.getLogits(if (isFirstRun) contextTokens else intArrayOf(coverTextToken)).last()
 
