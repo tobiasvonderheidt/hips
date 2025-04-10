@@ -188,6 +188,22 @@ object LlamaCpp {
     }
 
     /**
+     * Function to get the token ID of the ASCII NUL character in the vocabulary of the LLM.
+     *
+     * @return Token ID of the ASCII NUL character.
+     * @throws NoSuchElementException When the LLM vocabulary doesn't contain the ASCII NUL character.
+     */
+    fun getAsciiNul(): Int {
+        for (token in 0 until getVocabSize()) {
+            if (detokenize(intArrayOf(token)) == "\u0000") {
+                return token
+            }
+        }
+
+        throw NoSuchElementException("LLM vocabulary doesn't contain ASCII NUL character")
+    }
+
+    /**
      * Function to format a list of messages as a llama.cpp chat (i.e. apply the chat template of the LLM).
      * Creates the context needed to do steganography encoding/decoding in a conversation.
      *
