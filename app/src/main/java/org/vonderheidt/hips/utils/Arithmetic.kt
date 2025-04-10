@@ -121,6 +121,7 @@ object Arithmetic {
                 val probsTemp = probabilities
                     .mapIndexed { token, probability -> token to probability/temperature }
                     .sortedByDescending { it.second }
+                    .toMutableList()
 
                 // Stegasuras: "Cut off low probabilities that would be rounded to 0"
                 // curThreshold needs to be float as it will be compared to probabilities, float division happens implicitly in Python but explicitly in Kotlin
@@ -202,6 +203,13 @@ object Arithmetic {
                     Pair(it.first, it.second + curInterval[0])
                 }.toMutableList()
 
+                // Replace token of last sub-interval with ASCII NUL character so it can be sampled during decompression
+                // Similar to explanation at https://www.youtube.com/watch?v=RFWJM8JMXBs
+                if (isDecompression) {
+                    probsTemp[cumProbs.lastIndex] = Pair(LlamaCpp.getAsciiNul(), probsTemp[cumProbs.lastIndex].second)
+                    cumProbs[cumProbs.lastIndex] = Pair(LlamaCpp.getAsciiNul(), cumProbs[cumProbs.lastIndex].second)
+                }
+
                 // Stegasuras: "Get selected index based on binary fraction from message bits"
                 // Process cipher bits in portions of size precision
                 // Unlike Python, Kotlin doesn't handle "cipherBitString.substring(startIndex = i, endIndex = i + precision)" gracefully if i + precision is too large
@@ -268,6 +276,12 @@ object Arithmetic {
 
             // Append last sampled token to cover text tokens
             coverTextTokens += sampledToken
+
+            // Stegasuras: "For text->bits->text"
+            // Variable "partial" not needed here as cover text isn't appended to context
+            if (coverTextTokens.last() == LlamaCpp.getAsciiNul()) {
+                break
+            }
         }
 
         // Detokenize cover text tokens into cover text to return it
@@ -342,6 +356,7 @@ object Arithmetic {
             val probsTemp = probs
                 .mapIndexed { token, probability -> token to probability/temperature }
                 .sortedByDescending { it.second }
+                .toMutableList()
 
             // Stegasuras: "Cut off low probabilities that would be rounded to 0"
             val curIntRange = curInterval[1] - curInterval[0]
@@ -407,6 +422,13 @@ object Arithmetic {
             cumProbs = cumProbs.map {
                 Pair(it.first, it.second + curInterval[0])
             }.toMutableList()
+
+            // Replace token of last sub-interval with ASCII NUL character so it can be sampled during compression
+            // Similar to explanation at https://www.youtube.com/watch?v=RFWJM8JMXBs
+            if (isCompression) {
+                probsTemp[cumProbs.lastIndex] = Pair(LlamaCpp.getAsciiNul(), probsTemp[cumProbs.lastIndex].second)
+                cumProbs[cumProbs.lastIndex] = Pair(LlamaCpp.getAsciiNul(), cumProbs[cumProbs.lastIndex].second)
+            }
 
             // Stegasuras: n/a
             // Determine rank of predicted token amongst all tokens based on its probability
