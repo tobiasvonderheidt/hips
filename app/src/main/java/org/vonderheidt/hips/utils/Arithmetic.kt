@@ -1,8 +1,6 @@
 package org.vonderheidt.hips.utils
 
 import org.vonderheidt.hips.data.Settings
-import kotlin.math.ceil
-import kotlin.math.log2
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -21,12 +19,13 @@ object Arithmetic {
         // Stegasuras:
         // Arithmetic compression is just decoding with empty context
         // Parameters temperature, topK and precision are not taken from settings, but hard-coded to use the unmodulated LLM
+        // While topK is set to the vocabulary size of the LLM, precision is set as high as possible so (ideally) no tokens have probability < 1/2^precision
         return decode(
             context = "",
             coverText = preparedSecretMessage,
             temperature = 1.0f,
             topK = LlamaCpp.getVocabSize(),
-            precision = ceil(log2(LlamaCpp.getVocabSize().toFloat())).toInt()
+            precision = 30
         )
     }
 
@@ -39,13 +38,13 @@ object Arithmetic {
     fun decompress(paddedPlainBits: ByteArray): String {
         // Stegasuras:
         // Arithmetic decompression is just encoding with empty context
-        // Parameters temperature, topK and precision are not taken from settings, but hard-coded to use the unmodulated LLM
+        // Same parameters as compression
         return encode(
             context = "",
             cipherBits = paddedPlainBits,
             temperature = 1.0f,
             topK = LlamaCpp.getVocabSize(),
-            precision = ceil(log2(LlamaCpp.getVocabSize().toFloat())).toInt(),
+            precision = 30
         )
     }
 
