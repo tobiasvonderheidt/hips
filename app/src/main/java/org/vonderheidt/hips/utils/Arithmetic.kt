@@ -236,8 +236,8 @@ object Arithmetic {
                 val newIntervalTop = cumulatedProbabilities[selectedSubinterval].second
 
                 // Stegasuras: "Convert range to bits"
-                val newIntervalBottomBitsInclusive = Format.asBitString(newIntervalBottom, precision)          // Again, reversing shouldn't be necessary here
-                val newIntervalTopBitsInclusive = Format.asBitString(newIntervalTop - 1, precision)            // Stegasuras: "-1 here because upper bound is exclusive" (i.e. newIntervalTopBitsInclusive is inclusive)
+                val newIntervalBottomBitsInclusive = Format.asBitString(newIntervalBottom, precision)   // Again, reversing shouldn't be necessary here
+                val newIntervalTopBitsInclusive = Format.asBitString(newIntervalTop - 1, precision)     // Stegasuras: "-1 here because upper bound is exclusive" (i.e. newIntervalTopBitsInclusive is inclusive)
 
                 // Stegasuras: "Consume most significant bits which are now fixed and update interval"
                 // Arithmetic coding encodes data into a number by iteratively narrowing initial interval defined earlier
