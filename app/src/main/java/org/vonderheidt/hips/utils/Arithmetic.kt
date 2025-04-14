@@ -249,10 +249,10 @@ object Arithmetic {
                 // New interval is determined by setting unfixed bits to 0 for bottom end, to 1 for top end
                 // Interval boundaries can jump around because first numBitsEncoded bits are already processed and therefore cut off
                 // Next portion of cipher bits in general doesn't narrow the interval
-                val newIntBottomBits = newIntervalBottomBitsInclusive.substring(startIndex = numBitsEncoded) + "0".repeat(numBitsEncoded)
+                val newIntervalBottomBits = newIntervalBottomBitsInclusive.substring(startIndex = numBitsEncoded) + "0".repeat(numBitsEncoded)
                 val newIntervalTopBits = newIntervalTopBitsInclusive.substring(startIndex = numBitsEncoded) + "1".repeat(numBitsEncoded)
 
-                currentInterval[0] = Format.asInteger(newIntBottomBits)                            // Again, reversing shouldn't be necessary here
+                currentInterval[0] = Format.asInteger(newIntervalBottomBits)                            // Again, reversing shouldn't be necessary here
                 currentInterval[1] = Format.asInteger(newIntervalTopBits) + 1                           // Stegasuras: "+1 here because upper bound is exclusive"
 
                 // Sample token as determined above
@@ -491,10 +491,10 @@ object Arithmetic {
                 newIntervalTopBitsInclusive.substring(startIndex = 0, endIndex = numBitsEncoded)
             }
 
-            val newIntBottomBits = newIntervalBottomBitsInclusive.substring(startIndex = numBitsEncoded) + "0".repeat(numBitsEncoded)
+            val newIntervalBottomBits = newIntervalBottomBitsInclusive.substring(startIndex = numBitsEncoded) + "0".repeat(numBitsEncoded)
             val newIntervalTopBits = newIntervalTopBitsInclusive.substring(startIndex = numBitsEncoded) + "1".repeat(numBitsEncoded)
 
-            currentInterval[0] = Format.asInteger(newIntBottomBits)
+            currentInterval[0] = Format.asInteger(newIntervalBottomBits)
             currentInterval[1] = Format.asInteger(newIntervalTopBits) + 1
 
             // </Logic specific to arithmetic coding>
