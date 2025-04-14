@@ -181,10 +181,10 @@ object Arithmetic {
 
                 // Stegasuras: "Remove any elements from the bottom if rounding caused the total prob to be too large"
                 // Remove tokens with low probabilities if their cumulated probability is too large
-                val overfillIndex = cumulatedProbabilities.filter { it.second > currentIntervalRange }
+                val overfill = cumulatedProbabilities.filter { it.second > currentIntervalRange }
 
-                if (overfillIndex.isNotEmpty()) {
-                    cumulatedProbabilities = cumulatedProbabilities.dropLast(overfillIndex.size).toMutableList()
+                if (overfill.isNotEmpty()) {
+                    cumulatedProbabilities = cumulatedProbabilities.dropLast(overfill.size).toMutableList()
                 }
 
                 // Stegasuras: "Add any mass to the top if removing/rounding causes the total prob to be too small"
@@ -388,16 +388,16 @@ object Arithmetic {
             }
 
             // Stegasuras: "Remove any elements from the bottom if rounding caused the total prob to be too large"
-            val overfillIndex = cumulatedProbabilities.filter { it.second > currentIntervalRange }
+            val overfill = cumulatedProbabilities.filter { it.second > currentIntervalRange }
 
-            if (overfillIndex.isNotEmpty()) {
-                cumulatedProbabilities = cumulatedProbabilities.dropLast(overfillIndex.size).toMutableList()
+            if (overfill.isNotEmpty()) {
+                cumulatedProbabilities = cumulatedProbabilities.dropLast(overfill.size).toMutableList()
                 // Reassignment of k is new in decode, but not used here as possible BPE errors are ignored below
                 // Logic of Stegasuras is somewhat inverted again
                 // Stegasuras: overfill_index[0] = Index of first token with cumulated probability > cur_int_range
                 //             = Number of tokens with cumulated probability <= cur_int_range
                 //             = Size of cum_probs after it was overwritten there
-                // HiPS: overfillIndex = List of tokens with cumulated probability > currentIntervalRange
+                // HiPS: overfill = List of tokens with cumulated probability > currentIntervalRange
                 //       != Size of cumulatedProbabilities after it was overwritten here
                 // Now "if (rank >= k) { ... }" from BPE fixes below makes sense
                 k = cumulatedProbabilities.size
