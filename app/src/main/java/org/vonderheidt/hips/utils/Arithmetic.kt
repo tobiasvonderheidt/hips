@@ -341,9 +341,9 @@ object Arithmetic {
             // <Logic specific to arithmetic coding>
 
             // Similar to encode
-            val probs = Statistics.softmax(logits)
+            val probabilities = Statistics.softmax(logits)
 
-            val probsTemp = probs
+            val probsTemp = probabilities
                 .mapIndexed { token, probability -> token to probability/temperature }
                 .sortedByDescending { it.second }
                 .toMutableList()
