@@ -15,7 +15,7 @@ object Settings {
         We talk about what we did on the weekend.
         Be brief and casual, but friendly and engaging. Use emojis and phrases typical for chat messages.
     """.trimIndent().replace("\n", " ")
-    private val defaultNumberOfMessages = 0
+    private val defaultNumberOfMessages = 2
     private val defaultSteganographyMode = SteganographyMode.Arithmetic
     private val defaultTemperature = 1.0f
     private val defaultTopK = 0             // Only used if LLM is not in memory
