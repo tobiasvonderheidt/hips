@@ -227,14 +227,14 @@ object Arithmetic {
                 // Find position of first token with cumulated probability larger than this integer, i.e. find relevant sub-interval of current interval
                 // => sampledToken is already determined here, next steps only calculate new interval
                 val messageIdx = Format.asInteger(cipherBitSubstring)                                 // Stegasuras would reverse cipherBitSubstring, shouldn't be necessary here
-                val selection = cumulatedProbabilities.indexOfFirst { it.second > messageIdx }
+                val selectedSubinterval = cumulatedProbabilities.indexOfFirst { it.second > messageIdx }
 
                 // Stegasuras: "Calculate new range as ints"
                 // Calculate bottom and top of relevant sub-interval for next iteration
                 // New bottom (inclusive) is top of preceding sub-interval (exclusive there) if relevant one is not the first one, old bottom otherwise
                 // New top (exclusive) is top of relevant sub-interval
-                val newIntervalBottom = if (selection > 0) cumulatedProbabilities[selection-1].second else currentInterval[0]
-                val newIntervalTop = cumulatedProbabilities[selection].second
+                val newIntervalBottom = if (selectedSubinterval > 0) cumulatedProbabilities[selectedSubinterval-1].second else currentInterval[0]
+                val newIntervalTop = cumulatedProbabilities[selectedSubinterval].second
 
                 // Stegasuras: "Convert range to bits"
                 val newIntervalBottomBitsInclusive = Format.asBitString(newIntervalBottom, precision)          // Again, reversing shouldn't be necessary here
@@ -256,7 +256,7 @@ object Arithmetic {
                 currentInterval[1] = Format.asInteger(newIntervalTopBits) + 1                           // Stegasuras: "+1 here because upper bound is exclusive"
 
                 // Sample token as determined above
-                sampledToken = cumulatedProbabilities[selection].first
+                sampledToken = cumulatedProbabilities[selectedSubinterval].first
 
                 // </Logic specific to arithmetic coding>
 
@@ -470,11 +470,11 @@ object Arithmetic {
             }
 
             // Sample token at (corrected) rank
-            val selection = rank
+            val selectedSubinterval = rank
 
             // Stegasuras: "Calculate new range as ints"
-            val newIntervalBottom = if (selection > 0) cumulatedProbabilities[selection-1].second else currentInterval[0]
-            val newIntervalTop = cumulatedProbabilities[selection].second
+            val newIntervalBottom = if (selectedSubinterval > 0) cumulatedProbabilities[selectedSubinterval-1].second else currentInterval[0]
+            val newIntervalTop = cumulatedProbabilities[selectedSubinterval].second
 
             // Stegasuras: "Convert range to bits"
             val newIntervalBottomBitsInclusive = Format.asBitString(newIntervalBottom, precision)
