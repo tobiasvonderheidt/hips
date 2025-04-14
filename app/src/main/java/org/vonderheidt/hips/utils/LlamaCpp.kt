@@ -149,7 +149,7 @@ object LlamaCpp {
         val isSentenceFinished = detokenization.endsWith(".")
                 || detokenization.endsWith("!")
                 || detokenization.endsWith("?")
-                || detokenization.endsWithEmoji()
+                // || detokenization.endsWithEmoji()
 
         return isSentenceFinished
     }
@@ -163,6 +163,7 @@ object LlamaCpp {
      */
     private fun String.endsWithEmoji(): Boolean {
         // Most emojis are classified as "Symbols, other" (So) in Unicode, try to find them via regular expression
+        // TODO This pattern corrupts cover texts
         val endsWithEmoji = this.isNotEmpty() && Regex("\\p{So}").containsMatchIn(this.takeLast(1))
 
         return endsWithEmoji
@@ -184,6 +185,22 @@ object LlamaCpp {
         }
 
         return eogTokens.first()
+    }
+
+    /**
+     * Function to get the token ID of the ASCII NUL character in the vocabulary of the LLM.
+     *
+     * @return Token ID of the ASCII NUL character.
+     * @throws NoSuchElementException When the LLM vocabulary doesn't contain the ASCII NUL character.
+     */
+    fun getAsciiNul(): Int {
+        for (token in 0 until getVocabSize()) {
+            if (detokenize(intArrayOf(token)) == "\u0000") {
+                return token
+            }
+        }
+
+        throw NoSuchElementException("LLM vocabulary doesn't contain ASCII NUL character")
     }
 
     /**

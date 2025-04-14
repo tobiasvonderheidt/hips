@@ -541,6 +541,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             )
                         }
                     }
+                    /*
                     SteganographyMode.Bins -> {
                         Text(text = "Set the number of bins (higher is more efficient, but less coherent).")
 
@@ -574,6 +575,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             modifier = modifier.align(Alignment.CenterHorizontally)
                         )
                     }
+                    */
                     SteganographyMode.Huffman -> {
                         Text(text = "Set the bits per token (higher is more efficient, but less coherent).")
 

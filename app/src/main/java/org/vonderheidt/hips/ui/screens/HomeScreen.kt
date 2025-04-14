@@ -310,11 +310,6 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                     // Use Dispatchers.Default since LLM inference is CPU-bound
                     // Keep encapsulation of coroutine vs if-else like this so the loading animation works
                     CoroutineScope(Dispatchers.Default).launch {
-                        // Reset LLM instance on every button press to ensure reproducibility, otherwise ctx before encode and decode would not be the same
-                        // Works when called before this coroutine or inside it, but crashes when called inside its own coroutine before this one
-                        // Might be desirable to use it with Dispatchers.IO as it is presumably I/O-bound, but seems negligible
-                        LlamaCpp.resetInstance()
-
                         // If conversation switch is set, context needs to be formatted as chat
                         // Avoid overwriting state variable for context, otherwise formatting is shown in text input field
                         var formattedContext = context
