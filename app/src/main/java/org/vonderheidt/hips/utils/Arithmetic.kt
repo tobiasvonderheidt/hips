@@ -243,14 +243,14 @@ object Arithmetic {
                 // Stegasuras: "Consume most significant bits which are now fixed and update interval"
                 // Arithmetic coding encodes data into a number by iteratively narrowing initial interval defined earlier
                 // Therefore most significant bits are fixed first (~ numSameFromBeg), determining the order of magnitude of the number, less significant bits are fixed later
-                val numBitsEncoded = numSameFromBeg(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive)
-                i += numBitsEncoded
+                val numberOfEncodedBits = numSameFromBeg(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive)
+                i += numberOfEncodedBits
 
                 // New interval is determined by setting unfixed bits to 0 for bottom end, to 1 for top end
-                // Interval boundaries can jump around because first numBitsEncoded bits are already processed and therefore cut off
+                // Interval boundaries can jump around because first numberOfEncodedBits bits are already processed and therefore cut off
                 // Next portion of cipher bits in general doesn't narrow the interval
-                val newIntervalBottomBits = newIntervalBottomBitsInclusive.substring(startIndex = numBitsEncoded) + "0".repeat(numBitsEncoded)
-                val newIntervalTopBits = newIntervalTopBitsInclusive.substring(startIndex = numBitsEncoded) + "1".repeat(numBitsEncoded)
+                val newIntervalBottomBits = newIntervalBottomBitsInclusive.substring(startIndex = numberOfEncodedBits) + "0".repeat(numberOfEncodedBits)
+                val newIntervalTopBits = newIntervalTopBitsInclusive.substring(startIndex = numberOfEncodedBits) + "1".repeat(numberOfEncodedBits)
 
                 currentInterval[0] = Format.asInteger(newIntervalBottomBits)                            // Again, reversing shouldn't be necessary here
                 currentInterval[1] = Format.asInteger(newIntervalTopBits) + 1                           // Stegasuras: "+1 here because upper bound is exclusive"
@@ -482,17 +482,17 @@ object Arithmetic {
 
             // Stegasuras: "Emit most significant bits which are now fixed and update interval"
             // Inline += operation to eliminate newBits variable
-            val numBitsEncoded = numSameFromBeg(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive)
+            val numberOfEncodedBits = numSameFromBeg(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive)
 
             cipherBitString += if (i == coverTextTokens.size - 1) {
                 newIntervalBottomBitsInclusive
             }
             else {
-                newIntervalTopBitsInclusive.substring(startIndex = 0, endIndex = numBitsEncoded)
+                newIntervalTopBitsInclusive.substring(startIndex = 0, endIndex = numberOfEncodedBits)
             }
 
-            val newIntervalBottomBits = newIntervalBottomBitsInclusive.substring(startIndex = numBitsEncoded) + "0".repeat(numBitsEncoded)
-            val newIntervalTopBits = newIntervalTopBitsInclusive.substring(startIndex = numBitsEncoded) + "1".repeat(numBitsEncoded)
+            val newIntervalBottomBits = newIntervalBottomBitsInclusive.substring(startIndex = numberOfEncodedBits) + "0".repeat(numberOfEncodedBits)
+            val newIntervalTopBits = newIntervalTopBitsInclusive.substring(startIndex = numberOfEncodedBits) + "1".repeat(numberOfEncodedBits)
 
             currentInterval[0] = Format.asInteger(newIntervalBottomBits)
             currentInterval[1] = Format.asInteger(newIntervalTopBits) + 1
