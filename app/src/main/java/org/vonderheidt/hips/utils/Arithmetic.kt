@@ -148,24 +148,24 @@ object Arithmetic {
                 // Keep tokens with top k (!= topK) probabilities
                 // Stegasuras would use variable name roundedScaledProbabilities here already, but requires overwriting one data type with another (List<Pair<Int, Float>> vs List<Pair<Int, Int>>)
                 // Possible in Python, but not in Kotlin
-                // Use topProbsTemp for now to be similar to decode, roundedScaledProbabilities only after rounding probabilities from float to int below
-                var topProbsTemp = probsTemp.take(k)
+                // Use topScaledProbabilities for now to be similar to decode, roundedScaledProbabilities only after rounding probabilities from float to int below
+                var topScaledProbabilities = probsTemp.take(k)
 
                 // Stegasuras: "Rescale to correct range"
                 // Top k probabilities sum up to something in [0,1), rescale to [0, 2^precision)
                 var topProbsTempSum = 0.0f
 
-                for ((token, probability) in topProbsTemp) {
+                for ((token, probability) in topScaledProbabilities) {
                     topProbsTempSum += probability
                 }
 
-                topProbsTemp = topProbsTemp.map {
+                topScaledProbabilities = topScaledProbabilities.map {
                     Pair(it.first, it.second / topProbsTempSum * currentIntervalRange)
                 }
 
                 // Stegasuras: "Round probabilities to integers given precision"
                 // Variable name roundedScaledProbabilities is appropriate now
-                val roundedScaledProbabilities = topProbsTemp.map {
+                val roundedScaledProbabilities = topScaledProbabilities.map {
                     Pair(it.first, it.second.roundToInt())
                 }
 
@@ -360,22 +360,22 @@ object Arithmetic {
                 topK
             )
 
-            // Don't reassign "probsTemp = probsTemp.take(k)" but introduce new variable topProbsTemp as decode needs probsTemp again later
-            var topProbsTemp = probsTemp.take(k)
+            // Don't reassign "probsTemp = probsTemp.take(k)" but introduce new variable topScaledProbabilities as decode needs probsTemp again later
+            var topScaledProbabilities = probsTemp.take(k)
 
             // Stegasuras: "Rescale to correct range"
             var topProbsTempSum = 0.0f
 
-            for ((token, probability) in topProbsTemp) {
+            for ((token, probability) in topScaledProbabilities) {
                 topProbsTempSum += probability
             }
 
-            topProbsTemp = topProbsTemp.map {
+            topScaledProbabilities = topScaledProbabilities.map {
                 Pair(it.first, it.second / topProbsTempSum * currentIntervalRange)
             }
 
             // Stegasuras: "Round probabilities to integers given precision"
-            val roundedScaledProbabilities = topProbsTemp.map {
+            val roundedScaledProbabilities = topScaledProbabilities.map {
                 Pair(it.first, it.second.roundToInt())
             }
 
