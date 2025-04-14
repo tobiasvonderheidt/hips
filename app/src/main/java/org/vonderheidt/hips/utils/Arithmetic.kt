@@ -116,7 +116,7 @@ object Arithmetic {
                 // <Logic specific to arithmetic coding>
 
                 // Scale probabilities with 1/temperature and sort descending
-                val probsTemp = probabilities
+                val scaledProbabilities = probabilities
                     .mapIndexed { token, probability -> token to probability/temperature }
                     .sortedByDescending { it.second }
                     .toMutableList()
@@ -140,7 +140,7 @@ object Arithmetic {
                 val k = min(
                     max(
                         2,
-                        probsTemp.filter { it.second >= currentThreshold }.size
+                        scaledProbabilities.filter { it.second >= currentThreshold }.size
                     ),
                     topK
                 )
@@ -149,7 +149,7 @@ object Arithmetic {
                 // Stegasuras would use variable name roundedScaledProbabilities here already, but requires overwriting one data type with another (List<Pair<Int, Float>> vs List<Pair<Int, Int>>)
                 // Possible in Python, but not in Kotlin
                 // Use topScaledProbabilities for now to be similar to decode, roundedScaledProbabilities only after rounding probabilities from float to int below
-                var topScaledProbabilities = probsTemp.take(k)
+                var topScaledProbabilities = scaledProbabilities.take(k)
 
                 // Stegasuras: "Rescale to correct range"
                 // Top k probabilities sum up to something in [0,1), rescale to [0, 2^precision)
@@ -204,7 +204,7 @@ object Arithmetic {
                 // Replace token of last sub-interval with ASCII NUL character so it can be sampled during decompression
                 // Similar to explanation at https://www.youtube.com/watch?v=RFWJM8JMXBs
                 if (isDecompression) {
-                    probsTemp[cumulatedProbabilities.lastIndex] = Pair(LlamaCpp.getAsciiNul(), probsTemp[cumulatedProbabilities.lastIndex].second)
+                    scaledProbabilities[cumulatedProbabilities.lastIndex] = Pair(LlamaCpp.getAsciiNul(), scaledProbabilities[cumulatedProbabilities.lastIndex].second)
                     cumulatedProbabilities[cumulatedProbabilities.lastIndex] = Pair(LlamaCpp.getAsciiNul(), cumulatedProbabilities[cumulatedProbabilities.lastIndex].second)
                 }
 
@@ -343,7 +343,7 @@ object Arithmetic {
             // Similar to encode
             val probabilities = Statistics.softmax(logits)
 
-            val probsTemp = probabilities
+            val scaledProbabilities = probabilities
                 .mapIndexed { token, probability -> token to probability/temperature }
                 .sortedByDescending { it.second }
                 .toMutableList()
@@ -355,13 +355,13 @@ object Arithmetic {
             var k = min(
                 max(
                     2,
-                    probsTemp.filter { it.second >= currentThreshold }.size
+                    scaledProbabilities.filter { it.second >= currentThreshold }.size
                 ),
                 topK
             )
 
-            // Don't reassign "probsTemp = probsTemp.take(k)" but introduce new variable topScaledProbabilities as decode needs probsTemp again later
-            var topScaledProbabilities = probsTemp.take(k)
+            // Don't reassign "scaledProbabilities = scaledProbabilities.take(k)" but introduce new variable topScaledProbabilities as decode needs scaledProbabilities again later
+            var topScaledProbabilities = scaledProbabilities.take(k)
 
             // Stegasuras: "Rescale to correct range"
             var sum = 0.0f
@@ -416,13 +416,13 @@ object Arithmetic {
             // Replace token of last sub-interval with ASCII NUL character so it can be sampled during compression
             // Similar to explanation at https://www.youtube.com/watch?v=RFWJM8JMXBs
             if (isCompression) {
-                probsTemp[cumulatedProbabilities.lastIndex] = Pair(LlamaCpp.getAsciiNul(), probsTemp[cumulatedProbabilities.lastIndex].second)
+                scaledProbabilities[cumulatedProbabilities.lastIndex] = Pair(LlamaCpp.getAsciiNul(), scaledProbabilities[cumulatedProbabilities.lastIndex].second)
                 cumulatedProbabilities[cumulatedProbabilities.lastIndex] = Pair(LlamaCpp.getAsciiNul(), cumulatedProbabilities[cumulatedProbabilities.lastIndex].second)
             }
 
             // Stegasuras: n/a
             // Determine rank of predicted token amongst all tokens based on its probability
-            var rank = probsTemp.indexOfFirst { it.first == coverTextTokens[i] }
+            var rank = scaledProbabilities.indexOfFirst { it.first == coverTextTokens[i] }
 
             // Stegasuras: "Handle most errors that could happen because of BPE with heuristic"
             // Rank can't exceed cumulatedProbabilities indices
@@ -436,7 +436,7 @@ object Arithmetic {
                 // Loop through predicted tokens
                 for (rankIdx in 0 until k) {
                     // Predicted cover text token i
-                    val propTokenText = LlamaCpp.detokenize(intArrayOf(probsTemp[rankIdx].first))
+                    val propTokenText = LlamaCpp.detokenize(intArrayOf(scaledProbabilities[rankIdx].first))
 
                     // Stegasuras: "Is there a more likely prefix token that could be the actual token generated?"
                     // E.g. secret message "Albert Einstein was a renowned theoretical physicist" is tokenized to ["Albert", " Einstein", ...], but "A" is more likely prefix to "Albert"
@@ -451,7 +451,7 @@ object Arithmetic {
                         val suffixTokens = LlamaCpp.tokenize(suffix)
 
                         // Replace unlikely cover text token with its more likely prefix
-                        coverTextTokens[i] = probsTemp[rankIdx].first
+                        coverTextTokens[i] = scaledProbabilities[rankIdx].first
 
                         // Insert suffix after prefix to restore cover text
                         coverTextTokens = coverTextTokens
