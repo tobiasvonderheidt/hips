@@ -123,8 +123,8 @@ object Arithmetic {
 
                 // Stegasuras: "Cut off low probabilities that would be rounded to 0"
                 // currentThreshold needs to be float as it will be compared to probabilities, float division happens implicitly in Python but explicitly in Kotlin
-                val curIntRange = currentInterval[1] - currentInterval[0]
-                val currentThreshold = 1.0f / curIntRange
+                val currentIntervalRange = currentInterval[1] - currentInterval[0]
+                val currentThreshold = 1.0f / currentIntervalRange
 
                 // Invert logic of Stegasuras:
                 // Stegasuras: Drop all tokens with probability < currentThreshold
@@ -160,7 +160,7 @@ object Arithmetic {
                 }
 
                 topProbsTemp = topProbsTemp.map {
-                    Pair(it.first, it.second / topProbsTempSum * curIntRange)
+                    Pair(it.first, it.second / topProbsTempSum * currentIntervalRange)
                 }
 
                 // Stegasuras: "Round probabilities to integers given precision"
@@ -181,7 +181,7 @@ object Arithmetic {
 
                 // Stegasuras: "Remove any elements from the bottom if rounding caused the total prob to be too large"
                 // Remove tokens with low probabilities if their cumulated probability is too large
-                val overfillIndex = cumulatedProbabilities.filter { it.second > curIntRange }
+                val overfillIndex = cumulatedProbabilities.filter { it.second > currentIntervalRange }
 
                 if (overfillIndex.isNotEmpty()) {
                     cumulatedProbabilities = cumulatedProbabilities.dropLast(overfillIndex.size).toMutableList()
@@ -192,7 +192,7 @@ object Arithmetic {
                 // Arithmetic coding only works when current interval is exactly filled, so close the gap by shifting all cumulated probabilities up by its size
                 // Equivalent to first token having larger probability, shifting cumulated probabilities of all subsequent tokens
                 cumulatedProbabilities = cumulatedProbabilities.map {
-                    Pair(it.first, it.second + curIntRange - cumulatedProbabilities.last().second)
+                    Pair(it.first, it.second + currentIntervalRange - cumulatedProbabilities.last().second)
                 }.toMutableList()
 
                 // Stegasuras: "Convert to position in range"
@@ -349,8 +349,8 @@ object Arithmetic {
                 .toMutableList()
 
             // Stegasuras: "Cut off low probabilities that would be rounded to 0"
-            val curIntRange = currentInterval[1] - currentInterval[0]
-            val currentThreshold = 1.0f / curIntRange
+            val currentIntervalRange = currentInterval[1] - currentInterval[0]
+            val currentThreshold = 1.0f / currentIntervalRange
 
             var k = min(
                 max(
@@ -371,7 +371,7 @@ object Arithmetic {
             }
 
             topProbsTemp = topProbsTemp.map {
-                Pair(it.first, it.second / topProbsTempSum * curIntRange)
+                Pair(it.first, it.second / topProbsTempSum * currentIntervalRange)
             }
 
             // Stegasuras: "Round probabilities to integers given precision"
@@ -388,7 +388,7 @@ object Arithmetic {
             }
 
             // Stegasuras: "Remove any elements from the bottom if rounding caused the total prob to be too large"
-            val overfillIndex = cumulatedProbabilities.filter { it.second > curIntRange }
+            val overfillIndex = cumulatedProbabilities.filter { it.second > currentIntervalRange }
 
             if (overfillIndex.isNotEmpty()) {
                 cumulatedProbabilities = cumulatedProbabilities.dropLast(overfillIndex.size).toMutableList()
@@ -397,7 +397,7 @@ object Arithmetic {
                 // Stegasuras: overfill_index[0] = Index of first token with cumulated probability > cur_int_range
                 //             = Number of tokens with cumulated probability <= cur_int_range
                 //             = Size of cum_probs after it was overwritten there
-                // HiPS: overfillIndex = List of tokens with cumulated probability > curIntRange
+                // HiPS: overfillIndex = List of tokens with cumulated probability > currentIntervalRange
                 //       != Size of cumulatedProbabilities after it was overwritten here
                 // Now "if (rank >= k) { ... }" from BPE fixes below makes sense
                 k = cumulatedProbabilities.size
@@ -405,7 +405,7 @@ object Arithmetic {
 
             // Stegasuras: "Add any mass to the top if removing/rounding causes the total prob to be too small"
             cumulatedProbabilities = cumulatedProbabilities.map {
-                Pair(it.first, it.second + curIntRange - cumulatedProbabilities.last().second)
+                Pair(it.first, it.second + currentIntervalRange - cumulatedProbabilities.last().second)
             }.toMutableList()
 
             // Stegasuras: "Convert to position in range"
