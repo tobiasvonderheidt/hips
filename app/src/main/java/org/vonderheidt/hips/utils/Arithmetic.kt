@@ -122,13 +122,13 @@ object Arithmetic {
                     .toMutableList()
 
                 // Stegasuras: "Cut off low probabilities that would be rounded to 0"
-                // curThreshold needs to be float as it will be compared to probabilities, float division happens implicitly in Python but explicitly in Kotlin
+                // currentThreshold needs to be float as it will be compared to probabilities, float division happens implicitly in Python but explicitly in Kotlin
                 val curIntRange = currentInterval[1] - currentInterval[0]
-                val curThreshold = 1.0f / curIntRange
+                val currentThreshold = 1.0f / curIntRange
 
                 // Invert logic of Stegasuras:
-                // Stegasuras: Drop all tokens with probability < curThreshold
-                // <=> HiPS: Keep all tokens with probability >= curThreshold
+                // Stegasuras: Drop all tokens with probability < currentThreshold
+                // <=> HiPS: Keep all tokens with probability >= currentThreshold
 
                 // Minimum ensures that k doesn't exceed topK
                 // Maximum ensures that at least the tokens with the top 2 probabilities are considered
@@ -140,7 +140,7 @@ object Arithmetic {
                 val k = min(
                     max(
                         2,
-                        probsTemp.filter { it.second >= curThreshold }.size
+                        probsTemp.filter { it.second >= currentThreshold }.size
                     ),
                     topK
                 )
@@ -350,12 +350,12 @@ object Arithmetic {
 
             // Stegasuras: "Cut off low probabilities that would be rounded to 0"
             val curIntRange = currentInterval[1] - currentInterval[0]
-            val curThreshold = 1.0f / curIntRange
+            val currentThreshold = 1.0f / curIntRange
 
             var k = min(
                 max(
                     2,
-                    probsTemp.filter { it.second >= curThreshold }.size
+                    probsTemp.filter { it.second >= currentThreshold }.size
                 ),
                 topK
             )
