@@ -211,7 +211,7 @@ object Arithmetic {
                 // Stegasuras: "Get selected index based on binary fraction from message bits"
                 // Process cipher bits in portions of size precision
                 // Unlike Python, Kotlin doesn't handle "cipherBitString.substring(startIndex = i, endIndex = i + precision)" gracefully if i + precision is too large
-                var messageBits = if (i + precision < cipherBitString.length) {
+                var cipherBitSubstring = if (i + precision < cipherBitString.length) {
                     cipherBitString.substring(startIndex = i, endIndex = i + precision)
                 }
                 else {
@@ -220,13 +220,13 @@ object Arithmetic {
 
                 // Append 0s to last cipher bits to make last portion of size precision as well
                 if (i + precision > cipherBitString.length) {
-                    messageBits += "0".repeat(i + precision - cipherBitString.length)
+                    cipherBitSubstring += "0".repeat(i + precision - cipherBitString.length)
                 }
 
                 // Convert portion of cipher bits to integer for comparison with cumulated probabilities
                 // Find position of first token with cumulated probability larger than this integer, i.e. find relevant sub-interval of current interval
                 // => sampledToken is already determined here, next steps only calculate new interval
-                val messageIdx = Format.asInteger(messageBits)                                 // Stegasuras would reverse messageBits, shouldn't be necessary here
+                val messageIdx = Format.asInteger(cipherBitSubstring)                                 // Stegasuras would reverse cipherBitSubstring, shouldn't be necessary here
                 val selection = cumulatedProbabilities.indexOfFirst { it.second > messageIdx }
 
                 // Stegasuras: "Calculate new range as ints"
