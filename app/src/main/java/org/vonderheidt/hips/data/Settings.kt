@@ -3,6 +3,8 @@ package org.vonderheidt.hips.data
 import org.vonderheidt.hips.utils.ConversionMode
 import org.vonderheidt.hips.utils.LlamaCpp
 import org.vonderheidt.hips.utils.SteganographyMode
+import kotlin.math.ceil
+import kotlin.math.log2
 
 /**
  * Object (i.e. singleton class) that represents the user settings. Holds default values to be set upon installation of this app.
@@ -52,7 +54,7 @@ object Settings {
         }
         if (llm) {
             topK = if (LlamaCpp.isInMemory()) LlamaCpp.getVocabSize() else defaultTopK
-            precision = defaultPrecision
+            precision = if (LlamaCpp.isInMemory()) ceil(log2(topK.toFloat())).toInt() else defaultPrecision
         }
     }
 }
