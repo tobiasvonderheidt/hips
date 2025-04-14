@@ -242,8 +242,8 @@ object Arithmetic {
 
                 // Stegasuras: "Consume most significant bits which are now fixed and update interval"
                 // Arithmetic coding encodes data into a number by iteratively narrowing initial interval defined earlier
-                // Therefore most significant bits are fixed first (~ numSameFromBeg), determining the order of magnitude of the number, less significant bits are fixed later
-                val numberOfEncodedBits = numSameFromBeg(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive)
+                // Therefore most significant bits are fixed first (~ numberOfSameBitsFromBeginning), determining the order of magnitude of the number, less significant bits are fixed later
+                val numberOfEncodedBits = numberOfSameBitsFromBeginning(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive)
                 i += numberOfEncodedBits
 
                 // New interval is determined by setting unfixed bits to 0 for bottom end, to 1 for top end
@@ -482,7 +482,7 @@ object Arithmetic {
 
             // Stegasuras: "Emit most significant bits which are now fixed and update interval"
             // Inline += operation to eliminate newBits variable
-            val numberOfEncodedBits = numSameFromBeg(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive)
+            val numberOfEncodedBits = numberOfSameBitsFromBeginning(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive)
 
             cipherBitString += if (i == coverTextTokens.size - 1) {
                 newIntervalBottomBitsInclusive
@@ -522,23 +522,23 @@ object Arithmetic {
      * @return Number of bits that are the same from the beginning of the bit strings.
      * @throws IllegalArgumentException If the two bit strings are of different length.
      */
-    private fun numSameFromBeg(bitString1: String, bitString2: String): Int {
+    private fun numberOfSameBitsFromBeginning(bitString1: String, bitString2: String): Int {
         // Only edge case covered in Stegasuras
         if (bitString1.length != bitString2.length) {
             throw IllegalArgumentException("The bit strings are of different length")
         }
 
-        var numSameFromBeg = 0
+        var numberOfSameBitsFromBeginning = 0
 
         for (i in bitString1.indices) {
             if (bitString1[i] != bitString2[i]) {
                 break
             }
 
-            numSameFromBeg++
+            numberOfSameBitsFromBeginning++
         }
 
-        return numSameFromBeg
+        return numberOfSameBitsFromBeginning
     }
 
     /**
