@@ -226,6 +226,7 @@ object Arithmetic {
                 // Convert portion of cipher bits to integer for comparison with cumulated probabilities
                 // Find position of first token with cumulated probability larger than this integer, i.e. find relevant sub-interval of current interval
                 // => sampledToken is already determined here, next steps only calculate new interval
+                // Stegasuras variable "message_idx" is redundant
                 val selectedSubinterval = cumulatedProbabilities.indexOfFirst { it.second > Format.asInteger(cipherBitSubstring) }  // Stegasuras would reverse cipherBitSubstring, shouldn't be necessary here
 
                 // Stegasuras: "Calculate new range as ints"
