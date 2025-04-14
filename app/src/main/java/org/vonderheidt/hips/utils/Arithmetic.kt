@@ -153,14 +153,14 @@ object Arithmetic {
 
                 // Stegasuras: "Rescale to correct range"
                 // Top k probabilities sum up to something in [0,1), rescale to [0, 2^precision)
-                var topProbsTempSum = 0.0f
+                var sum = 0.0f
 
                 for ((token, probability) in topScaledProbabilities) {
-                    topProbsTempSum += probability
+                    sum += probability
                 }
 
                 topScaledProbabilities = topScaledProbabilities.map {
-                    Pair(it.first, it.second / topProbsTempSum * currentIntervalRange)
+                    Pair(it.first, it.second / sum * currentIntervalRange)
                 }
 
                 // Stegasuras: "Round probabilities to integers given precision"
@@ -364,14 +364,14 @@ object Arithmetic {
             var topScaledProbabilities = probsTemp.take(k)
 
             // Stegasuras: "Rescale to correct range"
-            var topProbsTempSum = 0.0f
+            var sum = 0.0f
 
             for ((token, probability) in topScaledProbabilities) {
-                topProbsTempSum += probability
+                sum += probability
             }
 
             topScaledProbabilities = topScaledProbabilities.map {
-                Pair(it.first, it.second / topProbsTempSum * currentIntervalRange)
+                Pair(it.first, it.second / sum * currentIntervalRange)
             }
 
             // Stegasuras: "Round probabilities to integers given precision"
