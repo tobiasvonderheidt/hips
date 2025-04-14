@@ -146,9 +146,9 @@ object Arithmetic {
                 )
 
                 // Keep tokens with top k (!= topK) probabilities
-                // Stegasuras would use variable name probsTempInt here already, but requires overwriting one data type with another (List<Pair<Int, Float>> vs List<Pair<Int, Int>>)
+                // Stegasuras would use variable name roundedScaledProbabilities here already, but requires overwriting one data type with another (List<Pair<Int, Float>> vs List<Pair<Int, Int>>)
                 // Possible in Python, but not in Kotlin
-                // Use topProbsTemp for now to be similar to decode, probsTempInt only after rounding probabilities from float to int below
+                // Use topProbsTemp for now to be similar to decode, roundedScaledProbabilities only after rounding probabilities from float to int below
                 var topProbsTemp = probsTemp.take(k)
 
                 // Stegasuras: "Rescale to correct range"
@@ -164,8 +164,8 @@ object Arithmetic {
                 }
 
                 // Stegasuras: "Round probabilities to integers given precision"
-                // Variable name probsTempInt is appropriate now
-                val probsTempInt = topProbsTemp.map {
+                // Variable name roundedScaledProbabilities is appropriate now
+                val roundedScaledProbabilities = topProbsTemp.map {
                     Pair(it.first, it.second.roundToInt())
                 }
 
@@ -174,7 +174,7 @@ object Arithmetic {
                 var cumulatedProbabilities = mutableListOf<Pair<Int, Int>>()
                 var cumulatedProbability = 0
 
-                for ((token, probability) in probsTempInt) {
+                for ((token, probability) in roundedScaledProbabilities) {
                     cumulatedProbability += probability
                     cumulatedProbabilities.add(Pair(token, cumulatedProbability))
                 }
@@ -375,14 +375,14 @@ object Arithmetic {
             }
 
             // Stegasuras: "Round probabilities to integers given precision"
-            val probsTempInt = topProbsTemp.map {
+            val roundedScaledProbabilities = topProbsTemp.map {
                 Pair(it.first, it.second.roundToInt())
             }
 
             var cumulatedProbabilities = mutableListOf<Pair<Int, Int>>()
             var cumulatedProbability = 0
 
-            for ((token, probability) in probsTempInt) {
+            for ((token, probability) in roundedScaledProbabilities) {
                 cumulatedProbability += probability
                 cumulatedProbabilities.add(Pair(token, cumulatedProbability))
             }
