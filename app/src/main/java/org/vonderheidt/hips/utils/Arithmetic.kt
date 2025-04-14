@@ -426,6 +426,12 @@ object Arithmetic {
 
             // Stegasuras: "Handle most errors that could happen because of BPE with heuristic"
             // Rank can't exceed cumulatedProbabilities indices
+            // TODO
+            //  Translation of else-if case is untested as no input could be found that triggers it
+            //  Should probably throw exception instead of setting rank = 0 at the end and wrap Steganography.encode in try-catch too
+            //  Variable names therefore are still like in Stegasuras
+            //  Control flow too, should be simplified to if and if instead of if and else-if since first if calls break anyway
+            //  But BPE fixes don't seem necessary anymore after precision for compression/decompression was increased
             if (rank >= k) {
                 // Actual cover text token i
                 val trueTokenText = LlamaCpp.detokenize(intArrayOf(coverTextTokens[i]))
@@ -462,7 +468,44 @@ object Arithmetic {
                         isBpeFixed = true
                         break
                     }
+                    // Stegasuras: "Is there a more likely longer token that could be the actual token generated?"
+                    else if (trueTokenText.length < propTokenText.length && trueTokenText == propTokenText.substring(startIndex = 0, endIndex = trueTokenText.length)) {
+                        var wholeText = trueTokenText
+                        var numExtra = 1
+
+                        while (wholeText.length < propTokenText.length) {
+                            wholeText += LlamaCpp.detokenize(intArrayOf(coverTextTokens[i + numExtra]))
+                            numExtra++
+                        }
+
+                        if (propTokenText == wholeText.substring(startIndex = 0, endIndex = propTokenText.length)) {
+                            rank = rankIdx
+
+                            coverTextTokens[i] = scaledProbabilities[rankIdx].first
+
+                            for (j in 1 until numExtra) {
+                                coverTextTokens = coverTextTokens
+                                    .toMutableList()
+                                    .apply { removeAt(i+j) }
+                                    .toIntArray()
+                            }
+
+                            if (propTokenText.length < wholeText.length) {
+                                val suffix = wholeText.substring(startIndex = propTokenText.length)
+                                val suffixTokens = LlamaCpp.tokenize(suffix)
+
+                                coverTextTokens = coverTextTokens
+                                    .toMutableList()
+                                    .apply { addAll(i + 1, suffixTokens.toMutableList()) } // Stegasuras: "Insert suffix tokens into list"
+                                    .toIntArray()
+                            }
+
+                            isBpeFixed = true
+                            break
+                        }
+                    }
                 }
+
                 // Stegasuras: "Unable to fix BPE error"
                 if (!isBpeFixed) {
                     rank = 0
