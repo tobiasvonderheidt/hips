@@ -81,9 +81,9 @@ object Arithmetic {
             contextTokens += LlamaCpp.getEndOfGeneration()
         }
 
-        // Define initial interval as [0, maxVal) = [0, 2^precision)
-        val maxVal = 1 shl precision
-        val curInterval = intArrayOf(0, maxVal) // Stegasuras: "Bottom inclusive, top exclusive"
+        // Define initial interval as [0, 2^precision)
+        // Stegasuras variable "max_val" is redundant
+        val curInterval = intArrayOf(0, 1 shl precision) // Stegasuras: "Bottom inclusive, top exclusive"
 
         // </Logic specific to arithmetic coding>
 
@@ -152,7 +152,7 @@ object Arithmetic {
                 var topProbsTemp = probsTemp.take(k)
 
                 // Stegasuras: "Rescale to correct range"
-                // Top k probabilities sum up to something in [0,1), rescale to [0, maxVal)
+                // Top k probabilities sum up to something in [0,1), rescale to [0, 2^precision)
                 var topProbsTempSum = 0.0f
 
                 for ((token, probability) in topProbsTemp) {
@@ -317,8 +317,7 @@ object Arithmetic {
             // Not done here as ASCII NUL is used instead (see translation of "partial" variable in encode)
         }
 
-        val maxVal = 1 shl precision
-        val curInterval = intArrayOf(0, maxVal)
+        val curInterval = intArrayOf(0, 1 shl precision)
 
         // </Logic specific to arithmetic coding>
 
