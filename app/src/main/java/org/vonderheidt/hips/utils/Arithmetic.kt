@@ -171,41 +171,41 @@ object Arithmetic {
 
                 // Replace probability with cumulated probability
                 // Probabilities that would round to 0 were cut off earlier, so all at least round to 1, no collisions possible
-                var cumProbs = mutableListOf<Pair<Int, Int>>()
+                var cumulatedProbabilities = mutableListOf<Pair<Int, Int>>()
                 var cumulatedProbability = 0
 
                 for ((token, probability) in probsTempInt) {
                     cumulatedProbability += probability
-                    cumProbs.add(Pair(token, cumulatedProbability))
+                    cumulatedProbabilities.add(Pair(token, cumulatedProbability))
                 }
 
                 // Stegasuras: "Remove any elements from the bottom if rounding caused the total prob to be too large"
                 // Remove tokens with low probabilities if their cumulated probability is too large
-                val overfillIndex = cumProbs.filter { it.second > curIntRange }
+                val overfillIndex = cumulatedProbabilities.filter { it.second > curIntRange }
 
                 if (overfillIndex.isNotEmpty()) {
-                    cumProbs = cumProbs.dropLast(overfillIndex.size).toMutableList()
+                    cumulatedProbabilities = cumulatedProbabilities.dropLast(overfillIndex.size).toMutableList()
                 }
 
                 // Stegasuras: "Add any mass to the top if removing/rounding causes the total prob to be too small"
                 // Removing tokens might have created a gap at the top, i.e. a sub-interval between cumulated probability of last token and top of current interval, that doesn't correspond to any token
                 // Arithmetic coding only works when current interval is exactly filled, so close the gap by shifting all cumulated probabilities up by its size
                 // Equivalent to first token having larger probability, shifting cumulated probabilities of all subsequent tokens
-                cumProbs = cumProbs.map {
-                    Pair(it.first, it.second + curIntRange - cumProbs.last().second)
+                cumulatedProbabilities = cumulatedProbabilities.map {
+                    Pair(it.first, it.second + curIntRange - cumulatedProbabilities.last().second)
                 }.toMutableList()
 
                 // Stegasuras: "Convert to position in range"
                 // Shifts all cumulated probabilities up again by bottom of current interval
-                cumProbs = cumProbs.map {
+                cumulatedProbabilities = cumulatedProbabilities.map {
                     Pair(it.first, it.second + currentInterval[0])
                 }.toMutableList()
 
                 // Replace token of last sub-interval with ASCII NUL character so it can be sampled during decompression
                 // Similar to explanation at https://www.youtube.com/watch?v=RFWJM8JMXBs
                 if (isDecompression) {
-                    probsTemp[cumProbs.lastIndex] = Pair(LlamaCpp.getAsciiNul(), probsTemp[cumProbs.lastIndex].second)
-                    cumProbs[cumProbs.lastIndex] = Pair(LlamaCpp.getAsciiNul(), cumProbs[cumProbs.lastIndex].second)
+                    probsTemp[cumulatedProbabilities.lastIndex] = Pair(LlamaCpp.getAsciiNul(), probsTemp[cumulatedProbabilities.lastIndex].second)
+                    cumulatedProbabilities[cumulatedProbabilities.lastIndex] = Pair(LlamaCpp.getAsciiNul(), cumulatedProbabilities[cumulatedProbabilities.lastIndex].second)
                 }
 
                 // Stegasuras: "Get selected index based on binary fraction from message bits"
@@ -227,14 +227,14 @@ object Arithmetic {
                 // Find position of first token with cumulated probability larger than this integer, i.e. find relevant sub-interval of current interval
                 // => sampledToken is already determined here, next steps only calculate new interval
                 val messageIdx = Format.asInteger(messageBits)                                 // Stegasuras would reverse messageBits, shouldn't be necessary here
-                val selection = cumProbs.indexOfFirst { it.second > messageIdx }
+                val selection = cumulatedProbabilities.indexOfFirst { it.second > messageIdx }
 
                 // Stegasuras: "Calculate new range as ints"
                 // Calculate bottom and top of relevant sub-interval for next iteration
                 // New bottom (inclusive) is top of preceding sub-interval (exclusive there) if relevant one is not the first one, old bottom otherwise
                 // New top (exclusive) is top of relevant sub-interval
-                val newIntBottom = if (selection > 0) cumProbs[selection-1].second else currentInterval[0]
-                val newIntTop = cumProbs[selection].second
+                val newIntBottom = if (selection > 0) cumulatedProbabilities[selection-1].second else currentInterval[0]
+                val newIntTop = cumulatedProbabilities[selection].second
 
                 // Stegasuras: "Convert range to bits"
                 val newIntBottomBitsInc = Format.asBitString(newIntBottom, precision)          // Again, reversing shouldn't be necessary here
@@ -256,7 +256,7 @@ object Arithmetic {
                 currentInterval[1] = Format.asInteger(newIntTopBits) + 1                           // Stegasuras: "+1 here because upper bound is exclusive"
 
                 // Sample token as determined above
-                sampledToken = cumProbs[selection].first
+                sampledToken = cumulatedProbabilities[selection].first
 
                 // </Logic specific to arithmetic coding>
 
@@ -379,45 +379,45 @@ object Arithmetic {
                 Pair(it.first, it.second.roundToInt())
             }
 
-            var cumProbs = mutableListOf<Pair<Int, Int>>()
+            var cumulatedProbabilities = mutableListOf<Pair<Int, Int>>()
             var cumulatedProbability = 0
 
             for ((token, probability) in probsTempInt) {
                 cumulatedProbability += probability
-                cumProbs.add(Pair(token, cumulatedProbability))
+                cumulatedProbabilities.add(Pair(token, cumulatedProbability))
             }
 
             // Stegasuras: "Remove any elements from the bottom if rounding caused the total prob to be too large"
-            val overfillIndex = cumProbs.filter { it.second > curIntRange }
+            val overfillIndex = cumulatedProbabilities.filter { it.second > curIntRange }
 
             if (overfillIndex.isNotEmpty()) {
-                cumProbs = cumProbs.dropLast(overfillIndex.size).toMutableList()
+                cumulatedProbabilities = cumulatedProbabilities.dropLast(overfillIndex.size).toMutableList()
                 // Reassignment of k is new in decode, but not used here as possible BPE errors are ignored below
                 // Logic of Stegasuras is somewhat inverted again
                 // Stegasuras: overfill_index[0] = Index of first token with cumulated probability > cur_int_range
                 //             = Number of tokens with cumulated probability <= cur_int_range
                 //             = Size of cum_probs after it was overwritten there
                 // HiPS: overfillIndex = List of tokens with cumulated probability > curIntRange
-                //       != Size of cumProbs after it was overwritten here
+                //       != Size of cumulatedProbabilities after it was overwritten here
                 // Now "if (rank >= k) { ... }" from BPE fixes below makes sense
-                k = cumProbs.size
+                k = cumulatedProbabilities.size
             }
 
             // Stegasuras: "Add any mass to the top if removing/rounding causes the total prob to be too small"
-            cumProbs = cumProbs.map {
-                Pair(it.first, it.second + curIntRange - cumProbs.last().second)
+            cumulatedProbabilities = cumulatedProbabilities.map {
+                Pair(it.first, it.second + curIntRange - cumulatedProbabilities.last().second)
             }.toMutableList()
 
             // Stegasuras: "Convert to position in range"
-            cumProbs = cumProbs.map {
+            cumulatedProbabilities = cumulatedProbabilities.map {
                 Pair(it.first, it.second + currentInterval[0])
             }.toMutableList()
 
             // Replace token of last sub-interval with ASCII NUL character so it can be sampled during compression
             // Similar to explanation at https://www.youtube.com/watch?v=RFWJM8JMXBs
             if (isCompression) {
-                probsTemp[cumProbs.lastIndex] = Pair(LlamaCpp.getAsciiNul(), probsTemp[cumProbs.lastIndex].second)
-                cumProbs[cumProbs.lastIndex] = Pair(LlamaCpp.getAsciiNul(), cumProbs[cumProbs.lastIndex].second)
+                probsTemp[cumulatedProbabilities.lastIndex] = Pair(LlamaCpp.getAsciiNul(), probsTemp[cumulatedProbabilities.lastIndex].second)
+                cumulatedProbabilities[cumulatedProbabilities.lastIndex] = Pair(LlamaCpp.getAsciiNul(), cumulatedProbabilities[cumulatedProbabilities.lastIndex].second)
             }
 
             // Stegasuras: n/a
@@ -425,7 +425,7 @@ object Arithmetic {
             var rank = probsTemp.indexOfFirst { it.first == coverTextTokens[i] }
 
             // Stegasuras: "Handle most errors that could happen because of BPE with heuristic"
-            // Rank can't exceed cumProbs indices
+            // Rank can't exceed cumulatedProbabilities indices
             if (rank >= k) {
                 // Actual cover text token i
                 val trueTokenText = LlamaCpp.detokenize(intArrayOf(coverTextTokens[i]))
@@ -473,8 +473,8 @@ object Arithmetic {
             val selection = rank
 
             // Stegasuras: "Calculate new range as ints"
-            val newIntBottom = if (selection > 0) cumProbs[selection-1].second else currentInterval[0]
-            val newIntTop = cumProbs[selection].second
+            val newIntBottom = if (selection > 0) cumulatedProbabilities[selection-1].second else currentInterval[0]
+            val newIntTop = cumulatedProbabilities[selection].second
 
             // Stegasuras: "Convert range to bits"
             val newIntBottomBitsInc = Format.asBitString(newIntBottom, precision)
