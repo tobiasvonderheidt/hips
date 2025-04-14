@@ -233,11 +233,11 @@ object Arithmetic {
                 // Calculate bottom and top of relevant sub-interval for next iteration
                 // New bottom (inclusive) is top of preceding sub-interval (exclusive there) if relevant one is not the first one, old bottom otherwise
                 // New top (exclusive) is top of relevant sub-interval
-                val newIntBottom = if (selection > 0) cumulatedProbabilities[selection-1].second else currentInterval[0]
+                val newIntervalBottom = if (selection > 0) cumulatedProbabilities[selection-1].second else currentInterval[0]
                 val newIntTop = cumulatedProbabilities[selection].second
 
                 // Stegasuras: "Convert range to bits"
-                val newIntervalBottomBitsInclusive = Format.asBitString(newIntBottom, precision)          // Again, reversing shouldn't be necessary here
+                val newIntervalBottomBitsInclusive = Format.asBitString(newIntervalBottom, precision)          // Again, reversing shouldn't be necessary here
                 val newIntervalTopBitsInclusive = Format.asBitString(newIntTop - 1, precision)            // Stegasuras: "-1 here because upper bound is exclusive" (i.e. newIntervalTopBitsInclusive is inclusive)
 
                 // Stegasuras: "Consume most significant bits which are now fixed and update interval"
@@ -473,11 +473,11 @@ object Arithmetic {
             val selection = rank
 
             // Stegasuras: "Calculate new range as ints"
-            val newIntBottom = if (selection > 0) cumulatedProbabilities[selection-1].second else currentInterval[0]
+            val newIntervalBottom = if (selection > 0) cumulatedProbabilities[selection-1].second else currentInterval[0]
             val newIntTop = cumulatedProbabilities[selection].second
 
             // Stegasuras: "Convert range to bits"
-            val newIntervalBottomBitsInclusive = Format.asBitString(newIntBottom, precision)
+            val newIntervalBottomBitsInclusive = Format.asBitString(newIntervalBottom, precision)
             val newIntervalTopBitsInclusive = Format.asBitString(newIntTop - 1, precision)
 
             // Stegasuras: "Emit most significant bits which are now fixed and update interval"
