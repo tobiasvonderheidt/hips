@@ -83,7 +83,7 @@ object Arithmetic {
 
         // Define initial interval as [0, 2^precision)
         // Stegasuras variable "max_val" is redundant
-        val curInterval = intArrayOf(0, 1 shl precision) // Stegasuras: "Bottom inclusive, top exclusive"
+        val currentInterval = intArrayOf(0, 1 shl precision) // Stegasuras: "Bottom inclusive, top exclusive"
 
         // </Logic specific to arithmetic coding>
 
@@ -123,7 +123,7 @@ object Arithmetic {
 
                 // Stegasuras: "Cut off low probabilities that would be rounded to 0"
                 // curThreshold needs to be float as it will be compared to probabilities, float division happens implicitly in Python but explicitly in Kotlin
-                val curIntRange = curInterval[1] - curInterval[0]
+                val curIntRange = currentInterval[1] - currentInterval[0]
                 val curThreshold = 1.0f / curIntRange
 
                 // Invert logic of Stegasuras:
@@ -198,7 +198,7 @@ object Arithmetic {
                 // Stegasuras: "Convert to position in range"
                 // Shifts all cumulated probabilities up again by bottom of current interval
                 cumProbs = cumProbs.map {
-                    Pair(it.first, it.second + curInterval[0])
+                    Pair(it.first, it.second + currentInterval[0])
                 }.toMutableList()
 
                 // Replace token of last sub-interval with ASCII NUL character so it can be sampled during decompression
@@ -233,7 +233,7 @@ object Arithmetic {
                 // Calculate bottom and top of relevant sub-interval for next iteration
                 // New bottom (inclusive) is top of preceding sub-interval (exclusive there) if relevant one is not the first one, old bottom otherwise
                 // New top (exclusive) is top of relevant sub-interval
-                val newIntBottom = if (selection > 0) cumProbs[selection-1].second else curInterval[0]
+                val newIntBottom = if (selection > 0) cumProbs[selection-1].second else currentInterval[0]
                 val newIntTop = cumProbs[selection].second
 
                 // Stegasuras: "Convert range to bits"
@@ -252,8 +252,8 @@ object Arithmetic {
                 val newIntBottomBits = newIntBottomBitsInc.substring(startIndex = numBitsEncoded) + "0".repeat(numBitsEncoded)
                 val newIntTopBits = newIntTopBitsInc.substring(startIndex = numBitsEncoded) + "1".repeat(numBitsEncoded)
 
-                curInterval[0] = Format.asInteger(newIntBottomBits)                            // Again, reversing shouldn't be necessary here
-                curInterval[1] = Format.asInteger(newIntTopBits) + 1                           // Stegasuras: "+1 here because upper bound is exclusive"
+                currentInterval[0] = Format.asInteger(newIntBottomBits)                            // Again, reversing shouldn't be necessary here
+                currentInterval[1] = Format.asInteger(newIntTopBits) + 1                           // Stegasuras: "+1 here because upper bound is exclusive"
 
                 // Sample token as determined above
                 sampledToken = cumProbs[selection].first
@@ -317,7 +317,7 @@ object Arithmetic {
             // Not done here as ASCII NUL is used instead (see translation of "partial" variable in encode)
         }
 
-        val curInterval = intArrayOf(0, 1 shl precision)
+        val currentInterval = intArrayOf(0, 1 shl precision)
 
         // </Logic specific to arithmetic coding>
 
@@ -349,7 +349,7 @@ object Arithmetic {
                 .toMutableList()
 
             // Stegasuras: "Cut off low probabilities that would be rounded to 0"
-            val curIntRange = curInterval[1] - curInterval[0]
+            val curIntRange = currentInterval[1] - currentInterval[0]
             val curThreshold = 1.0f / curIntRange
 
             var k = min(
@@ -410,7 +410,7 @@ object Arithmetic {
 
             // Stegasuras: "Convert to position in range"
             cumProbs = cumProbs.map {
-                Pair(it.first, it.second + curInterval[0])
+                Pair(it.first, it.second + currentInterval[0])
             }.toMutableList()
 
             // Replace token of last sub-interval with ASCII NUL character so it can be sampled during compression
@@ -473,7 +473,7 @@ object Arithmetic {
             val selection = rank
 
             // Stegasuras: "Calculate new range as ints"
-            val newIntBottom = if (selection > 0) cumProbs[selection-1].second else curInterval[0]
+            val newIntBottom = if (selection > 0) cumProbs[selection-1].second else currentInterval[0]
             val newIntTop = cumProbs[selection].second
 
             // Stegasuras: "Convert range to bits"
@@ -494,8 +494,8 @@ object Arithmetic {
             val newIntBottomBits = newIntBottomBitsInc.substring(startIndex = numBitsEncoded) + "0".repeat(numBitsEncoded)
             val newIntTopBits = newIntTopBitsInc.substring(startIndex = numBitsEncoded) + "1".repeat(numBitsEncoded)
 
-            curInterval[0] = Format.asInteger(newIntBottomBits)
-            curInterval[1] = Format.asInteger(newIntTopBits) + 1
+            currentInterval[0] = Format.asInteger(newIntBottomBits)
+            currentInterval[1] = Format.asInteger(newIntTopBits) + 1
 
             // </Logic specific to arithmetic coding>
 
