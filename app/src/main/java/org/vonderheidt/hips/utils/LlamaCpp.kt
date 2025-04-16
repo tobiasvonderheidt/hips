@@ -116,20 +116,18 @@ object LlamaCpp {
     }
 
     /**
-     * Function to suppress special tokens, i.e. eog (end-of-generation) and control tokens.
+     * Function to suppress special tokens, i.e. end-of-generation (eog) and control tokens.
      *
      * Suppressing eog tokens is needed to avoid early termination when generating a cover text.
+     * Additionally suppressing control tokens is needed to avoid artefacts when generating a conversation of cover texts.
      *
-     * Additionally suppressing control tokens is beneficial because the cover text then can't contain any invisible tokens.
-     * This ensures integrity when using a non-digital communication medium.
-     *
-     * @param logits Logits for the last token of the prompt (= last row of logits matrix).
+     * @param probabilities Probabilities for the last token of the prompt (= last row of logits matrix after normalization).
      */
-    fun suppressSpecialTokens(logits: FloatArray) {
-        // Suppress special tokens by setting their logits to negative values
-        for (token in logits.indices) {
+    fun suppressSpecialTokens(probabilities: FloatArray) {
+        // Suppress special tokens by setting their probabilities to 0
+        for (token in probabilities.indices) {
             if (isSpecial(token)) {
-                logits[token] = 0f
+                probabilities[token] = 0f
             }
         }
     }
