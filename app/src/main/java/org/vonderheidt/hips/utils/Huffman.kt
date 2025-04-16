@@ -107,10 +107,13 @@ object Huffman {
             // Suppress special tokens to avoid early termination before all bits of secret message are encoded
             LlamaCpp.suppressSpecialTokens(logits)
 
+            // Normalize logits to probabilities
+            val probabilities = Statistics.softmax(logits)
+
             // Huffman sampling to encode bits of secret message into tokens
             if (i < cipherBitString.length) {
                 // Get top 2^bitsPerToken logits for last token of prompt (= height of Huffman tree)
-                val topLogits = getTopLogits(logits)
+                val topLogits = getTopLogits(probabilities)
 
                 // Construct Huffman tree from top logits
                 val huffmanCoding = HuffmanCoding<Int, Float>()
@@ -147,7 +150,7 @@ object Huffman {
             // Greedy sampling to pick most likely token until last sentence is finished
             else {
                 // Get most likely token by sampling top 2^0 = 1 tokens
-                sampledToken = getTopLogits(logits, 0).keys.first()
+                sampledToken = getTopLogits(probabilities, 0).keys.first()
 
                 // Update flag
                 isLastSentenceFinished = LlamaCpp.isEndOfSentence(sampledToken)
@@ -194,8 +197,11 @@ object Huffman {
             // Suppress special tokens
             LlamaCpp.suppressSpecialTokens(logits)
 
+            // Normalize logits to probabilities
+            val probabilities = Statistics.softmax(logits)
+
             // Get top 2^bitsPerToken logits
-            val topLogits = getTopLogits(logits)
+            val topLogits = getTopLogits(probabilities)
 
             // Construct Huffman tree
             val huffmanCoding = HuffmanCoding<Int, Float>()
