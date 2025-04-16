@@ -71,6 +71,8 @@ import org.vonderheidt.hips.utils.ConversionMode
 import org.vonderheidt.hips.utils.LLM
 import org.vonderheidt.hips.utils.LlamaCpp
 import org.vonderheidt.hips.utils.SteganographyMode
+import java.util.Locale
+import kotlin.math.log2
 import kotlin.math.roundToInt
 
 /**
@@ -508,7 +510,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             Spacer(modifier = modifier.height(16.dp))
 
                             // Precision
-                            Text(text = "Set the precision for token sampling.")
+                            Text(text = "Set the precision for token sampling (recommended is around log₂($selectedTopK) = ${String.format(Locale.ENGLISH, "%.1f", log2(selectedTopK.toFloat()))} bits).")
 
                             Spacer(modifier = modifier.height(16.dp))
 
