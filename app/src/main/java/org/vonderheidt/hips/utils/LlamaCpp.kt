@@ -129,7 +129,7 @@ object LlamaCpp {
         // Suppress special tokens by setting their logits to negative values
         for (token in logits.indices) {
             if (isSpecial(token)) {
-                logits[token] = -100f
+                logits[token] = 0f
             }
         }
     }

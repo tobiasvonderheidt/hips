@@ -104,11 +104,11 @@ object Huffman {
             // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
             val logits = LlamaCpp.getLogits(if (isFirstRun) contextTokens else intArrayOf(sampledToken)).last()
 
-            // Suppress special tokens to avoid early termination before all bits of secret message are encoded
-            LlamaCpp.suppressSpecialTokens(logits)
-
             // Normalize logits to probabilities
             val probabilities = Statistics.softmax(logits)
+
+            // Suppress special tokens to avoid early termination before all bits of secret message are encoded
+            LlamaCpp.suppressSpecialTokens(probabilities)
 
             // Huffman sampling to encode bits of secret message into tokens
             if (i < cipherBitString.length) {
@@ -194,11 +194,11 @@ object Huffman {
             // Calculate the logit matrix again initially from context tokens, then from last cover text token, and get last row
             val logits = LlamaCpp.getLogits(if (isFirstRun) contextTokens else intArrayOf(coverTextToken)).last()
 
-            // Suppress special tokens
-            LlamaCpp.suppressSpecialTokens(logits)
-
             // Normalize logits to probabilities
             val probabilities = Statistics.softmax(logits)
+
+            // Suppress special tokens
+            LlamaCpp.suppressSpecialTokens(probabilities)
 
             // Get top 2^bitsPerToken logits
             val topLogits = getTopLogits(probabilities)
