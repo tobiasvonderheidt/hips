@@ -480,7 +480,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                         // Show settings specific to LLM only when it is in memory
                         if (isInMemory) {
                             // Top k
-                            Text(text = "Set the top k for token sampling.")
+                            Text(text = "Set the top k for token sampling (number of most likely tokens from the LLM's vocabulary to consider, 100% is recommended).")
 
                             Spacer(modifier = modifier.height(16.dp))
 
