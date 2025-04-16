@@ -515,6 +515,8 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             Spacer(modifier = modifier.height(16.dp))
 
                             // Again, do int conversion here as slider only allows floats
+                            // Don't expose 64 bit precision from Arithmetic compression in UI for steganography, encoding would take ages and offer no benefit with vocabulary sizes of current LLMs
+                            // Using 64 bits internally also avoids integer overflows at 31-32 bits
                             Slider(
                                 value = selectedPrecision.toFloat(),
                                 onValueChange = {
