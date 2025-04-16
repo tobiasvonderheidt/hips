@@ -71,7 +71,7 @@ import org.vonderheidt.hips.utils.ConversionMode
 import org.vonderheidt.hips.utils.LLM
 import org.vonderheidt.hips.utils.LlamaCpp
 import org.vonderheidt.hips.utils.SteganographyMode
-import java.util.Locale
+import kotlin.math.ceil
 import kotlin.math.log2
 import kotlin.math.roundToInt
 
@@ -446,7 +446,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                 // Specific settings for each steganography mode
                 when (selectedSteganographyMode) {
                     SteganographyMode.Arithmetic -> {
-                        Text(text = "Set the temperature for token sampling (\"creativity\" of the LLM, you can play around with this).")
+                        Text(text = "Set the temperature for token sampling. This is the \"creativity\" of the LLM. You can play around with it.")
 
                         Spacer(modifier = modifier.height(16.dp))
 
@@ -480,7 +480,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                         // Show settings specific to LLM only when it is in memory
                         if (isInMemory) {
                             // Top k
-                            Text(text = "Set the top k for token sampling (number of most likely tokens from the LLM's vocabulary to consider, 100% is recommended).")
+                            Text(text = "Set the top k for token sampling. This is the number of most likely tokens from the LLM's vocabulary to consider. 100% (= ${LlamaCpp.getVocabSize()} tokens) is recommended.")
 
                             Spacer(modifier = modifier.height(16.dp))
 
@@ -510,7 +510,11 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             Spacer(modifier = modifier.height(16.dp))
 
                             // Precision
-                            Text(text = "Set the precision for token sampling (recommended is around log₂($selectedTopK) = ${String.format(Locale.ENGLISH, "%.1f", log2(selectedTopK.toFloat()))} bits, extremes produce longer cover texts).")
+                            Text(
+                                text = "Set the precision for token sampling. Recommended is ⌈log₂($selectedTopK)⌉ = "
+                                        + if (selectedTopK > 0) { "${ceil(log2(selectedTopK.toFloat())).toInt()}" } else { "n/a" }
+                                        + " bits. Other values can be more efficient, but extremes produce long cover texts."
+                            )
 
                             Spacer(modifier = modifier.height(16.dp))
 
@@ -581,7 +585,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                     }
                     */
                     SteganographyMode.Huffman -> {
-                        Text(text = "Set the bits per token (higher is more efficient, but less coherent).")
+                        Text(text = "Set the number of bits to encode per cover text token. Higher is more efficient, but less coherent.")
 
                         Spacer(modifier = modifier.height(16.dp))
 
