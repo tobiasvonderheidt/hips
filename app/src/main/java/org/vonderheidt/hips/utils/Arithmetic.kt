@@ -104,12 +104,8 @@ object Arithmetic {
             // Suppress special tokens to avoid early termination before all bits of secret message are encoded
             LlamaCpp.suppressSpecialTokens(logits)
 
-            // <Logic specific to arithmetic coding>
-
             // Normalize logits to probabilities
             val probabilities = Statistics.softmax(logits)
-
-            // </Logic specific to arithmetic coding>
 
             // Arithmetic sampling to encode bits of secret message into tokens
             if (i < cipherBitString.length) {
@@ -338,10 +334,10 @@ object Arithmetic {
             // Suppress special tokens
             LlamaCpp.suppressSpecialTokens(logits)
 
-            // <Logic specific to arithmetic coding>
-
             // Similar to encode
             val probabilities = Statistics.softmax(logits)
+
+            // <Logic specific to arithmetic coding>
 
             val scaledProbabilities = probabilities
                 .mapIndexed { token, probability -> token to probability/temperature }
