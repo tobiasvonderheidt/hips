@@ -510,7 +510,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             Spacer(modifier = modifier.height(16.dp))
 
                             // Precision
-                            Text(text = "Set the precision for token sampling (recommended is around log₂($selectedTopK) = ${String.format(Locale.ENGLISH, "%.1f", log2(selectedTopK.toFloat()))} bits).")
+                            Text(text = "Set the precision for token sampling (recommended is around log₂($selectedTopK) = ${String.format(Locale.ENGLISH, "%.1f", log2(selectedTopK.toFloat()))} bits, extremes produce longer cover texts).")
 
                             Spacer(modifier = modifier.height(16.dp))
 
