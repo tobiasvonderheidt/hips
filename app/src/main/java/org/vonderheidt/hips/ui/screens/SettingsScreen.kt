@@ -446,7 +446,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                 // Specific settings for each steganography mode
                 when (selectedSteganographyMode) {
                     SteganographyMode.Arithmetic -> {
-                        Text(text = "Set the temperature for token sampling (\"creativity\" of the LLM).")
+                        Text(text = "Set the temperature for token sampling (\"creativity\" of the LLM, you can play around with this).")
 
                         Spacer(modifier = modifier.height(16.dp))
 
