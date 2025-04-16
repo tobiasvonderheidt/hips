@@ -113,11 +113,11 @@ object Huffman {
             // Huffman sampling to encode bits of secret message into tokens
             if (i < cipherBitString.length) {
                 // Get top 2^bitsPerToken logits for last token of prompt (= height of Huffman tree)
-                val topLogits = getTopProbabilities(probabilities)
+                val topProbabilities = getTopProbabilities(probabilities)
 
                 // Construct Huffman tree from top logits
                 val huffmanCoding = HuffmanCoding<Int, Float>()
-                huffmanCoding.buildHuffmanTree(topLogits)
+                huffmanCoding.buildHuffmanTree(topProbabilities)
                 huffmanCoding.mergeHuffmanNodes()
                 val root = huffmanCoding.generateHuffmanCodes()
 
@@ -201,11 +201,11 @@ object Huffman {
             LlamaCpp.suppressSpecialTokens(probabilities)
 
             // Get top 2^bitsPerToken logits
-            val topLogits = getTopProbabilities(probabilities)
+            val topProbabilities = getTopProbabilities(probabilities)
 
             // Construct Huffman tree
             val huffmanCoding = HuffmanCoding<Int, Float>()
-            huffmanCoding.buildHuffmanTree(topLogits)
+            huffmanCoding.buildHuffmanTree(topProbabilities)
             huffmanCoding.mergeHuffmanNodes()
             huffmanCoding.generateHuffmanCodes()        // Return value (root) is not needed here as Huffman tree is not traversed manually
 
@@ -235,12 +235,12 @@ object Huffman {
      * @return Map of top 2^bitsPerToken probabilities and the corresponding token IDs.
      */
     private fun getTopProbabilities(probabilities: FloatArray, bitsPerToken: Int = Settings.bitsPerToken): Map<Int, Float> {
-        val topLogits = probabilities
+        val topProbabilities = probabilities
             .mapIndexed{ token, logit -> token to logit }   // Convert to List<Pair<Int, Float>> so token IDs won't get lost
             .sortedByDescending { it.second }               // Sort pairs descending based on logits
             .take(1 shl bitsPerToken)                       // Take top 2^bitsPerToken pairs
             .toMap()                                        // Convert to Map<Int, Float> for Huffman tree (ensures there can't be any duplicate token IDs)
 
-        return topLogits
+        return topProbabilities
     }
 }
