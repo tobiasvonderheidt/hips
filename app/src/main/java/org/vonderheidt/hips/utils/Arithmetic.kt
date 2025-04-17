@@ -388,6 +388,7 @@ object Arithmetic {
 
             if (overfill.isNotEmpty()) {
                 cumulatedProbabilities = cumulatedProbabilities.dropLast(overfill.size).toMutableList()
+                /*
                 // Reassignment of k is new in decode, but not used here as possible BPE errors are ignored below
                 // Logic of Stegasuras is somewhat inverted again
                 // Stegasuras: overfill_index[0] = Index of first token with cumulated probability > cur_int_range
@@ -397,6 +398,7 @@ object Arithmetic {
                 //       != Size of cumulatedProbabilities after it was overwritten here
                 // Now "if (rank >= k) { ... }" from BPE fixes below makes sense
                 k = cumulatedProbabilities.size
+                */
             }
 
             // Stegasuras: "Add any mass to the top if removing/rounding causes the total prob to be too small"
@@ -420,6 +422,7 @@ object Arithmetic {
             // Determine rank of predicted token amongst all tokens based on its probability
             var rank = scaledProbabilities.indexOfFirst { it.first == coverTextTokens[i] }
 
+            /*
             // Stegasuras: "Handle most errors that could happen because of BPE with heuristic"
             // Rank can't exceed cumulatedProbabilities indices
             // TODO
@@ -507,6 +510,7 @@ object Arithmetic {
                     rank = 0
                 }
             }
+            */
 
             // Sample token at (corrected) rank
             val selectedSubinterval = rank
