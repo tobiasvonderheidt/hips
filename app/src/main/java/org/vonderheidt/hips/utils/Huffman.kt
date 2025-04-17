@@ -104,17 +104,20 @@ object Huffman {
             // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
             val logits = LlamaCpp.getLogits(if (isFirstRun) contextTokens else intArrayOf(sampledToken)).last()
 
+            // Normalize logits to probabilities
+            val probabilities = Statistics.softmax(logits)
+
             // Suppress special tokens to avoid early termination before all bits of secret message are encoded
-            LlamaCpp.suppressSpecialTokens(logits)
+            LlamaCpp.suppressSpecialTokens(probabilities)
 
             // Huffman sampling to encode bits of secret message into tokens
             if (i < cipherBitString.length) {
                 // Get top 2^bitsPerToken logits for last token of prompt (= height of Huffman tree)
-                val topLogits = getTopLogits(logits)
+                val topProbabilities = getTopProbabilities(probabilities)
 
                 // Construct Huffman tree from top logits
                 val huffmanCoding = HuffmanCoding<Int, Float>()
-                huffmanCoding.buildHuffmanTree(topLogits)
+                huffmanCoding.buildHuffmanTree(topProbabilities)
                 huffmanCoding.mergeHuffmanNodes()
                 val root = huffmanCoding.generateHuffmanCodes()
 
@@ -147,7 +150,7 @@ object Huffman {
             // Greedy sampling to pick most likely token until last sentence is finished
             else {
                 // Get most likely token by sampling top 2^0 = 1 tokens
-                sampledToken = getTopLogits(logits, 0).keys.first()
+                sampledToken = getTopProbabilities(probabilities, 0).keys.first()
 
                 // Update flag
                 isLastSentenceFinished = LlamaCpp.isEndOfSentence(sampledToken)
@@ -191,15 +194,18 @@ object Huffman {
             // Calculate the logit matrix again initially from context tokens, then from last cover text token, and get last row
             val logits = LlamaCpp.getLogits(if (isFirstRun) contextTokens else intArrayOf(coverTextToken)).last()
 
+            // Normalize logits to probabilities
+            val probabilities = Statistics.softmax(logits)
+
             // Suppress special tokens
-            LlamaCpp.suppressSpecialTokens(logits)
+            LlamaCpp.suppressSpecialTokens(probabilities)
 
             // Get top 2^bitsPerToken logits
-            val topLogits = getTopLogits(logits)
+            val topProbabilities = getTopProbabilities(probabilities)
 
             // Construct Huffman tree
             val huffmanCoding = HuffmanCoding<Int, Float>()
-            huffmanCoding.buildHuffmanTree(topLogits)
+            huffmanCoding.buildHuffmanTree(topProbabilities)
             huffmanCoding.mergeHuffmanNodes()
             huffmanCoding.generateHuffmanCodes()        // Return value (root) is not needed here as Huffman tree is not traversed manually
 
@@ -220,21 +226,21 @@ object Huffman {
     }
 
     /**
-     * Function to get the top 2^bitsPerToken logits for the last token of the prompt. Keeps track of the corresponding token IDs in a map.
+     * Function to get the top 2^bitsPerToken probabilities for the last token of the prompt. Keeps track of the corresponding token IDs in a map.
      *
      * Parameter `bits_per_word` from Stegasuras was renamed to `bitsPerToken`.
      *
-     * @param logits Logits for the last token of the prompt (= last row of logits matrix).
+     * @param probabilities Probabilities for the last token of the prompt (= last row of logits matrix after normalization).
      * @param bitsPerToken Number of bits to encode/decode per cover text token (= height of Huffman tree). Determined by Settings object.
-     * @return Map of top 2^bitsPerToken logits and the corresponding token IDs.
+     * @return Map of top 2^bitsPerToken probabilities and the corresponding token IDs.
      */
-    private fun getTopLogits(logits: FloatArray, bitsPerToken: Int = Settings.bitsPerToken): Map<Int, Float> {
-        val topLogits = logits
+    private fun getTopProbabilities(probabilities: FloatArray, bitsPerToken: Int = Settings.bitsPerToken): Map<Int, Float> {
+        val topProbabilities = probabilities
             .mapIndexed{ token, logit -> token to logit }   // Convert to List<Pair<Int, Float>> so token IDs won't get lost
             .sortedByDescending { it.second }               // Sort pairs descending based on logits
             .take(1 shl bitsPerToken)                       // Take top 2^bitsPerToken pairs
             .toMap()                                        // Convert to Map<Int, Float> for Huffman tree (ensures there can't be any duplicate token IDs)
 
-        return topLogits
+        return topProbabilities
     }
 }

@@ -71,6 +71,8 @@ import org.vonderheidt.hips.utils.ConversionMode
 import org.vonderheidt.hips.utils.LLM
 import org.vonderheidt.hips.utils.LlamaCpp
 import org.vonderheidt.hips.utils.SteganographyMode
+import kotlin.math.ceil
+import kotlin.math.log2
 import kotlin.math.roundToInt
 
 /**
@@ -444,7 +446,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                 // Specific settings for each steganography mode
                 when (selectedSteganographyMode) {
                     SteganographyMode.Arithmetic -> {
-                        Text(text = "Set the temperature for token sampling (\"creativity\" of the LLM).")
+                        Text(text = "Set the temperature for token sampling. This is the \"creativity\" of the LLM. You can play around with it.")
 
                         Spacer(modifier = modifier.height(16.dp))
 
@@ -478,7 +480,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                         // Show settings specific to LLM only when it is in memory
                         if (isInMemory) {
                             // Top k
-                            Text(text = "Set the top k for token sampling.")
+                            Text(text = "Set the top k for token sampling. This is the number of most likely tokens from the LLM's vocabulary to consider. 100% (= ${LlamaCpp.getVocabSize()} tokens) is recommended.")
 
                             Spacer(modifier = modifier.height(16.dp))
 
@@ -508,11 +510,17 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             Spacer(modifier = modifier.height(16.dp))
 
                             // Precision
-                            Text(text = "Set the precision for token sampling.")
+                            Text(
+                                text = "Set the precision for token sampling. Recommended is ⌈log₂($selectedTopK)⌉ = "
+                                        + if (selectedTopK > 0) { "${ceil(log2(selectedTopK.toFloat())).toInt()}" } else { "n/a" }
+                                        + " bits. Other values can be more efficient, but extremes produce long cover texts."
+                            )
 
                             Spacer(modifier = modifier.height(16.dp))
 
                             // Again, do int conversion here as slider only allows floats
+                            // Don't expose 64 bit precision from Arithmetic compression in UI for steganography, encoding would take ages and offer no benefit with vocabulary sizes of current LLMs
+                            // Using 64 bits internally also avoids integer overflows at 31-32 bits
                             Slider(
                                 value = selectedPrecision.toFloat(),
                                 onValueChange = {
@@ -577,7 +585,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                     }
                     */
                     SteganographyMode.Huffman -> {
-                        Text(text = "Set the bits per token (higher is more efficient, but less coherent).")
+                        Text(text = "Set the number of bits to encode per cover text token. Higher is more efficient, but less coherent.")
 
                         Spacer(modifier = modifier.height(16.dp))
 

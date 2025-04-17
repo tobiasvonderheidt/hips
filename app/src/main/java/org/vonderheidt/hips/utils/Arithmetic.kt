@@ -25,7 +25,7 @@ object Arithmetic {
             coverText = preparedSecretMessage,
             temperature = 1.0f,
             topK = LlamaCpp.getVocabSize(),
-            precision = 30
+            precision = 62
         )
     }
 
@@ -44,7 +44,7 @@ object Arithmetic {
             cipherBits = paddedPlainBits,
             temperature = 1.0f,
             topK = LlamaCpp.getVocabSize(),
-            precision = 30
+            precision = 62
         )
     }
 
@@ -83,7 +83,7 @@ object Arithmetic {
 
         // Define initial interval as [0, 2^precision)
         // Stegasuras variable "max_val" is redundant
-        val currentInterval = intArrayOf(0, 1 shl precision) // Stegasuras: "Bottom inclusive, top exclusive"
+        val currentInterval = longArrayOf(0L, 1L shl precision) // Stegasuras: "Bottom inclusive, top exclusive"
 
         // </Logic specific to arithmetic coding>
 
@@ -101,15 +101,11 @@ object Arithmetic {
             // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
             val logits = LlamaCpp.getLogits(if (isFirstRun) contextTokens else intArrayOf(sampledToken)).last()
 
-            // Suppress special tokens to avoid early termination before all bits of secret message are encoded
-            LlamaCpp.suppressSpecialTokens(logits)
-
-            // <Logic specific to arithmetic coding>
-
             // Normalize logits to probabilities
             val probabilities = Statistics.softmax(logits)
 
-            // </Logic specific to arithmetic coding>
+            // Suppress special tokens to avoid early termination before all bits of secret message are encoded
+            LlamaCpp.suppressSpecialTokens(probabilities)
 
             // Arithmetic sampling to encode bits of secret message into tokens
             if (i < cipherBitString.length) {
@@ -171,8 +167,8 @@ object Arithmetic {
 
                 // Replace probability with cumulated probability
                 // Probabilities that would round to 0 were cut off earlier, so all at least round to 1, no collisions possible
-                var cumulatedProbabilities = mutableListOf<Pair<Int, Int>>()
-                var cumulatedProbability = 0
+                var cumulatedProbabilities = mutableListOf<Pair<Int, Long>>()
+                var cumulatedProbability = 0L
 
                 for ((token, probability) in roundedScaledProbabilities) {
                     cumulatedProbability += probability
@@ -227,7 +223,7 @@ object Arithmetic {
                 // Find position of first token with cumulated probability larger than this integer, i.e. find relevant sub-interval of current interval
                 // => sampledToken is already determined here, next steps only calculate new interval
                 // Stegasuras variable "message_idx" is redundant
-                val selectedSubinterval = cumulatedProbabilities.indexOfFirst { it.second > Format.asInteger(cipherBitSubstring) }  // Stegasuras would reverse cipherBitSubstring, shouldn't be necessary here
+                val selectedSubinterval = cumulatedProbabilities.indexOfFirst { it.second > Format.asLong(cipherBitSubstring) }  // Stegasuras would reverse cipherBitSubstring, shouldn't be necessary here
 
                 // Stegasuras: "Calculate new range as ints"
                 // Calculate bottom and top of relevant sub-interval for next iteration
@@ -252,8 +248,8 @@ object Arithmetic {
                 val newIntervalBottomBits = newIntervalBottomBitsInclusive.substring(startIndex = numberOfEncodedBits) + "0".repeat(numberOfEncodedBits)
                 val newIntervalTopBits = newIntervalTopBitsInclusive.substring(startIndex = numberOfEncodedBits) + "1".repeat(numberOfEncodedBits)
 
-                currentInterval[0] = Format.asInteger(newIntervalBottomBits)                            // Again, reversing shouldn't be necessary here
-                currentInterval[1] = Format.asInteger(newIntervalTopBits) + 1                           // Stegasuras: "+1 here because upper bound is exclusive"
+                currentInterval[0] = Format.asLong(newIntervalBottomBits)                            // Again, reversing shouldn't be necessary here
+                currentInterval[1] = Format.asLong(newIntervalTopBits) + 1                           // Stegasuras: "+1 here because upper bound is exclusive"
 
                 // Sample token as determined above
                 sampledToken = cumulatedProbabilities[selectedSubinterval].first
@@ -317,7 +313,7 @@ object Arithmetic {
             // Not done here as ASCII NUL is used instead (see translation of "partial" variable in encode)
         }
 
-        val currentInterval = intArrayOf(0, 1 shl precision)
+        val currentInterval = longArrayOf(0L, 1L shl precision)
 
         // </Logic specific to arithmetic coding>
 
@@ -335,13 +331,13 @@ object Arithmetic {
             // Calculate the logit matrix again initially from context tokens, then from last cover text token, and get last row
             val logits = LlamaCpp.getLogits(if (isFirstRun) contextTokens else intArrayOf(coverTextToken)).last()
 
-            // Suppress special tokens
-            LlamaCpp.suppressSpecialTokens(logits)
-
-            // <Logic specific to arithmetic coding>
-
             // Similar to encode
             val probabilities = Statistics.softmax(logits)
+
+            // Suppress special tokens
+            LlamaCpp.suppressSpecialTokens(probabilities)
+
+            // <Logic specific to arithmetic coding>
 
             val scaledProbabilities = probabilities
                 .mapIndexed { token, probability -> token to probability/temperature }
@@ -379,8 +375,8 @@ object Arithmetic {
                 Pair(it.first, it.second.roundToInt())
             }
 
-            var cumulatedProbabilities = mutableListOf<Pair<Int, Int>>()
-            var cumulatedProbability = 0
+            var cumulatedProbabilities = mutableListOf<Pair<Int, Long>>()
+            var cumulatedProbability = 0L
 
             for ((token, probability) in roundedScaledProbabilities) {
                 cumulatedProbability += probability
@@ -392,6 +388,7 @@ object Arithmetic {
 
             if (overfill.isNotEmpty()) {
                 cumulatedProbabilities = cumulatedProbabilities.dropLast(overfill.size).toMutableList()
+                /*
                 // Reassignment of k is new in decode, but not used here as possible BPE errors are ignored below
                 // Logic of Stegasuras is somewhat inverted again
                 // Stegasuras: overfill_index[0] = Index of first token with cumulated probability > cur_int_range
@@ -401,6 +398,7 @@ object Arithmetic {
                 //       != Size of cumulatedProbabilities after it was overwritten here
                 // Now "if (rank >= k) { ... }" from BPE fixes below makes sense
                 k = cumulatedProbabilities.size
+                */
             }
 
             // Stegasuras: "Add any mass to the top if removing/rounding causes the total prob to be too small"
@@ -424,6 +422,7 @@ object Arithmetic {
             // Determine rank of predicted token amongst all tokens based on its probability
             var rank = scaledProbabilities.indexOfFirst { it.first == coverTextTokens[i] }
 
+            /*
             // Stegasuras: "Handle most errors that could happen because of BPE with heuristic"
             // Rank can't exceed cumulatedProbabilities indices
             // TODO
@@ -511,6 +510,7 @@ object Arithmetic {
                     rank = 0
                 }
             }
+            */
 
             // Sample token at (corrected) rank
             val selectedSubinterval = rank
@@ -537,8 +537,8 @@ object Arithmetic {
             val newIntervalBottomBits = newIntervalBottomBitsInclusive.substring(startIndex = numberOfEncodedBits) + "0".repeat(numberOfEncodedBits)
             val newIntervalTopBits = newIntervalTopBitsInclusive.substring(startIndex = numberOfEncodedBits) + "1".repeat(numberOfEncodedBits)
 
-            currentInterval[0] = Format.asInteger(newIntervalBottomBits)
-            currentInterval[1] = Format.asInteger(newIntervalTopBits) + 1
+            currentInterval[0] = Format.asLong(newIntervalBottomBits)
+            currentInterval[1] = Format.asLong(newIntervalTopBits) + 1
 
             // </Logic specific to arithmetic coding>
 

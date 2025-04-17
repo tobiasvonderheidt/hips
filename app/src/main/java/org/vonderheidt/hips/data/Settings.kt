@@ -3,6 +3,8 @@ package org.vonderheidt.hips.data
 import org.vonderheidt.hips.utils.ConversionMode
 import org.vonderheidt.hips.utils.LlamaCpp
 import org.vonderheidt.hips.utils.SteganographyMode
+import kotlin.math.ceil
+import kotlin.math.log2
 
 /**
  * Object (i.e. singleton class) that represents the user settings. Holds default values to be set upon installation of this app.
@@ -11,11 +13,11 @@ object Settings {
     // Define default values
     private val defaultConversionMode = ConversionMode.Arithmetic
     private val defaultSystemPrompt = """
-        You and I are friends, talking about what we did on the weekend.
-        Use phrases and abbreviations typical for chat messages.
-        Be brief and casual, but friendly and engaging.
+        Let's do a role play. You and I are friends, texting with each other.
+        We talk about what we did on the weekend.
+        Be brief and casual, but friendly and engaging. Use emojis and phrases typical for chat messages.
     """.trimIndent().replace("\n", " ")
-    private val defaultNumberOfMessages = 0
+    private val defaultNumberOfMessages = 2
     private val defaultSteganographyMode = SteganographyMode.Arithmetic
     private val defaultTemperature = 1.0f
     private val defaultTopK = 0             // Only used if LLM is not in memory
@@ -52,7 +54,7 @@ object Settings {
         }
         if (llm) {
             topK = if (LlamaCpp.isInMemory()) LlamaCpp.getVocabSize() else defaultTopK
-            precision = defaultPrecision
+            precision = if (LlamaCpp.isInMemory()) ceil(log2(topK.toFloat())).toInt() else defaultPrecision
         }
     }
 }

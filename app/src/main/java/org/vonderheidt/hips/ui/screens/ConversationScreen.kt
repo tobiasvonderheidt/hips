@@ -70,6 +70,7 @@ import org.vonderheidt.hips.utils.ConversionMode
 import org.vonderheidt.hips.utils.Huffman
 import org.vonderheidt.hips.utils.LlamaCpp
 import org.vonderheidt.hips.utils.Steganography
+import org.vonderheidt.hips.utils.SteganographyMode
 
 /**
  * Function that defines the conversation screen.
@@ -178,6 +179,11 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                             // Check if LLM is loaded
                             if (!LlamaCpp.isInMemory()) {
                                 Toast.makeText(currentLocalContext, "Load LLM into memory first", Toast.LENGTH_LONG).show()
+                                return@IconButton
+                            }
+                            // Check settings
+                            if (Settings.steganographyMode == SteganographyMode.Arithmetic && (Settings.topK == 0 || Settings.precision == 0)) {
+                                Toast.makeText(currentLocalContext, "Arithmetic coding needs topK > 0 and precision > 0", Toast.LENGTH_LONG).show()
                                 return@IconButton
                             }
                             // Only 1 message can be decoded at a time
@@ -399,6 +405,11 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                         // Check if LLM is loaded
                                         if (!LlamaCpp.isInMemory()) {
                                             Toast.makeText(currentLocalContext, "Load LLM into memory first", Toast.LENGTH_LONG).show()
+                                            return@detectTapGestures
+                                        }
+                                        // Check settings
+                                        if (Settings.steganographyMode == SteganographyMode.Arithmetic && (Settings.topK == 0 || Settings.precision == 0)) {
+                                            Toast.makeText(currentLocalContext, "Arithmetic coding needs topK > 0 and precision > 0", Toast.LENGTH_LONG).show()
                                             return@detectTapGestures
                                         }
                                         // Only send non-blank messages, allows to switch user on button press
