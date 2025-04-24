@@ -15,16 +15,16 @@ HiPS consists of three screens. Let's walk through them.
 On the home screen, you get steganography as a standalone functionality to use with existing instant messengers. You can encode a secret message into a cover text and decode it vice versa. Both encoding and decoding need a context. If the conversation switch is toggled on, the cover text will be a response to the context. Otherwise, it will be a continuation. Just copy-paste your messages here to use it.
 
 <div style="display: flex; justify-content: space-around;">
-    <img src="./screenshots/hips_home_screen_a.png" alt="Home screen" style="width: 45%; margin: 25px;"/>
-    <img src="./screenshots/hips_home_screen_b.png" alt="Home screen" style="width: 45%; margin: 25px;"/>
+    <img src="./screenshots/hips_home_screen_a.png" alt="Home screen" style="width: 45%; margin: 5px;"/>
+    <img src="./screenshots/hips_home_screen_b.png" alt="Home screen" style="width: 45%; margin: 5px;"/>
 </div>
 
 ### Conversation screen
 On the conversation screen, you can see a more sophisticated demonstration of what steganography could look like if it was integrated into existing instant messengers. It shows a typical chat conversation, but the messages you type in are only stored locally and not sent anywhere. Effectively, you chat with yourself by constantly switching roles. You can switch roles manually by tapping the send button. By long-pressing it, you can toggle steganography on or off. If you long-press a message, you can decode or delete it.
 
 <div style="display: flex; justify-content: space-around;">
-    <img src="./screenshots/hips_conversation_screen_a.png" alt="Conversation screen" style="width: 45%; margin: 25px;"/>
-    <img src="./screenshots/hips_conversation_screen_b.png" alt="Conversation screen" style="width: 45%; margin: 25px;"/>
+    <img src="./screenshots/hips_conversation_screen_a.png" alt="Conversation screen" style="width: 45%; margin: 5px;"/>
+    <img src="./screenshots/hips_conversation_screen_b.png" alt="Conversation screen" style="width: 45%; margin: 5px;"/>
 </div>
 
 ### Settings screen
@@ -39,9 +39,9 @@ On the settings screen, you can manage the LLM and configure the steganography a
 The reset button at the bottom can be used to find sensible defaults for settings specific to the LLM (only when it is in memory). You need to do this when first using the app.
 
 <div style="display: flex; justify-content: space-around;">
-    <img src="./screenshots/hips_settings_screen_a.png" alt="Settings screen" style="width: 30%; margin: 25px;"/>
-    <img src="./screenshots/hips_settings_screen_b.png" alt="Settings screen" style="width: 30%; margin: 25px;"/>
-    <img src="./screenshots/hips_settings_screen_c.png" alt="Settings screen" style="width: 30%; margin: 25px;"/>
+    <img src="./screenshots/hips_settings_screen_a.png" alt="Settings screen" style="width: 30%; margin: 5px;"/>
+    <img src="./screenshots/hips_settings_screen_b.png" alt="Settings screen" style="width: 30%; margin: 5px;"/>
+    <img src="./screenshots/hips_settings_screen_c.png" alt="Settings screen" style="width: 30%; margin: 5px;"/>
 </div>
 
 ## Permissions
