@@ -370,7 +370,28 @@ extern "C" JNIEXPORT jobjectArray JNICALL Java_org_vonderheidt_hips_utils_LlamaC
     //  But is used like this in https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp
     llama_batch batch = llama_batch_get_one(cppTokens, n_tokens);
 
+    // Check if model architecture is encoder-decoder or decoder-only
+    if (llama_model_has_encoder(model)) {
+        LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_getLogits: Encoder-decoder model");
+
+        // Run encoder to calculate logits for the next token
+        // Return value of llama_encode only indicates success/error, actual result is stored internally in cppCtx
+        int32_t encode = llama_encode(cppCtx, batch);
+
+        // Log success/error message from llama.cpp docs
+        if (encode == 0) {
+            LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_getLogits: encode = %d, success", encode);
+        }
+        else {
+            LOGe("Java_org_vonderheidt_hips_utils_LlamaCpp_getLogits: encode = %d, error. the KV cache state is restored to the state before this call", encode);
+        }
+    }
+    else {
+        LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_getLogits: Decoder-only model");
+    }
+
     // Run decoder to calculate logits for the next token
+    // Return value of llama_decode only indicates success/error, actual result is stored internally in cppCtx
     int32_t decode = llama_decode(cppCtx, batch);
 
     // Log success or error message
@@ -443,7 +464,30 @@ extern "C" JNIEXPORT jint JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_sampl
     //  But is used like this in https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp
     llama_batch batch = llama_batch_get_one(&lastToken, 1);
 
+    // Check if model architecture is encoder-decoder or decoder-only
+    const llama_model* model = llama_get_model(cppCtx);
+
+    if (llama_model_has_encoder(model)) {
+        LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_sample: Encoder-decoder model");
+
+        // Run encoder to calculate logits for the next token
+        // Return value of llama_encode only indicates success/error, actual result is stored internally in cppCtx
+        int32_t encode = llama_encode(cppCtx, batch);
+
+        // Log success/error message from llama.cpp docs
+        if (encode == 0) {
+            LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_sample: encode = %d, success", encode);
+        }
+        else {
+            LOGe("Java_org_vonderheidt_hips_utils_LlamaCpp_sample: encode = %d, error. the KV cache state is restored to the state before this call", encode);
+        }
+    }
+    else {
+        LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_sample: Decoder-only model");
+    }
+
     // Run decoder to calculate logits for the next token
+    // Return value of llama_decode only indicates success/error, actual result is stored internally in cppCtx
     int32_t decode = llama_decode(cppCtx, batch);
 
     // Log success or error message
