@@ -29,7 +29,7 @@ object Steganography {
 
         val plainBits = when (conversionMode) {
             ConversionMode.Arithmetic -> { Arithmetic.compress(preparedSecretMessage) }
-            ConversionMode.Huffman -> { Huffman.compress(preparedSecretMessage) }
+            /* ConversionMode.Huffman -> { Huffman.compress(preparedSecretMessage) } */
             ConversionMode.UTF8 -> { UTF8.encode(preparedSecretMessage) }
         }
 
@@ -82,7 +82,7 @@ object Steganography {
 
         val preparedSecretMessage = when (conversionMode) {
             ConversionMode.Arithmetic -> { Arithmetic.decompress(plainBits) }
-            ConversionMode.Huffman -> { Huffman.decompress(plainBits, inverseHuffmanCodes!!) }
+            /* ConversionMode.Huffman -> { Huffman.decompress(plainBits, inverseHuffmanCodes!!) } */
             ConversionMode.UTF8 -> { UTF8.decode(plainBits) }
         }
 
