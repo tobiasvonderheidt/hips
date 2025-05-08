@@ -1,5 +1,5 @@
 # HiPS
-Hiding in Plain Sight (HiPS) is an Android app that performs steganography in chat messages. It runs a LLM locally to encode a secret message into a cover text you can send over instant messengers like WhatsApp or Signal. You can use it to protect your privacy from unwanted eavesdroppers like abusive partners or law enforcement officers.
+Hiding in Plain Sight (HiPS) is an Android app that performs steganography in chat messages. It runs a LLM locally to encode a secret message into a cover text you can send over instant messengers like WhatsApp or Signal. You can use it to protect your privacy against unwanted eavesdroppers like abusive partners or law enforcement officers.
 
 ## Contents
 - [HiPS](#hips)
