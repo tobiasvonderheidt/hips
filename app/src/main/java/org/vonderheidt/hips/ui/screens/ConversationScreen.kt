@@ -442,7 +442,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
                                             // Generate cover text and update database
                                             val newCoverText = if (isPlainText) newSecretMessage else Steganography.encode(context, newSecretMessage)
-                                            val newInverseHuffmanCodes = if (!isPlainText && Settings.conversionMode == ConversionMode.Huffman) Json.encodeToString(Huffman.getLastInverseHuffmanCodes()) else null
+                                            val newInverseHuffmanCodes = /* if (!isPlainText && Settings.conversionMode == ConversionMode.Huffman) Json.encodeToString(Huffman.getLastInverseHuffmanCodes()) else */ null
 
                                             val newMessage = Message(newSender.id, newReceiver.id, newCoverText, newInverseHuffmanCodes)
 

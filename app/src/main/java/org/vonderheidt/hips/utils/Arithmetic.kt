@@ -25,7 +25,7 @@ object Arithmetic {
             coverText = preparedSecretMessage,
             temperature = 1.0f,
             topK = LlamaCpp.getVocabSize(),
-            precision = 62
+            precision = 40
         )
     }
 
