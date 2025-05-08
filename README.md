@@ -39,9 +39,8 @@ On the settings screen, you can manage the LLM and configure the steganography a
 The reset button at the bottom can be used to find sensible defaults for settings specific to the LLM (only when it is in memory). You need to do this when first using the app.
 
 <div style="display: flex; justify-content: space-around;">
-    <img src="./screenshots/hips_settings_screen_a.png" alt="Settings screen" style="width: 30%; margin: 5px;"/>
-    <img src="./screenshots/hips_settings_screen_b.png" alt="Settings screen" style="width: 30%; margin: 5px;"/>
-    <img src="./screenshots/hips_settings_screen_c.png" alt="Settings screen" style="width: 30%; margin: 5px;"/>
+    <img src="./screenshots/hips_settings_screen_a.png" alt="Settings screen" style="width: 45%; margin: 5px;"/>
+    <img src="./screenshots/hips_settings_screen_b.png" alt="Settings screen" style="width: 45%; margin: 5px;"/>
 </div>
 
 ## Permissions
