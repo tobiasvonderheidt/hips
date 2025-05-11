@@ -21,6 +21,7 @@ android {
         externalNativeBuild {
             cmake {
                 // CLI arguments for CMake
+                arguments += "-DLLAMA_CURL=OFF"
                 arguments += "-DLLAMA_BUILD_COMMON=ON"
                 arguments += "-DCMAKE_BUILD_TYPE=Release"
 

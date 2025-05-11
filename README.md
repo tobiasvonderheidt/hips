@@ -1,3 +1,5 @@
+<img align="left" width="80" height="80" src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" alt="App icon">
+
 # HiPS
 Hiding in Plain Sight (HiPS) is an Android app that performs steganography in chat messages. It runs a LLM locally to encode a secret message into a cover text you can send over instant messengers like WhatsApp or Signal. You can use it to protect your privacy against unwanted eavesdroppers like abusive partners or law enforcement officers.
 
@@ -28,13 +30,15 @@ On the conversation screen, you can see a more sophisticated demonstration of wh
 </div>
 
 ### Settings screen
-On the settings screen, you can manage the LLM and configure the steganography algorithms. All parameters are exposed and arranged in the order they are used in during encoding;
+On the settings screen, you can manage the LLM and configure the steganography algorithms. All parameters are exposed and arranged in the order they are used in during encoding:
 - Conversion of the secret message from string to binary
+  - Arithmetic compression
+  - UTF-8 conversion
 - System prompt for the LLM
 - Number of messages to use as context on the conversation screen
 - Steganography algorithms and their specific settings
-  - Arithmetic: `temperature`, `topK` and `precision`
-  - Huffman: `bitsPerToken`
+  - Arithmetic coding: `temperature`, `topK` and `precision`
+  - Huffman coding: `bitsPerToken`
 
 The reset button at the bottom can be used to find sensible defaults for settings specific to the LLM (only when it is in memory). You need to do this when first using the app.
 
@@ -52,7 +56,8 @@ The reset button at the bottom can be used to find sensible defaults for setting
 - DataStore Preferences: Store settings.
 - Room: Local SQLite database.
   - KSP: Annotation processing.
-- Kotlinx Serialization: Serialize Huffman codes to store in the database.
+
+To implement Huffman compression, Kotlinx Serialization is used to serialize Huffman codes. As this is still experimental, it is not exposed in the UI.
 
 ## Acknowledgements
 - The steganography is based on the Stegasuras project ([Paper](https://arxiv.org/abs/1909.01496), [Demo](https://steganography.live/), [Code](https://github.com/harvardnlp/NeuralSteganography)).
