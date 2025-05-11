@@ -28,7 +28,7 @@ On the conversation screen, you can see a more sophisticated demonstration of wh
 </div>
 
 ### Settings screen
-On the settings screen, you can manage the LLM and configure the steganography algorithms. All parameters are exposed and arranged in the order they are used in during encoding;
+On the settings screen, you can manage the LLM and configure the steganography algorithms. All parameters are exposed and arranged in the order they are used in during encoding:
 - Conversion of the secret message from string to binary
 - System prompt for the LLM
 - Number of messages to use as context on the conversation screen
