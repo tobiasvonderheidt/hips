@@ -19,7 +19,7 @@ include(FetchContent)
 FetchContent_Declare(
     llama
     GIT_REPOSITORY https://github.com/ggml-org/llama.cpp
-    GIT_TAG        b1dd4d08e8fe40c9484422c0c5ec9bbd13b067a9 # master as of 2025-05-01
+    GIT_TAG        master
 )
 
 # Fetch llama.cpp (also provides "common")
