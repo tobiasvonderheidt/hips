@@ -102,7 +102,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_load
     llama_context_params params = llama_context_default_params();
 
     // Create context with the LLM (=> context knows its state) and save pointer to it
-    llama_context* cppCtx = llama_new_context_with_model(cppModel, params);
+    llama_context* cppCtx = llama_init_from_model(cppModel, params);
 
     // Log success or error message
     if (cppCtx != nullptr) {
