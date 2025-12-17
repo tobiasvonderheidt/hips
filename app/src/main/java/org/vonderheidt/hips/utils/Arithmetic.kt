@@ -44,7 +44,8 @@ object Arithmetic {
             cipherBits = paddedPlainBits,
             temperature = 1.0f,
             topK = LlamaCpp.getVocabSize(),
-            precision = 62
+            precision = 40
+            // EDIT 1: Matched precision to the value in compress(), both need to work with same interval size
         )
     }
 
@@ -95,7 +96,9 @@ object Arithmetic {
         var sampledToken = -1                   // Will always be overwritten with last cover text token
 
         // Sample tokens until all bits of secret message are encoded and last sentence is finished
-        while (i < cipherBitString.length || !isLastSentenceFinished) {
+        // EDIT 2: Added a check for isDecompression, we are converting bits back to the string so without a check it would loop
+        // forever, trying to finish a sentence
+        while (i < cipherBitString.length || (!isDecompression && !isLastSentenceFinished)) {
             // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp:
             // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
             // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
@@ -239,7 +242,15 @@ object Arithmetic {
                 // Stegasuras: "Consume most significant bits which are now fixed and update interval"
                 // Arithmetic coding encodes data into a number by iteratively narrowing initial interval defined earlier
                 // Therefore most significant bits are fixed first (~ numberOfSameBitsFromBeginning), determining the order of magnitude of the number, less significant bits are fixed later
-                val numberOfEncodedBits = numberOfSameBitsFromBeginning(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive)
+                // EDIT 3: Changed val to var. For cases where the LLM is very confident about the next token, interval barely narrows and
+                // numberOfEncodedBits can be 0, so it would loop. Need to force 1 bit of progress during decompression to avoid this.
+                var numberOfEncodedBits = numberOfSameBitsFromBeginning(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive)
+
+                if (isDecompression && numberOfEncodedBits == 0 && i < cipherBitString.length) {
+                    numberOfEncodedBits = 1
+                }
+                // ======================================================================
+
                 i += numberOfEncodedBits
 
                 // New interval is determined by setting unfixed bits to 0 for bottom end, to 1 for top end
@@ -421,6 +432,12 @@ object Arithmetic {
             // Stegasuras: n/a
             // Determine rank of predicted token amongst all tokens based on its probability
             var rank = scaledProbabilities.indexOfFirst { it.first == coverTextTokens[i] }
+
+            // EDIT 4: Error handling for if the token isn't found in the valid range.
+            if (rank == -1 || rank >= cumulatedProbabilities.size) {
+                throw IllegalArgumentException("Cover text cannot be decoded: token mismatch at position $i")
+            }
+            // ==================================================================
 
             /*
             // Stegasuras: "Handle most errors that could happen because of BPE with heuristic"
