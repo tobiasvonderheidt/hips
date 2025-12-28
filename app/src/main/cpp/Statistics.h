@@ -1,6 +1,8 @@
 #ifndef STATISTICS_H
 #define STATISTICS_H
 
+#include "llama.h"
+
 /**
  * Class that represents statistical functions.
  */
@@ -10,10 +12,10 @@ public:
      * Function to normalize logits to probabilities.
      *
      * @param logits An array of logits.
-     * @param vocabSize Vocabulary size of the LLM.
+     * @param model Memory address of the LLM.
      * @return The array of probabilities.
      */
-    static float* softmax(float* logits, int32_t vocabSize);
+    static float* softmax(float* logits, const llama_model* model);
 };
 
 #endif
