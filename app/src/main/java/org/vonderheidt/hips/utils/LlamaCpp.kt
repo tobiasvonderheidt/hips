@@ -99,10 +99,9 @@ object LlamaCpp {
         }
     }
 
+    // TODO Remove when state management of LLM is translated to C++ as well
     /**
      * Function to get the memory address of the context.
-     *
-     * Helper function only needed until state management of LLM is translated to C++ as well.
      *
      * @return Memory address of the context.
      */
