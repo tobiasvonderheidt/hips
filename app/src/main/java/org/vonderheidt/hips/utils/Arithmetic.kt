@@ -45,7 +45,6 @@ object Arithmetic {
             temperature = 1.0f,
             topK = LlamaCpp.getVocabSize(),
             precision = 40
-            // EDIT 1: Matched precision to the value in compress(), both need to work with same interval size
         )
     }
 
