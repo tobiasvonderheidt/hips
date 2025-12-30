@@ -99,6 +99,16 @@ object LlamaCpp {
         }
     }
 
+    // TODO Remove when state management of LLM is translated to C++ as well
+    /**
+     * Function to get the memory address of the context.
+     *
+     * @return Memory address of the context.
+     */
+    fun getCtx(): Long {
+        return ctx
+    }
+
     /**
      * Wrapper for the `common_detokenize` function of llama.cpp. Detokenizes an array of token IDs into a string.
      *

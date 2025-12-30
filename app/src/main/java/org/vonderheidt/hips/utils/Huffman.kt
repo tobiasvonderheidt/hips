@@ -78,6 +78,33 @@ object Huffman {
      *
      * @param context The context to encode the secret message with.
      * @param cipherBits The encrypted binary representation of the secret message.
+     * @param bitsPerToken Number of bits to encode/decode per cover text token (= height of Huffman tree). Determined by Settings object.
+     * @param ctx Memory address of the context.
+     * @return A cover text containing the secret message.
+     */
+    external fun encode(context: String, cipherBits: ByteArray, bitsPerToken: Int = Settings.bitsPerToken, ctx: Long = LlamaCpp.getCtx()): String
+
+    /**
+     * Function to decode a cover text into (the encrypted binary representation of) the secret message using Huffman decoding.
+     *
+     * Corresponds to Stegasuras method `decode_huffman` in `huffman_baseline.py`.
+     *
+     * @param context The context to decode the cover text with.
+     * @param coverText The cover text containing a secret message.
+     * @param bitsPerToken Number of bits to encode/decode per cover text token (= height of Huffman tree). Determined by Settings object.
+     * @param ctx Memory address of the context.
+     * @return The encrypted binary representation of the secret message.
+     */
+    external fun decode(context: String, coverText: String, bitsPerToken: Int = Settings.bitsPerToken, ctx: Long = LlamaCpp.getCtx()): ByteArray
+
+    /*
+    /**
+     * Function to encode (the encrypted binary representation of) the secret message into a cover text using Huffman encoding.
+     *
+     * Corresponds to Stegasuras method `encode_huffman` in `huffman_baseline.py`. Parameter `finish_sent` was removed (<=> is now hard coded to true).
+     *
+     * @param context The context to encode the secret message with.
+     * @param cipherBits The encrypted binary representation of the secret message.
      * @return A cover text containing the secret message.
      */
     fun encode(context: String, cipherBits: ByteArray): String {
@@ -243,4 +270,5 @@ object Huffman {
 
         return topProbabilities
     }
+    */
 }
