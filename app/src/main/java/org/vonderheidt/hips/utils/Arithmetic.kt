@@ -51,7 +51,7 @@ object Arithmetic {
     /**
      * Function to encode (the encrypted binary representation of) the secret message into a cover text using arithmetic encoding.
      *
-     * Corresponds to Stegasuras method `encode_arithmetic` in `arithmetic.py`. Parameter `finish_sent` was removed (<=> is now hard coded to true).
+     * Corresponds to Stegasuras method `encode_arithmetic` in `arithmetic.py`. Parameter `finish_sent` was removed (i.e. is now hard coded to true for encoding, false for decompression).
      *
      * @param context The context to encode the secret message with.
      * @param cipherBits The encrypted binary representation of the secret message.
@@ -94,9 +94,9 @@ object Arithmetic {
         var isFirstRun = true                   // llama.cpp batch needs to store context tokens in first run, but only last sampled token in subsequent runs
         var sampledToken = -1                   // Will always be overwritten with last cover text token
 
-        // Sample tokens until all bits of secret message are encoded and last sentence is finished
-        // EDIT 2: Added a check for isDecompression, we are converting bits back to the string so without a check it would loop
-        // forever, trying to finish a sentence
+        // Sample tokens until all bits of secret message are encoded
+        // But only finish last sentence during encoding, not during decompression, to avoid infinite loop
+        // Our use of isDecompression here matches control flow of Stegasuras with its finish_sent parameter
         while (i < cipherBitString.length || (!isDecompression && !isLastSentenceFinished)) {
             // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp:
             // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
