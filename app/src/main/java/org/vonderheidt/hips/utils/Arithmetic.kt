@@ -243,10 +243,10 @@ object Arithmetic {
                 // Therefore most significant bits are fixed first (~ numberOfSameBitsFromBeginning), determining the order of magnitude of the number, less significant bits are fixed later
                 var numberOfEncodedBits = numberOfSameBitsFromBeginning(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive)
 
-                if (isDecompression && numberOfEncodedBits == 0 && i < cipherBitString.length) {
                 // Deviation from Stegasuras:
                 // For cases where the LLM is very confident about the next token, interval barely narrows and numberOfEncodedBits can be 0, so it would loop
                 // Need to force 1 bit of progress during decompression to avoid this
+                if (isDecompression && numberOfEncodedBits == 0) {
                     numberOfEncodedBits = 1
                 }
 
