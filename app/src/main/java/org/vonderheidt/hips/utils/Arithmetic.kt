@@ -432,11 +432,12 @@ object Arithmetic {
             // Determine rank of predicted token amongst all tokens based on its probability
             var rank = scaledProbabilities.indexOfFirst { it.first == coverTextTokens[i] }
 
-            // EDIT 4: Error handling for if the token isn't found in the valid range.
+            // Deviation from Stegasuras:
+            // Error handling for if the token isn't found in the valid range
+            // Small chance but possible as token probability has to be > currentThreshold (~ 1/2^precision)
             if (rank == -1 || rank >= cumulatedProbabilities.size) {
                 throw IllegalArgumentException("Cover text cannot be decoded: token mismatch at position $i")
             }
-            // ==================================================================
 
             /*
             // Stegasuras: "Handle most errors that could happen because of BPE with heuristic"
