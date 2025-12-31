@@ -44,14 +44,14 @@ object Arithmetic {
             cipherBits = paddedPlainBits,
             temperature = 1.0f,
             topK = LlamaCpp.getVocabSize(),
-            precision = 62
+            precision = 40
         )
     }
 
     /**
      * Function to encode (the encrypted binary representation of) the secret message into a cover text using arithmetic encoding.
      *
-     * Corresponds to Stegasuras method `encode_arithmetic` in `arithmetic.py`. Parameter `finish_sent` was removed (<=> is now hard coded to true).
+     * Corresponds to Stegasuras method `encode_arithmetic` in `arithmetic.py`. Parameter `finish_sent` was removed (i.e. is now hard coded to true for encoding, false for decompression).
      *
      * @param context The context to encode the secret message with.
      * @param cipherBits The encrypted binary representation of the secret message.
@@ -94,8 +94,10 @@ object Arithmetic {
         var isFirstRun = true                   // llama.cpp batch needs to store context tokens in first run, but only last sampled token in subsequent runs
         var sampledToken = -1                   // Will always be overwritten with last cover text token
 
-        // Sample tokens until all bits of secret message are encoded and last sentence is finished
-        while (i < cipherBitString.length || !isLastSentenceFinished) {
+        // Sample tokens until all bits of secret message are encoded
+        // But only finish last sentence during encoding, not during decompression, to avoid infinite loop
+        // Our use of isDecompression here matches control flow of Stegasuras with its finish_sent parameter
+        while (i < cipherBitString.length || (!isDecompression && !isLastSentenceFinished)) {
             // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp:
             // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
             // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
@@ -239,7 +241,15 @@ object Arithmetic {
                 // Stegasuras: "Consume most significant bits which are now fixed and update interval"
                 // Arithmetic coding encodes data into a number by iteratively narrowing initial interval defined earlier
                 // Therefore most significant bits are fixed first (~ numberOfSameBitsFromBeginning), determining the order of magnitude of the number, less significant bits are fixed later
-                val numberOfEncodedBits = numberOfSameBitsFromBeginning(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive)
+                var numberOfEncodedBits = numberOfSameBitsFromBeginning(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive)
+
+                // Deviation from Stegasuras:
+                // For cases where the LLM is very confident about the next token, interval barely narrows and numberOfEncodedBits can be 0, so it would loop
+                // Need to force 1 bit of progress during decompression to avoid this
+                if (isDecompression && numberOfEncodedBits == 0) {
+                    numberOfEncodedBits = 1
+                }
+
                 i += numberOfEncodedBits
 
                 // New interval is determined by setting unfixed bits to 0 for bottom end, to 1 for top end
@@ -421,6 +431,13 @@ object Arithmetic {
             // Stegasuras: n/a
             // Determine rank of predicted token amongst all tokens based on its probability
             var rank = scaledProbabilities.indexOfFirst { it.first == coverTextTokens[i] }
+
+            // Deviation from Stegasuras:
+            // Error handling for if the token isn't found in the valid range
+            // Small chance but possible as token probability has to be > currentThreshold (~ 1/2^precision)
+            if (rank == -1 || rank >= cumulatedProbabilities.size) {
+                throw IllegalArgumentException("Cover text cannot be decoded: token mismatch at position $i")
+            }
 
             /*
             // Stegasuras: "Handle most errors that could happen because of BPE with heuristic"
