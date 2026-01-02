@@ -66,8 +66,11 @@ llama_token LlamaCpp::getEndOfGeneration(const llama_model* model) {
 }
 
 llama_token LlamaCpp::getAsciiNul(const llama_model* model, const llama_context* ctx) {
+    // Only checks if detokenization contains the ASCII NUL character
+    // Checking if it is equal to it would require constructing a string that only contains the NUL char, which conflicts with C/C++ strings being NUL-terminated
+    // TODO llama.cpp's common_detokenize seems to return a string that only contains the NUL char, figure out how they do it
     for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
-        if (LlamaCpp::detokenize(std::vector<llama_token>{token}, ctx) == "\u0000") {
+        if (LlamaCpp::detokenize(std::vector<llama_token>{token}, ctx).find('\0') != std::string::npos) {
             return token;
         }
     }
