@@ -58,6 +58,37 @@ object Arithmetic {
      * @param temperature The temperature parameter for token sampling. Determined by Settings object.
      * @param topK Number of most likely tokens to consider. Must be less than or equal to the vocabulary size `n_vocab` of the LLM. Determined by Settings object.
      * @param precision Number of bits to encode the top k tokens with. Determined by Settings object.
+     * @param ctx Memory address of the context.
+     * @return A cover text containing the secret message.
+     */
+    external fun encode(context: String, cipherBits: ByteArray, temperature: Float = Settings.temperature, topK: Int = Settings.topK, precision: Int = Settings.precision, ctx: Long = LlamaCpp.getCtx()) : String
+
+    /**
+     * Function to decode a cover text into (the encrypted binary representation of) the secret message using arithmetic decoding.
+     *
+     * Corresponds to Stegasuras method `decode_arithmetic` in `arithmetic.py`.
+     *
+     * @param context The context to decode the cover text with.
+     * @param coverText The cover text containing a secret message.
+     * @param temperature The temperature parameter for token sampling. Determined by Settings object.
+     * @param topK Number of most likely tokens to consider. Must be less than or equal to the vocabulary size `n_vocab` of the LLM. Determined by Settings object.
+     * @param precision Number of bits to encode the top k tokens with. Determined by Settings object.
+     * @param ctx Memory address of the context.
+     * @return The encrypted binary representation of the secret message.
+     */
+    external fun decode(context: String, coverText: String, temperature: Float = Settings.temperature, topK: Int = Settings.topK, precision: Int = Settings.precision, ctx: Long = LlamaCpp.getCtx()) : ByteArray
+
+    /*
+    /**
+     * Function to encode (the encrypted binary representation of) the secret message into a cover text using arithmetic encoding.
+     *
+     * Corresponds to Stegasuras method `encode_arithmetic` in `arithmetic.py`. Parameter `finish_sent` was removed (i.e. is now hard coded to true for encoding, false for decompression).
+     *
+     * @param context The context to encode the secret message with.
+     * @param cipherBits The encrypted binary representation of the secret message.
+     * @param temperature The temperature parameter for token sampling. Determined by Settings object.
+     * @param topK Number of most likely tokens to consider. Must be less than or equal to the vocabulary size `n_vocab` of the LLM. Determined by Settings object.
+     * @param precision Number of bits to encode the top k tokens with. Determined by Settings object.
      * @return A cover text containing the secret message.
      */
     fun encode(context: String, cipherBits: ByteArray, temperature: Float = Settings.temperature, topK: Int = Settings.topK, precision: Int = Settings.precision): String {
@@ -615,4 +646,5 @@ object Arithmetic {
 
         return sampledToken
     }
+    */
 }
