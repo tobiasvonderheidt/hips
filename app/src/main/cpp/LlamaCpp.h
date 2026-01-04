@@ -19,7 +19,7 @@ private:
      * @param ctx Memory address of the context.
      * @return Detokenization as a C++ string.
      */
-    static std::string detokenize(llama_tokens tokens, const llama_context* ctx);
+    static std::string detokenize(const llama_tokens& tokens, const llama_context* ctx);
 
     /**
      * Wrapper for the `llama_vocab_is_eog` and `llama_vocab_is_control` functions of llama.cpp. Checks if a token is a special token.
@@ -48,7 +48,7 @@ public:
      * @param ctx Memory address of the context.
      * @return Detokenization as a Java string.
      */
-    static jstring detokenize(JNIEnv* env, llama_tokens tokens, const llama_context* ctx);
+    static jstring detokenize(JNIEnv* env, const llama_tokens& tokens, const llama_context* ctx);
 
     /**
      * Function to suppress special tokens, i.e. end-of-generation (eog) and control tokens.

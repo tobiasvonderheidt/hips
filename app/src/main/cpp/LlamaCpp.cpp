@@ -1,6 +1,6 @@
 #include "LlamaCpp.h"
 
-std::string LlamaCpp::detokenize(llama_tokens tokens, const llama_context* ctx) {
+std::string LlamaCpp::detokenize(const llama_tokens& tokens, const llama_context* ctx) {
     // Detokenize vector of tokens to C++ string
     // See common.cpp: common_detokenize calls llama_detokenize, with parameters "remove_special = false" hard-coded and "unparse_special = special" passed through
     std::string string = common_detokenize(ctx, tokens, true);
@@ -26,7 +26,7 @@ bool LlamaCpp::isEndOfGeneration(llama_token token, const llama_model* model) {
     return isEog;
 }
 
-jstring LlamaCpp::detokenize(JNIEnv* env, llama_tokens tokens, const llama_context* ctx) {
+jstring LlamaCpp::detokenize(JNIEnv* env, const llama_tokens& tokens, const llama_context* ctx) {
     std::string cppString = LlamaCpp::detokenize(tokens, ctx);
     jstring jString = env->NewStringUTF(cppString.c_str());
 
