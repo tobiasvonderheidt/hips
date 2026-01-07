@@ -33,7 +33,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_
 
     // Define initial interval as [0, 2^precision)
     // Stegasuras variable "max_val" is redundant
-    std::pair<long long, long long> currentInterval = {0, 1 << jPrecision};
+    std::pair<long long, long long> currentInterval = {0, 1LL << jPrecision};
 
     // </Logic specific to arithmetic coding>
 
@@ -298,7 +298,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         // Not done here as ASCII NUL is used instead (see translation of "partial" variable in encode)
     }
 
-    std::pair<long long, long long> currentInterval = {0, 1 << jPrecision};
+    std::pair<long long, long long> currentInterval = {0, 1LL << jPrecision};
 
     // </Logic specific to arithmetic coding>
 
