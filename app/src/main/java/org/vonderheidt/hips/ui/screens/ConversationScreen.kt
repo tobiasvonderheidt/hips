@@ -112,7 +112,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
     // UI components
     Column(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().padding(horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Back button
@@ -149,8 +149,8 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
         // Chat partner
         Row(
             modifier = modifier
-                .fillMaxWidth(0.95f)
-                .height(48.dp),
+                .fillMaxWidth()
+                .height(40.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Profile picture
@@ -160,12 +160,12 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                 modifier = modifier.size(24.dp)
             )
 
-            Spacer(modifier = modifier.width(8.dp))
+            Spacer(modifier = modifier.width(4.dp))
 
             // Name
             Text(
                 text = "Demo",
-                fontSize = 24.sp,
+                fontSize = 20.sp,
             )
 
             // Profile picture and name on the left, buttons on the right
@@ -270,13 +270,11 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
             }
         }
 
-        Spacer(modifier = modifier.height(8.dp))
-
         // Messages
         // Use LazyColumn as it only loads visible messages into memory, allowing for arbitrary number of messages
         LazyColumn(
             modifier = modifier
-                .fillMaxWidth(0.95f)
+                .fillMaxWidth()
                 .weight(1f)
         ) {
             // Current user (senderID == 0) is right aligned and green
@@ -296,7 +294,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                             .graphicsLayer(
                                 alpha = if (selectedMessages.isEmpty() || message in selectedMessages) { 1f } else { 0.25f }
                             )
-                            .padding(8.dp)
+                            .padding(4.dp)
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onLongPress = {
@@ -325,7 +323,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                         if (isDecoding && message == messageToDecode) {
                             CircularProgressIndicator(
                                 modifier = modifier
-                                    .padding(8.dp)
+                                    .padding(4.dp)
                                     .align(Alignment.Center),
                                 color = Color.White
                             )
@@ -339,13 +337,11 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                         }
                     }
                 }
-
-                Spacer(modifier = modifier.height(8.dp))
             }
         }
 
         Row(
-            modifier = modifier.fillMaxWidth(0.95f),
+            modifier = modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Bottom
         ) {
             // Input field for new message
@@ -367,7 +363,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                 maxLines = 5
             )
 
-            Spacer(modifier = modifier.width(8.dp))
+            Spacer(modifier = modifier.width(4.dp))
 
             // Send button
             // Colour corresponds to user a new message is being sent as
@@ -482,8 +478,6 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                 }
             }
         }
-
-        Spacer(modifier = modifier.height(8.dp))
     }
 }
 
