@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -113,8 +114,10 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(state = scrollState),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .verticalScroll(state = scrollState)
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Back button
         // No explicit alignment (via modifier or horizontalArrangement argument) needed here since left align is default
@@ -142,7 +145,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
         // LLM download hint
         Row(
-            modifier = modifier.fillMaxWidth(0.9f)
+            modifier = modifier.fillMaxWidth()
         ) {
             if (isDownloaded) {
                 Icon(
@@ -175,8 +178,6 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
             }
         }
 
-        Spacer(modifier = modifier.height(16.dp))
-
         // Download button
         Row {
             Button(
@@ -193,12 +194,10 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
             }
         }
 
-        Spacer(modifier = modifier.height(16.dp))
-
         // Button to load LLM into memory
         if (isDownloaded) {
             Row(
-                modifier = modifier.fillMaxWidth(0.9f)
+                modifier = modifier.fillMaxWidth()
             ) {
                 Icon(
                     imageVector = if (!isInMemory) Icons.Outlined.PlayArrow else Icons.Outlined.Pause,
@@ -209,8 +208,6 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
                 Text(text = "The LLM needs to be loaded into memory.")
             }
-
-            Spacer(modifier = modifier.height(16.dp))
 
             Button(
                 onClick = {
@@ -233,13 +230,11 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
             ) {
                 Text(text = if (!isInMemory) "Start LLM" else "Stop LLM")
             }
-
-            Spacer(modifier = modifier.height(16.dp))
         }
 
         // Conversion settings
         Row(
-            modifier = modifier.fillMaxWidth(0.9f)
+            modifier = modifier.fillMaxWidth()
         ) {
             Icon(
                 imageVector = Icons.Outlined.Key,
@@ -248,7 +243,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
             Spacer(modifier = modifier.width(16.dp))
 
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "Conversion",
                     fontSize = 18.sp,
@@ -256,8 +251,6 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                 )
 
                 Text(text = "Select how to convert the secret message from string to binary.")
-
-                Spacer(modifier = modifier.height(16.dp))
 
                 // Select conversion mode
                 ConversionMode.entries.toTypedArray().forEach { conversionMode ->
@@ -297,11 +290,9 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
             }
         }
 
-        Spacer(modifier = modifier.height(16.dp))
-
         // Steganography settings
         Row(
-            modifier = modifier.fillMaxWidth(0.9f)
+            modifier = modifier.fillMaxWidth()
         ) {
             Icon(
                 imageVector = Icons.Outlined.Lock,
@@ -310,7 +301,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
             Spacer(modifier = modifier.width(16.dp))
 
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "Steganography",
                     fontSize = 18.sp,
@@ -319,8 +310,6 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
                 // Set system prompt
                 Text(text = "Set the system prompt to define the role the LLM takes in a conversation.")
-
-                Spacer(modifier = modifier.height(16.dp))
 
                 OutlinedTextField(
                     value = systemPrompt,
@@ -345,8 +334,6 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                     maxLines = 5
                 )
 
-                Spacer(modifier = modifier.height(8.dp))
-
                 Button(
                     onClick = {
                         if (systemPrompt.isBlank()) {
@@ -366,12 +353,8 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                     Text(text = "Save")
                 }
 
-                Spacer(modifier = modifier.height(16.dp))
-
                 // Select number of messages
                 Text(text = "Select the number of prior messages to use as context.")
-
-                Spacer(modifier = modifier.height(16.dp))
 
                 // Slider only allows floats, do int conversion here to abstract it away from state variable
                 Slider(
@@ -388,8 +371,6 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                     steps = 9
                 )
 
-                Spacer(modifier = modifier.height(8.dp))
-
                 Text(
                     text = when (selectedNumberOfMessages) {
                         0 -> "All messages"
@@ -399,11 +380,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                     modifier = modifier.align(Alignment.CenterHorizontally)
                 )
 
-                Spacer(modifier = modifier.height(16.dp))
-
                 Text(text = "Select how to encode the secret message into a cover text.")
-
-                Spacer(modifier = modifier.height(16.dp))
 
                 // Select steganography mode
                 SteganographyMode.entries.toTypedArray().forEach { steganographyMode ->
@@ -441,112 +418,96 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                     }
                 }
 
-                Spacer(modifier = modifier.height(16.dp))
-
                 // Specific settings for each steganography mode
                 when (selectedSteganographyMode) {
                     SteganographyMode.Arithmetic -> {
-                        Text(text = "Set the temperature for token sampling. This is the \"creativity\" of the LLM. You can play around with it.")
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(text = "Set the temperature for token sampling. This is the \"creativity\" of the LLM. You can play around with it.")
 
-                        Spacer(modifier = modifier.height(16.dp))
-
-                        // Scale up, round and scale down again to fix float artefacts (e.g. 1.299998 instead of 1.3)
-                        Slider(
-                            value = selectedTemperature * 10,
-                            onValueChange = {
-                                // Temperature can't be 0 because logits are scaled with 1/temperature
-                                if (it > 0f) {
-                                    // Update state variable
-                                    selectedTemperature = it.roundToInt() / 10f
-
-                                    // Update DataStore
-                                    Settings.temperature = it.roundToInt() / 10f
-                                    coroutineScope.launch { HiPSDataStore.writeSettings() }
-                                }
-                            },
-                            valueRange = 0f..20f,
-                            steps = 19
-                        )
-
-                        Spacer(modifier = modifier.height(8.dp))
-
-                        Text(
-                            text = "$selectedTemperature",
-                            modifier = modifier.align(Alignment.CenterHorizontally)
-                        )
-
-                        Spacer(modifier = modifier.height(16.dp))
-
-                        // Show settings specific to LLM only when it is in memory
-                        if (isInMemory) {
-                            // Top k
-                            Text(text = "Set the top k for token sampling. This is the number of most likely tokens from the LLM's vocabulary to consider. 100% (= ${LlamaCpp.getVocabSize()} tokens) is recommended.")
-
-                            Spacer(modifier = modifier.height(16.dp))
-
-                            // Again, do int conversion here as slider only allows floats
-                            // Display top k in %, but store absolute number internally
+                            // Scale up, round and scale down again to fix float artefacts (e.g. 1.299998 instead of 1.3)
                             Slider(
-                                value = (selectedTopK.toFloat() / LlamaCpp.getVocabSize() * 100),
+                                value = selectedTemperature * 10,
                                 onValueChange = {
-                                    // Update state variable
-                                    selectedTopK = (it / 100 * LlamaCpp.getVocabSize()).toInt()
+                                    // Temperature can't be 0 because logits are scaled with 1/temperature
+                                    if (it > 0f) {
+                                        // Update state variable
+                                        selectedTemperature = it.roundToInt() / 10f
 
-                                    // Update DataStore
-                                    Settings.topK = (it / 100 * LlamaCpp.getVocabSize()).toInt()
-                                    coroutineScope.launch { HiPSDataStore.writeSettings() }
+                                        // Update DataStore
+                                        Settings.temperature = it.roundToInt() / 10f
+                                        coroutineScope.launch { HiPSDataStore.writeSettings() }
+                                    }
                                 },
-                                valueRange = 0f..100f,
-                                steps = 99
+                                valueRange = 0f..20f,
+                                steps = 19
                             )
 
-                            Spacer(modifier = modifier.height(8.dp))
-
                             Text(
-                                text = "${(selectedTopK.toFloat() / LlamaCpp.getVocabSize() * 100).toInt()}% of the vocabulary",
+                                text = "$selectedTemperature",
                                 modifier = modifier.align(Alignment.CenterHorizontally)
                             )
 
-                            Spacer(modifier = modifier.height(16.dp))
+                            // Show settings specific to LLM only when it is in memory
+                            if (isInMemory) {
+                                // Top k
+                                Text(text = "Set the top k for token sampling. This is the number of most likely tokens from the LLM's vocabulary to consider. 100% (= ${LlamaCpp.getVocabSize()} tokens) is recommended.")
 
-                            // Precision
-                            Text(
-                                text = "Set the precision for token sampling. Recommended is ⌈log₂($selectedTopK)⌉ = "
-                                        + if (selectedTopK > 0) { "${ceil(log2(selectedTopK.toFloat())).toInt()}" } else { "n/a" }
-                                        + " bits. Other values can be more efficient, but extremes produce long cover texts."
-                            )
+                                // Again, do int conversion here as slider only allows floats
+                                // Display top k in %, but store absolute number internally
+                                Slider(
+                                    value = (selectedTopK.toFloat() / LlamaCpp.getVocabSize() * 100),
+                                    onValueChange = {
+                                        // Update state variable
+                                        selectedTopK = (it / 100 * LlamaCpp.getVocabSize()).toInt()
 
-                            Spacer(modifier = modifier.height(16.dp))
+                                        // Update DataStore
+                                        Settings.topK = (it / 100 * LlamaCpp.getVocabSize()).toInt()
+                                        coroutineScope.launch { HiPSDataStore.writeSettings() }
+                                    },
+                                    valueRange = 0f..100f,
+                                    steps = 99
+                                )
 
-                            // Again, do int conversion here as slider only allows floats
-                            // Don't expose 64 bit precision from Arithmetic compression in UI for steganography, encoding would take ages and offer no benefit with vocabulary sizes of current LLMs
-                            // Using 64 bits internally also avoids integer overflows at 31-32 bits
-                            Slider(
-                                value = selectedPrecision.toFloat(),
-                                onValueChange = {
-                                    // Update state variable
-                                    selectedPrecision = it.toInt()
+                                Text(
+                                    text = "${(selectedTopK.toFloat() / LlamaCpp.getVocabSize() * 100).toInt()}% of the vocabulary",
+                                    modifier = modifier.align(Alignment.CenterHorizontally)
+                                )
 
-                                    // Update DataStore
-                                    Settings.precision = it.toInt()
-                                    coroutineScope.launch { HiPSDataStore.writeSettings() }
-                                },
-                                valueRange = 0f..32f,
-                                steps = 31
-                            )
+                                // Precision
+                                Text(
+                                    text = "Set the precision for token sampling. Recommended is ⌈log₂($selectedTopK)⌉ = "
+                                            + if (selectedTopK > 0) { "${ceil(log2(selectedTopK.toFloat())).toInt()}" } else { "n/a" }
+                                            + " bits. Other values can be more efficient, but extremes produce long cover texts."
+                                )
 
-                            Spacer(modifier = modifier.height(8.dp))
+                                // Again, do int conversion here as slider only allows floats
+                                // Don't expose 64 bit precision from Arithmetic compression in UI for steganography, encoding would take ages and offer no benefit with vocabulary sizes of current LLMs
+                                // Using 64 bits internally also avoids integer overflows at 31-32 bits
+                                Slider(
+                                    value = selectedPrecision.toFloat(),
+                                    onValueChange = {
+                                        // Update state variable
+                                        selectedPrecision = it.toInt()
 
-                            Text(
-                                text = "$selectedPrecision " + if (selectedPrecision == 1) "bit" else "bits",
-                                modifier = modifier.align(Alignment.CenterHorizontally)
-                            )
-                        }
-                        else {
-                            Text(
-                                text = "Load the LLM into memory to see more settings here.",
-                                fontStyle = FontStyle.Italic
-                            )
+                                        // Update DataStore
+                                        Settings.precision = it.toInt()
+                                        coroutineScope.launch { HiPSDataStore.writeSettings() }
+                                    },
+                                    valueRange = 0f..32f,
+                                    steps = 31
+                                )
+
+                                Text(
+                                    text = "$selectedPrecision " + if (selectedPrecision == 1) "bit" else "bits",
+                                    modifier = modifier.align(Alignment.CenterHorizontally)
+                                )
+                            }
+                            else {
+                                Text(
+                                    text = "Load the LLM into memory to see more settings here.",
+                                    fontStyle = FontStyle.Italic
+                                )
+                            }
                         }
                     }
                     /*
@@ -585,41 +546,37 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                     }
                     */
                     SteganographyMode.Huffman -> {
-                        Text(text = "Set the number of bits to encode per cover text token. Higher is more efficient, but less coherent.")
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(text = "Set the number of bits to encode per cover text token. Higher is more efficient, but less coherent.")
 
-                        Spacer(modifier = modifier.height(16.dp))
+                            // Again, do int conversion here as slider only allows floats
+                            Slider(
+                                value = selectedBitsPerToken.toFloat(),
+                                onValueChange = {
+                                    // Update state variable
+                                    selectedBitsPerToken = it.toInt()
 
-                        // Again, do int conversion here as slider only allows floats
-                        Slider(
-                            value = selectedBitsPerToken.toFloat(),
-                            onValueChange = {
-                                // Update state variable
-                                selectedBitsPerToken = it.toInt()
+                                    // Update DataStore
+                                    Settings.bitsPerToken = it.toInt()
+                                    coroutineScope.launch { HiPSDataStore.writeSettings() }
+                                },
+                                valueRange = 1f..4f,
+                                steps = 2
+                            )
 
-                                // Update DataStore
-                                Settings.bitsPerToken = it.toInt()
-                                coroutineScope.launch { HiPSDataStore.writeSettings() }
-                            },
-                            valueRange = 1f..4f,
-                            steps = 2
-                        )
-
-                        Spacer(modifier = modifier.height(8.dp))
-
-                        Text(
-                            text = "$selectedBitsPerToken " + if (selectedBitsPerToken == 1) "bit/token" else "bits/token",
-                            modifier = modifier.align(Alignment.CenterHorizontally)
-                        )
+                            Text(
+                                text = "$selectedBitsPerToken " + if (selectedBitsPerToken == 1) "bit/token" else "bits/token",
+                                modifier = modifier.align(Alignment.CenterHorizontally)
+                            )
+                        }
                     }
                 }
             }
         }
 
-        Spacer(modifier = modifier.height(16.dp))
-
         // Reset settings
         Row(
-            modifier = modifier.fillMaxWidth(0.9f)
+            modifier = modifier.fillMaxWidth()
         ) {
             Icon(
                 imageVector = Icons.Outlined.Restore,
@@ -628,7 +585,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
             Spacer(modifier = modifier.width(16.dp))
 
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "Reset settings",
                     fontSize = 18.sp,
@@ -637,11 +594,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
                 Text(text = "Reset settings to their default values.")
 
-                Spacer(modifier = modifier.height(16.dp))
-
                 Text(text = "If the LLM is in memory, this finds reasonable values for the settings that are specific to it.")
-
-                Spacer(modifier = modifier.height(16.dp))
 
                 Row(
                     modifier = modifier.fillMaxWidth(),
@@ -706,17 +659,13 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
             }
         }
 
-        Spacer(modifier = modifier.height(16.dp))
-
         HorizontalDivider()
-
-        Spacer(modifier = modifier.height(16.dp))
 
         // Author credits
         // Make the whole row clickable instead of just the text for better accessibility
         Row(
             modifier = modifier
-                .fillMaxWidth(0.9f)
+                .fillMaxWidth()
                 .clickable(
                     onClick = {
                         // Open email app and create draft with subject "HiPS"
@@ -743,12 +692,10 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
             }
         }
 
-        Spacer(modifier = modifier.height(16.dp))
-
         // Link to source code
         Row(
             modifier = modifier
-                .fillMaxWidth(0.9f)
+                .fillMaxWidth()
                 .clickable(
                     onClick = {
                         // Open the repo website
@@ -774,8 +721,6 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                 Text(text = "github.com/tobiasvonderheidt/hips")
             }
         }
-
-        Spacer(modifier = modifier.height(32.dp))
     }
 }
 
