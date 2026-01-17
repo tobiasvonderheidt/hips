@@ -446,11 +446,20 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         // Inline += operation to eliminate newBits variable
         int numberOfEncodedBits = Arithmetic::numberOfSameBitsFromBeginning(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive);
 
-        cppCipherBits.insert(
-            cppCipherBits.end(),
-            newIntervalTopBitsInclusive.begin(),
-            i == coverTextTokens.size() - 1 ? newIntervalBottomBitsInclusive.end() : newIntervalTopBitsInclusive.begin() + numberOfEncodedBits
-        );
+        if (i == coverTextTokens.size() - 1) {
+            cppCipherBits.insert(
+                cppCipherBits.end(),
+                newIntervalBottomBitsInclusive.begin(),
+                newIntervalBottomBitsInclusive.end()
+            );
+        }
+        else {
+            cppCipherBits.insert(
+                cppCipherBits.end(),
+                newIntervalTopBitsInclusive.begin(),
+                newIntervalTopBitsInclusive.begin() + numberOfEncodedBits
+            );
+        }
 
         std::vector<bool> newIntervalBottomBits = std::vector<bool>(newIntervalBottomBitsInclusive.begin() + numberOfEncodedBits, newIntervalBottomBitsInclusive.end());
         newIntervalBottomBits.resize(newIntervalBottomBits.size() + numberOfEncodedBits, false);
