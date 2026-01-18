@@ -1,6 +1,6 @@
 #include "LlamaCpp.h"
 
-std::string LlamaCpp::detokenize(llama_tokens tokens, const llama_context* ctx) {
+std::string LlamaCpp::detokenize(const llama_tokens& tokens, const llama_context* ctx) {
     // Detokenize vector of tokens to C++ string
     // See common.cpp: common_detokenize calls llama_detokenize, with parameters "remove_special = false" hard-coded and "unparse_special = special" passed through
     std::string string = common_detokenize(ctx, tokens, true);
@@ -26,7 +26,7 @@ bool LlamaCpp::isEndOfGeneration(llama_token token, const llama_model* model) {
     return isEog;
 }
 
-jstring LlamaCpp::detokenize(JNIEnv* env, llama_tokens tokens, const llama_context* ctx) {
+jstring LlamaCpp::detokenize(JNIEnv* env, const llama_tokens& tokens, const llama_context* ctx) {
     std::string cppString = LlamaCpp::detokenize(tokens, ctx);
     jstring jString = env->NewStringUTF(cppString.c_str());
 
@@ -66,8 +66,11 @@ llama_token LlamaCpp::getEndOfGeneration(const llama_model* model) {
 }
 
 llama_token LlamaCpp::getAsciiNul(const llama_model* model, const llama_context* ctx) {
+    // Only checks if detokenization contains the ASCII NUL character
+    // Checking if it is equal to it would require constructing a string that only contains the NUL char, which conflicts with C/C++ strings being NUL-terminated
+    // TODO llama.cpp's common_detokenize seems to return a string that only contains the NUL char, figure out how they do it
     for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
-        if (LlamaCpp::detokenize(std::vector<llama_token>{token}, ctx) == "\u0000") {
+        if (LlamaCpp::detokenize(std::vector<llama_token>{token}, ctx).find('\0') != std::string::npos) {
             return token;
         }
     }
