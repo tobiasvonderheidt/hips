@@ -9,10 +9,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -99,8 +97,10 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(state = scrollState),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .verticalScroll(state = scrollState)
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(
             modifier = modifier.fillMaxWidth(),
@@ -149,13 +149,11 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
             )
         }
 
-        Spacer(modifier = modifier.height(32.dp))
-
         // 1st input is context
         OutlinedTextField(
             value = context,
             onValueChange = { context = it },
-            modifier = modifier.fillMaxWidth(0.8f),
+            modifier = modifier.fillMaxWidth(),
             label = { Text(text = "Context") },
             leadingIcon = {
                 Icon(
@@ -175,14 +173,12 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
             maxLines = 5
         )
 
-        Spacer(modifier = modifier.height(32.dp))
-
         // 2nd input is either secret message or cover text
         if (selectedMode == 0) {
             OutlinedTextField(
                 value = secretMessage,
                 onValueChange = { secretMessage = it },
-                modifier = modifier.fillMaxWidth(0.8f),
+                modifier = modifier.fillMaxWidth(),
                 label = { Text(text = "Secret message") },
                 leadingIcon = {
                     Icon(
@@ -206,7 +202,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
             OutlinedTextField(
                 value = coverText,
                 onValueChange = { coverText = it },
-                modifier = modifier.fillMaxWidth(0.8f),
+                modifier = modifier.fillMaxWidth(),
                 label = { Text(text = "Cover text") },
                 leadingIcon = {
                     Icon(
@@ -227,11 +223,9 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
             )
         }
 
-        Spacer(modifier = modifier.height(16.dp))
-
         // Switch for conversation vs completion
         Row(
-            modifier = modifier.fillMaxWidth(0.8f),
+            modifier = modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -243,10 +237,8 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
             )
         }
 
-        Spacer(modifier = modifier.height(16.dp))
-
         Row(
-            modifier = modifier.fillMaxWidth(0.8f),
+            modifier = modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             // Mode selector
@@ -369,54 +361,46 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
 
         // Loading animation to show when start button is pressed
         if (isLoading) {
-            Spacer (modifier = modifier.height(64.dp))
-
             CircularProgressIndicator()
         }
 
         // Output is either cover text or secret message
         // Only show when encode or decode is finished (i.e. also not on app startup)
         if (isOutputVisible) {
-            Spacer(modifier = modifier.height(32.dp))
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (selectedMode == 0) {
+                    Text(
+                        text = "Cover text (tap to copy):",
+                        fontWeight = FontWeight.Bold
+                    )
 
-            if (selectedMode == 0) {
-                Text(
-                    text = "Cover text (tap to copy):",
-                    fontWeight = FontWeight.Bold
-                )
+                    Text(
+                        text = coverText,
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                // Copy cover text to clipboard
+                                val clip = ClipData.newPlainText("Cover text", coverText)
+                                clipboardManager.setPrimaryClip(clip)
 
-                Spacer(modifier = modifier.height(16.dp))
+                                // Show confirmation via toast message
+                                Toast.makeText(currentLocalContext, "Copied to clipboard", Toast.LENGTH_LONG).show()
+                            }
+                    )
+                }
+                else {
+                    Text(
+                        text = "Secret message:",
+                        fontWeight = FontWeight.Bold
+                    )
 
-                Text(
-                    text = coverText,
-                    modifier = modifier
-                        .fillMaxWidth(0.8f)
-                        .clickable {
-                            // Copy cover text to clipboard
-                            val clip = ClipData.newPlainText("Cover text", coverText)
-                            clipboardManager.setPrimaryClip(clip)
-
-                            // Show confirmation via toast message
-                            Toast.makeText(currentLocalContext, "Copied to clipboard", Toast.LENGTH_LONG).show()
-                        }
-                )
-            }
-            else {
-                Text(
-                    text = "Secret message:",
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = modifier.height(16.dp))
-
-                Text(
-                    text = secretMessage,
-                    modifier = modifier.fillMaxWidth(0.8f)
-                )
+                    Text(
+                        text = secretMessage,
+                        modifier = modifier.fillMaxWidth()
+                    )
+                }
             }
         }
-
-        Spacer(modifier = modifier.height(32.dp))
     }
 }
 
