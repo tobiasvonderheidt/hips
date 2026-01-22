@@ -43,6 +43,13 @@ private:
      */
     void generateHuffmanCodesRecursively(HuffmanNode* currentHuffmanNode, std::vector<bool> currentHuffmanCode);
 
+    /**
+     * Helper function for the destructor. Traverses the Huffman tree recursively to delete left and right child nodes first before deleting the given Huffman node.
+     *
+     * @param huffmanNode Pointer to a Huffman node to be deleted.
+     */
+    void deleteHuffmanNode(HuffmanNode* huffmanNode);
+
 public:
     std::unordered_map<llama_token, std::vector<bool>> huffmanCodes;
 
@@ -50,6 +57,11 @@ public:
      * Constructor for a Huffman coding. Does not take any parameters as attributes `huffmanTree` and `huffmanCodes` are initialized as empty by default.
      */
     HuffmanCoding();
+
+    /**
+     * Destructor for a Huffman coding.
+     */
+    ~HuffmanCoding();
 
     /**
      * Function to build the Huffman tree, given a mapping of tokens and their logits.

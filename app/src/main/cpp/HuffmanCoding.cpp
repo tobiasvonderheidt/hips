@@ -2,10 +2,37 @@
 
 HuffmanCoding::HuffmanCoding() { }
 
+HuffmanCoding::~HuffmanCoding() {
+    // Run delete until Huffman tree is empty
+    while(!huffmanTree.empty()) {
+        // Poll top node from Huffman tree
+        HuffmanNode* huffmanNode = huffmanTree.top();
+        huffmanTree.pop();
+
+        // Recursively delete left and right subtrees
+        deleteHuffmanNode(huffmanNode);
+    }
+}
+
+void HuffmanCoding::deleteHuffmanNode(HuffmanNode *huffmanNode) {
+    // Recursion ends at bottom of Huffman tree
+    if (huffmanNode == nullptr) {
+        return;
+    }
+
+    // Recursively traverse left and right subtrees to delete child nodes first
+    deleteHuffmanNode(huffmanNode->left);
+    deleteHuffmanNode(huffmanNode->right);
+
+    // Now it is safe to delete the given node
+    delete huffmanNode;
+}
+
 void HuffmanCoding::buildHuffmanTree(const std::vector<std::pair<llama_token, float>>& tokenLogits) {
     // Loop through the mapping
     for (const auto& [token, logit] : tokenLogits) {
         // Create a new node for every entry
+        // Use "new" to allocate memory on heap instead of stack, so nodes aren't deleted when function exits => Now we need a destructor
         auto huffmanNode = new HuffmanNode(token, logit, nullptr, nullptr);
 
         // Insert it into the Huffman tree
@@ -24,6 +51,7 @@ void HuffmanCoding::mergeHuffmanNodes() {
         huffmanTree.pop();
 
         // Create a new parent node for them, combining their logits
+        // Use "new" to allocate memory on heap instead of stack, so nodes aren't deleted when function exits => Now we need a destructor
         auto mergedHuffmanNode = new HuffmanNode(-1, left->logit + right->logit, left, right);
 
         // Insert the new node into the Huffman tree

@@ -76,6 +76,8 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Huffman_enc
 
             // Update flag
             isFirstRun = false;
+
+            // Destructor for huffmanCoding is called implicitly as it goes out of scope here
         }
         // Greedy sampling to pick most likely token until last sentence is finished
         else {
@@ -146,6 +148,8 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_
         isFirstRun = false;
 
         i++;
+
+        // Destructor for huffmanCoding is called implicitly as it goes out of scope here
     }
 
     // Create Java ByteArray from bit vector to return cipher bits
