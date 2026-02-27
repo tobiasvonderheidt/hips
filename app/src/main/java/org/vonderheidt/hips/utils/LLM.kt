@@ -11,8 +11,8 @@ import java.io.File
  * Object (i.e. singleton class) to handle LLM download.
  */
 object LLM {
-    private const val DOWNLOAD_LINK = "https://huggingface.co/hugging-quants/Llama-3.2-1B-Instruct-Q4_K_M-GGUF/resolve/main/llama-3.2-1b-instruct-q4_k_m.gguf"
-    private const val FILE_NAME = "llama-3.2-1b-instruct-q4_k_m.gguf"
+    private const val DOWNLOAD_LINK = "https://huggingface.co/hugging-quants/Llama-3.2-3B-Instruct-Q4_K_M-GGUF/resolve/main/llama-3.2-3b-instruct-q4_k_m.gguf"
+    private const val FILE_NAME = "llama-3.2-3b-instruct-q4_k_m.gguf"
 
     /**
      * Function to check if the LLM has already been downloaded.
