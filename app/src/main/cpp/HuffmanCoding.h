@@ -7,25 +7,25 @@
 #include "HuffmanNode.h"
 
 /**
- * Struct to define comparison logic for nodes in a Huffman tree based on their logits.
+ * Struct to define comparison logic for nodes in a Huffman tree based on their probabilities.
  */
 struct Compare {
     /**
-     * Operator to compare nodes in a Huffman tree with each other based on their logits.
+     * Operator to compare nodes in a Huffman tree with each other based on their probabilities.
      *
      * Corresponds to Stegasuras methods `__lt__` and `__eq__` of class `HeapNode` in `huffman.py`.
      *
      * @param left Pointer to a Huffman node.
      * @param right Pointer to another Huffman node.
-     * @return Boolean that is true if the logit of `left` is less than the logit of `right`, false otherwise.
+     * @return Boolean that is true if the probability of `left` is less than the probability of `right`, false otherwise.
      */
     bool operator()(HuffmanNode* left, HuffmanNode* right) {
-        return left->logit < right->logit;
+        return left->probability < right->probability;
     }
 };
 
 /**
- * Class that represents the Huffman coding of a set of tokens based on their logits.
+ * Class that represents the Huffman coding of a set of tokens based on their probabilities.
  *
  * Corresponds to Stegasuras class `HuffmanCoding` in `huffman.py`. Attribute `heap` was renamed to `huffmanTree`, `codes` to `huffmanCodes`.
  */
@@ -64,13 +64,13 @@ public:
     ~HuffmanCoding();
 
     /**
-     * Function to build the Huffman tree, given a mapping of tokens and their logits.
+     * Function to build the Huffman tree, given a mapping of tokens and their probabilities.
      *
-     * Corresponds to Stegasuras method `make_heap` of class `HuffmanCoding` in `huffman.py`. Parameter `frequency` was renamed to `tokenLogits`.
+     * Corresponds to Stegasuras method `make_heap` of class `HuffmanCoding` in `huffman.py`. Parameter `frequency` was renamed to `tokenProbabilities`.
      *
-     * @param tokenLogits Mapping of tokens and their logits.
+     * @param tokenProbabilities Mapping of tokens and their probabilities.
      */
-    void buildHuffmanTree(const std::vector<std::pair<llama_token, float>>& tokenLogits);
+    void buildHuffmanTree(const std::vector<std::pair<llama_token, double>>& tokenProbabilities);
 
     /**
      * Function to merge all nodes in a Huffman tree.

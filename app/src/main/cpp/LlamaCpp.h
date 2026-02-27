@@ -59,7 +59,7 @@ public:
      * @param probabilities Probabilities for the last token of the prompt (= last row of logits matrix after normalization).
      * @param model Memory address of the LLM.
      */
-    static void suppressSpecialTokens(float* probabilities, const llama_model* model);
+    static void suppressSpecialTokens(double* probabilities, const llama_model* model);
 
     /**
      * Function to check if a token is the end of a sentence. Needed to complete the last sentence of the cover text.

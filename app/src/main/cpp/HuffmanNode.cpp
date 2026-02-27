@@ -2,9 +2,9 @@
 
 HuffmanNode::HuffmanNode(
     llama_token token,
-    float logit,
+    double probability,
     HuffmanNode* left,
     HuffmanNode* right
 )
-: token(token), logit(logit), left(left), right(right)
+: token(token), probability(probability), left(left), right(right)
 { }

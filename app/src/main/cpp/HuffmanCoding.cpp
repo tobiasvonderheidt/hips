@@ -28,12 +28,12 @@ void HuffmanCoding::deleteHuffmanNode(HuffmanNode *huffmanNode) {
     delete huffmanNode;
 }
 
-void HuffmanCoding::buildHuffmanTree(const std::vector<std::pair<llama_token, float>>& tokenLogits) {
+void HuffmanCoding::buildHuffmanTree(const std::vector<std::pair<llama_token, double>>& tokenProbabilities) {
     // Loop through the mapping
-    for (const auto& [token, logit] : tokenLogits) {
+    for (const auto& [token, probability] : tokenProbabilities) {
         // Create a new node for every entry
         // Use "new" to allocate memory on heap instead of stack, so nodes aren't deleted when function exits => Now we need a destructor
-        auto huffmanNode = new HuffmanNode(token, logit, nullptr, nullptr);
+        auto huffmanNode = new HuffmanNode(token, probability, nullptr, nullptr);
 
         // Insert it into the Huffman tree
         huffmanTree.push(huffmanNode);
@@ -50,9 +50,9 @@ void HuffmanCoding::mergeHuffmanNodes() {
         HuffmanNode* right = huffmanTree.top();
         huffmanTree.pop();
 
-        // Create a new parent node for them, combining their logits
+        // Create a new parent node for them, combining their probabilities
         // Use "new" to allocate memory on heap instead of stack, so nodes aren't deleted when function exits => Now we need a destructor
-        auto mergedHuffmanNode = new HuffmanNode(-1, left->logit + right->logit, left, right);
+        auto mergedHuffmanNode = new HuffmanNode(-1, left->probability + right->probability, left, right);
 
         // Insert the new node into the Huffman tree
         huffmanTree.push(mergedHuffmanNode);

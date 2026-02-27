@@ -15,7 +15,7 @@ public:
      * @param model Memory address of the LLM.
      * @return The array of probabilities.
      */
-    static float* softmax(float* logits, const llama_model* model);
+    static double* softmax(float* logits, const llama_model* model);
 };
 
 #endif

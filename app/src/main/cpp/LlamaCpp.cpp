@@ -33,7 +33,7 @@ jstring LlamaCpp::detokenize(JNIEnv* env, const llama_tokens& tokens, const llam
     return jString;
 }
 
-void LlamaCpp::suppressSpecialTokens(float* probabilities, const llama_model* model) {
+void LlamaCpp::suppressSpecialTokens(double* probabilities, const llama_model* model) {
     // Suppress special tokens by setting their probabilities to 0
     for (llama_token token = 0; token < LlamaCpp::getVocabSize(model); token++) {
         if (LlamaCpp::isSpecial(token, model)) {
