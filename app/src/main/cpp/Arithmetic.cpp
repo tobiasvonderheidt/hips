@@ -48,7 +48,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_
     // But only finish last sentence during encoding, not during decompression, to avoid infinite loop
     // Our use of isDecompression here matches control flow of Stegasuras with its finish_sent parameter
     while (i < cppCipherBits.size() || (!isDecompression && !isLastSentenceFinished)) {
-        // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp:
+        // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggml-org/llama.cpp/blob/master/examples/simple/simple.cpp:
         // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
         // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
         float* logits = LlamaCpp::getLogits(isFirstRun ? contextTokens : std::vector<llama_token>{sampledToken}, cppCtx);

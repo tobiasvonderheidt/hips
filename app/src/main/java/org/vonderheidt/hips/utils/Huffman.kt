@@ -126,7 +126,7 @@ object Huffman {
 
         // Sample tokens until all bits of secret message are encoded and last sentence is finished
         while (i < cipherBitString.length || !isLastSentenceFinished) {
-            // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp:
+            // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggml-org/llama.cpp/blob/master/examples/simple/simple.cpp:
             // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
             // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
             val logits = LlamaCpp.getLogits(if (isFirstRun) contextTokens else intArrayOf(sampledToken)).last()

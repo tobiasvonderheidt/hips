@@ -112,7 +112,7 @@ float* LlamaCpp::getLogits(llama_tokens tokens, llama_context* ctx) {
     // llama.cpp example cited below stores multiple tokens from tokenization of the prompt in the first run, single last sampled token in subsequent runs
     // TODO
     //  llama.cpp docs: "NOTE: this is a helper function to facilitate transition to the new batch API - avoid using it"
-    //  But is used like this in https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp
+    //  But is used like this in https://github.com/ggml-org/llama.cpp/blob/master/examples/simple/simple.cpp
     llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens);
 
     // Check if model architecture is encoder-decoder or decoder-only
