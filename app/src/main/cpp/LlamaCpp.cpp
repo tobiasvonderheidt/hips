@@ -26,11 +26,17 @@ bool LlamaCpp::isEndOfGeneration(llama_token token, const llama_model* model) {
     return isEog;
 }
 
-jstring LlamaCpp::detokenize(JNIEnv* env, const llama_tokens& tokens, const llama_context* ctx) {
+jbyteArray LlamaCpp::detokenize(JNIEnv* env, const llama_tokens& tokens, const llama_context* ctx) {
+    // Detokenize tokens to C++ string
     std::string cppString = LlamaCpp::detokenize(tokens, ctx);
-    jstring jString = env->NewStringUTF(cppString.c_str());
 
-    return jString;
+    // Initialize Java byte array to store UTF-8 encoding of the C++ string
+    jbyteArray jByteArray = env->NewByteArray((int32_t) cppString.size());
+
+    // Fill the Java byte array and return it
+    env->SetByteArrayRegion(jByteArray, 0, (int32_t) cppString.size(), reinterpret_cast<const jbyte*>(cppString.data()));
+
+    return jByteArray;
 }
 
 void LlamaCpp::suppressSpecialTokens(double* probabilities, const llama_model* model) {
@@ -85,17 +91,19 @@ int32_t LlamaCpp::getVocabSize(const llama_model* model) {
     return n_vocab;
 }
 
-llama_tokens LlamaCpp::tokenize(JNIEnv* env, jstring jString, const llama_context* ctx) {
-    // Convert Java string to be tokenized to C++ string
+llama_tokens LlamaCpp::tokenize(JNIEnv* env, jbyteArray jByteArray, const llama_context* ctx) {
+    // Convert Java byte array storing UTF-8 encoding of string to be tokenized to C++ string
     jboolean isCopy = true;
-    const char* cppString = env->GetStringUTFChars(jString, &isCopy);
+    jbyte* jBytes = env->GetByteArrayElements(jByteArray, &isCopy);
+
+    std::string cppString(reinterpret_cast<char*>(jBytes), env->GetArrayLength(jByteArray));
 
     // Tokenize string, save tokens as llama_tokens (equivalent to std::vector<llama_token>, with llama_token equivalent to int32_t)
     // See common.cpp: common_tokenize(ctx, ...) calls common_tokenize(vocab, ...), which calls llama_tokenize, always passing parameters {add,parse}_special through
     llama_tokens tokens = common_tokenize(ctx, cppString, false, true);
 
-    // Release C++ string from memory
-    env->ReleaseStringUTFChars(jString, cppString);
+    // Release memory allocated above again
+    env->ReleaseByteArrayElements(jByteArray, jBytes, 0);
 
     return tokens;
 }

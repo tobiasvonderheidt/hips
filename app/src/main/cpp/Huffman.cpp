@@ -6,7 +6,7 @@
 #include "LlamaCpp.h"
 #include "Statistics.h"
 
-extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Huffman_encode(JNIEnv* env, jobject /* thiz */, jstring jContext, jbyteArray jCipherBits, jint jBitsPerToken, jlong jCtx) {
+extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_encode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCipherBits, jint jBitsPerToken, jlong jCtx) {
     // TODO Abstract state management away in LlamaCpp.{h,cpp}
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
     const llama_model* model = llama_get_model(cppCtx);
@@ -96,12 +96,12 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Huffman_enc
     }
 
     // Detokenize cover text tokens into cover text to return it
-    jstring coverText = LlamaCpp::detokenize(env, coverTextTokens, cppCtx);
+    jbyteArray coverText = LlamaCpp::detokenize(env, coverTextTokens, cppCtx);
 
     return coverText;
 }
 
-extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_decode(JNIEnv* env, jobject /* thiz */, jstring jContext, jstring jCoverText, jint jBitsPerToken, jlong jCtx) {
+extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_decode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCoverText, jint jBitsPerToken, jlong jCtx) {
     // TODO Abstract state management away in LlamaCpp.{h,cpp}
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
     const llama_model* model = llama_get_model(cppCtx);
