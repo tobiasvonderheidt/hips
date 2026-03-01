@@ -22,6 +22,15 @@ private:
     static std::string detokenize(const llama_tokens& tokens, const llama_context* ctx);
 
     /**
+     * Wrapper for the `common_detokenize` function of llama.cpp. Detokenizes a token ID into a C++ string.
+     *
+     * @param token A token ID.
+     * @param ctx Memory address of the context.
+     * @return Detokenization as a C++ string.
+     */
+    static std::string detokenize(const llama_token& token, const llama_context* ctx);
+
+    /**
      * Wrapper for the `llama_vocab_is_eog` and `llama_vocab_is_control` functions of llama.cpp. Checks if a token is a special token.
      *
      * @param token Token ID to check.

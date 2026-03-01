@@ -8,6 +8,14 @@ std::string LlamaCpp::detokenize(const llama_tokens& tokens, const llama_context
     return string;
 }
 
+std::string LlamaCpp::detokenize(const llama_token& token, const llama_context* ctx) {
+    llama_tokens tokens = std::vector<llama_token>{token};
+
+    std::string string = LlamaCpp::detokenize(tokens, ctx);
+
+    return string;
+}
+
 bool LlamaCpp::isSpecial(llama_token token, const llama_model* model) {
     // Get vocabulary of the LLM
     const llama_vocab* vocab = llama_model_get_vocab(model);
@@ -50,7 +58,7 @@ void LlamaCpp::suppressSpecialTokens(double* probabilities, const llama_model* m
 
 bool LlamaCpp::isEndOfSentence(llama_token token, const llama_context* ctx) {
     // Detokenize the token and check if it ends with a punctuation mark (covers "?" vs " ?" etc)
-    std::string detokenization = LlamaCpp::detokenize(std::vector<llama_token>{token}, ctx);
+    std::string detokenization = LlamaCpp::detokenize(token, ctx);
 
     bool isSentenceFinished = detokenization.back() == '.'
                               || detokenization.back() == '?'
@@ -76,7 +84,7 @@ llama_token LlamaCpp::getAsciiNul(const llama_model* model, const llama_context*
     // Checking if it is equal to it would require constructing a string that only contains the NUL char, which conflicts with C/C++ strings being NUL-terminated
     // TODO llama.cpp's common_detokenize seems to return a string that only contains the NUL char, figure out how they do it
     for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
-        if (LlamaCpp::detokenize(std::vector<llama_token>{token}, ctx).find('\0') != std::string::npos) {
+        if (LlamaCpp::detokenize(token, ctx).find('\0') != std::string::npos) {
             return token;
         }
     }
