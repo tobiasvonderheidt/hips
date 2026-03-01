@@ -139,3 +139,11 @@ float* LlamaCpp::getLogits(llama_tokens tokens, llama_context* ctx) {
 
     return logits;
 }
+
+float* LlamaCpp::getLogits(llama_token token, llama_context* ctx) {
+    llama_tokens tokens = std::vector<llama_token>{token};
+
+    float* logits = LlamaCpp::getLogits(tokens, ctx);
+
+    return logits;
+}

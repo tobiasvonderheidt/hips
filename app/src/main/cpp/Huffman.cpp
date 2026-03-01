@@ -32,7 +32,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_
         // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggml-org/llama.cpp/blob/master/examples/simple/simple.cpp:
         // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
         // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
-        float* logits = LlamaCpp::getLogits(isFirstRun ? contextTokens : std::vector<llama_token>{sampledToken}, cppCtx);
+        float* logits = isFirstRun ? LlamaCpp::getLogits(contextTokens, cppCtx) : LlamaCpp::getLogits(sampledToken, cppCtx);
 
         // Normalize logits to probabilities
         double* probabilities = Statistics::softmax(logits, model);
@@ -122,7 +122,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_
     // Decode every cover text token into bitsPerToken bits
     while (i < coverTextTokens.size()) {
         // Calculate the logit matrix again initially from context tokens, then from last cover text token, and get last row
-        float* logits = LlamaCpp::getLogits(isFirstRun ? contextTokens : std::vector<llama_token>{coverTextToken}, cppCtx);
+        float* logits = isFirstRun ? LlamaCpp::getLogits(contextTokens, cppCtx) : LlamaCpp::getLogits(coverTextToken, cppCtx);
 
         // Normalize logits to probabilities
         double* probabilities = Statistics::softmax(logits, model);

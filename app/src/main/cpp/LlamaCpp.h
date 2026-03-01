@@ -119,6 +119,15 @@ public:
      * @return The last row of the logit matrix.
      */
     static float* getLogits(llama_tokens tokens, llama_context* ctx);
+
+    /**
+     * Function to calculate a vector of logits (i.e. predictions for the last sampled token).
+     *
+     * @param token Token ID of the last sampled token.
+     * @param ctx Memory address of the context.
+     * @return A vector of logits.
+     */
+    static float* getLogits(llama_token token, llama_context* ctx);
 };
 
 #endif
