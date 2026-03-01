@@ -64,7 +64,7 @@ object Arithmetic {
     fun encode(context: String, cipherBits: ByteArray): String {
         val coverTextBytes = encode(
             context = context.toByteArray(charset = Charsets.UTF_8),
-            cipherBits = cipherBits,
+            cipherBits = cipherBits
         )
 
         val coverText = String(bytes = coverTextBytes, charset = Charsets.UTF_8)
