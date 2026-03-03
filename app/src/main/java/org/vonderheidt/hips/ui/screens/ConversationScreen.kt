@@ -444,15 +444,20 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                             val newCoverText = if (isPlainText) newSecretMessage else Steganography.encode(context, newSecretMessage)
                                             val newInverseHuffmanCodes = /* if (!isPlainText && Settings.conversionMode == ConversionMode.Huffman) Json.encodeToString(Huffman.getLastInverseHuffmanCodes()) else */ null
 
-                                            val newMessage = Message(newSender.id, newReceiver.id, newCoverText, newInverseHuffmanCodes)
+                                            // Split cover text into paragraphs
+                                            for (paragraph in newCoverText.split("\n\n")) {
+                                                val newMessage = Message(newSender.id, newReceiver.id, paragraph, newInverseHuffmanCodes)
 
-                                            // Order is important to avoid violating foreign key relations
-                                            db.userDao.upsertUser(newSender)
-                                            db.userDao.upsertUser(newReceiver)
-                                            db.messageDao.upsertMessage(newMessage)
+                                                // Order is important to avoid violating foreign key relations
+                                                db.userDao.upsertUser(newSender)
+                                                db.userDao.upsertUser(newReceiver)
+                                                db.messageDao.upsertMessage(newMessage)
+
+                                                // Update state variables
+                                                messages += newMessage
+                                            }
 
                                             // Update state variables
-                                            messages += newMessage
                                             newSecretMessage = ""
                                             isAlice = !isAlice
                                             isEncoding = false
