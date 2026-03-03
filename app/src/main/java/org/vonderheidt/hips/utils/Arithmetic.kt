@@ -79,12 +79,19 @@ object Arithmetic {
      *
      * @param context The context to decode the cover text with.
      * @param coverText The cover text containing a secret message.
+     * @param numberOfCipherBits Desired number of cipher bits to return. Only needed when searching for start signal in split cover text. Has to be multiple of 8 for decryption.
      * @return The encrypted binary representation of the secret message.
+     * @throws IllegalArgumentException If `numberOfCipherBits` is not a multiple of 8.
      */
-    fun decode(context: String, coverText: String): ByteArray {
+    fun decode(context: String, coverText: String, numberOfCipherBits: Int = -1): ByteArray {
+        if (numberOfCipherBits > 0 && numberOfCipherBits % 8 != 0) {
+            throw IllegalArgumentException("numberOfCipherBits has to be multiple of 8, but is $numberOfCipherBits")
+        }
+
         return decode(
             context = context.toByteArray(charset = Charsets.UTF_8),
             coverText = coverText.toByteArray(charset = Charsets.UTF_8),
+            numberOfCipherBits = numberOfCipherBits
         )
     }
 
@@ -118,9 +125,10 @@ object Arithmetic {
      * @param topK Number of most likely tokens to consider. Must be less than or equal to the vocabulary size `n_vocab` of the LLM. Determined by Settings object.
      * @param precision Number of bits to encode the top k tokens with. Determined by Settings object.
      * @param ctx Memory address of the context.
+     * @param numberOfCipherBits Desired number of cipher bits to return. Only needed when searching for start signal in split cover text. Has to be multiple of 8 for decryption.
      * @return The encrypted binary representation of the secret message.
      */
-    private external fun decode(context: ByteArray, coverText: ByteArray, temperature: Float = Settings.temperature, topK: Int = Settings.topK, precision: Int = Settings.precision, ctx: Long = LlamaCpp.getCtx()) : ByteArray
+    private external fun decode(context: ByteArray, coverText: ByteArray, temperature: Float = Settings.temperature, topK: Int = Settings.topK, precision: Int = Settings.precision, ctx: Long = LlamaCpp.getCtx(), numberOfCipherBits: Int = -1) : ByteArray
 
     /*
     /**

@@ -101,7 +101,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_
     return coverText;
 }
 
-extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_decode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCoverText, jint jBitsPerToken, jlong jCtx) {
+extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_decode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCoverText, jint jBitsPerToken, jlong jCtx, jint numberOfCipherBits) {
     // TODO Abstract state management away in LlamaCpp.{h,cpp}
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
     const llama_model* model = llama_get_model(cppCtx);
@@ -156,6 +156,13 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_
 
         // Free allocated memory
         delete[] probabilities;
+
+        // End decoding early if we are only searching for the start signal
+        if (numberOfCipherBits > 0 && cppCipherBits.size() >= numberOfCipherBits) {
+            // Discard any incomplete byte at the end because decryption works on byte arrays
+            cppCipherBits.resize(numberOfCipherBits);
+            break;
+        }
     }
 
     // Create Java ByteArray from bit vector to return cipher bits
