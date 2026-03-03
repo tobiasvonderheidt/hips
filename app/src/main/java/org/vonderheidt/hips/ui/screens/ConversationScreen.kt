@@ -198,11 +198,26 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
                             CoroutineScope(Dispatchers.Default).launch {
                                 // Decoding needs to reproduce the state the message was encoded in
-                                val priorMessages = messages.subList(fromIndex = 0, toIndex = messages.indexOf(messageToDecode))    // Start inclusive, end exclusive
+                                var priorMessages = messages.subList(fromIndex = 0, toIndex = messages.indexOf(messageToDecode))    // Start inclusive, end exclusive
 
-                                val context = LlamaCpp.formatChat(priorMessages, isAlice = messageToDecode!!.senderID == User.Alice.id)
-                                val coverText = messageToDecode!!.content
+                                var context = LlamaCpp.formatChat(priorMessages, isAlice = messageToDecode!!.senderID == User.Alice.id)
+                                var coverText = messageToDecode!!.content
                                 val inverseHuffmanCodes = if (messageToDecode!!.inverseHuffmanCodes != null) Json.decodeFromString<MutableMap<String, Char>>(messageToDecode!!.inverseHuffmanCodes!!) else null
+
+                                var isFirstMessageOfSplit = Steganography.isFirstMessageOfSplit(context, coverText)
+
+                                while (!isFirstMessageOfSplit) {
+                                    // Prepend prior message
+                                    val messageToPrepend = priorMessages.last()
+                                    priorMessages = priorMessages.dropLast(1)
+
+                                    context = LlamaCpp.formatChat(priorMessages, isAlice = messageToDecode!!.senderID == User.Alice.id)
+                                    coverText = messageToPrepend.content + "\n\n" + coverText
+                                    // TODO Ignore inverseHuffmanCodes for now as Huffman compression will likely be removed later
+
+                                    // Update loop variable
+                                    isFirstMessageOfSplit = Steganography.isFirstMessageOfSplit(context, coverText)
+                                }
 
                                 // See if message can be decoded, show toast otherwise
                                 try {
