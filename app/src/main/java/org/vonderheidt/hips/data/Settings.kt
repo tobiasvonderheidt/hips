@@ -19,6 +19,7 @@ object Settings {
         Be brief and casual, but friendly and engaging.
         Use a few emojis and phrases typical for chat messages, but not too many.
         Do not use any hashtags.
+        Split your output in paragraphs every 2-3 sentences.
     """.trimIndent().replace("\n", " ")
     private val defaultNumberOfMessages = 2
     private val defaultSteganographyMode = SteganographyMode.Arithmetic
