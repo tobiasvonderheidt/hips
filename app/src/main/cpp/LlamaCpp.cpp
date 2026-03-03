@@ -8,6 +8,14 @@ std::string LlamaCpp::detokenize(const llama_tokens& tokens, const llama_context
     return string;
 }
 
+std::string LlamaCpp::detokenize(const llama_token& token, const llama_context* ctx) {
+    llama_tokens tokens = std::vector<llama_token>{token};
+
+    std::string string = LlamaCpp::detokenize(tokens, ctx);
+
+    return string;
+}
+
 bool LlamaCpp::isSpecial(llama_token token, const llama_model* model) {
     // Get vocabulary of the LLM
     const llama_vocab* vocab = llama_model_get_vocab(model);
@@ -26,14 +34,20 @@ bool LlamaCpp::isEndOfGeneration(llama_token token, const llama_model* model) {
     return isEog;
 }
 
-jstring LlamaCpp::detokenize(JNIEnv* env, const llama_tokens& tokens, const llama_context* ctx) {
+jbyteArray LlamaCpp::detokenize(JNIEnv* env, const llama_tokens& tokens, const llama_context* ctx) {
+    // Detokenize tokens to C++ string
     std::string cppString = LlamaCpp::detokenize(tokens, ctx);
-    jstring jString = env->NewStringUTF(cppString.c_str());
 
-    return jString;
+    // Initialize Java byte array to store UTF-8 encoding of the C++ string
+    jbyteArray jByteArray = env->NewByteArray((int32_t) cppString.size());
+
+    // Fill the Java byte array and return it
+    env->SetByteArrayRegion(jByteArray, 0, (int32_t) cppString.size(), reinterpret_cast<const jbyte*>(cppString.data()));
+
+    return jByteArray;
 }
 
-void LlamaCpp::suppressSpecialTokens(float* probabilities, const llama_model* model) {
+void LlamaCpp::suppressSpecialTokens(double* probabilities, const llama_model* model) {
     // Suppress special tokens by setting their probabilities to 0
     for (llama_token token = 0; token < LlamaCpp::getVocabSize(model); token++) {
         if (LlamaCpp::isSpecial(token, model)) {
@@ -44,7 +58,7 @@ void LlamaCpp::suppressSpecialTokens(float* probabilities, const llama_model* mo
 
 bool LlamaCpp::isEndOfSentence(llama_token token, const llama_context* ctx) {
     // Detokenize the token and check if it ends with a punctuation mark (covers "?" vs " ?" etc)
-    std::string detokenization = LlamaCpp::detokenize(std::vector<llama_token>{token}, ctx);
+    std::string detokenization = LlamaCpp::detokenize(token, ctx);
 
     bool isSentenceFinished = detokenization.back() == '.'
                               || detokenization.back() == '?'
@@ -70,7 +84,7 @@ llama_token LlamaCpp::getAsciiNul(const llama_model* model, const llama_context*
     // Checking if it is equal to it would require constructing a string that only contains the NUL char, which conflicts with C/C++ strings being NUL-terminated
     // TODO llama.cpp's common_detokenize seems to return a string that only contains the NUL char, figure out how they do it
     for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
-        if (LlamaCpp::detokenize(std::vector<llama_token>{token}, ctx).find('\0') != std::string::npos) {
+        if (LlamaCpp::detokenize(token, ctx).find('\0') != std::string::npos) {
             return token;
         }
     }
@@ -85,17 +99,19 @@ int32_t LlamaCpp::getVocabSize(const llama_model* model) {
     return n_vocab;
 }
 
-llama_tokens LlamaCpp::tokenize(JNIEnv* env, jstring jString, const llama_context* ctx) {
-    // Convert Java string to be tokenized to C++ string
+llama_tokens LlamaCpp::tokenize(JNIEnv* env, jbyteArray jByteArray, const llama_context* ctx) {
+    // Convert Java byte array storing UTF-8 encoding of string to be tokenized to C++ string
     jboolean isCopy = true;
-    const char* cppString = env->GetStringUTFChars(jString, &isCopy);
+    jbyte* jBytes = env->GetByteArrayElements(jByteArray, &isCopy);
+
+    std::string cppString(reinterpret_cast<char*>(jBytes), env->GetArrayLength(jByteArray));
 
     // Tokenize string, save tokens as llama_tokens (equivalent to std::vector<llama_token>, with llama_token equivalent to int32_t)
     // See common.cpp: common_tokenize(ctx, ...) calls common_tokenize(vocab, ...), which calls llama_tokenize, always passing parameters {add,parse}_special through
     llama_tokens tokens = common_tokenize(ctx, cppString, false, true);
 
-    // Release C++ string from memory
-    env->ReleaseStringUTFChars(jString, cppString);
+    // Release memory allocated above again
+    env->ReleaseByteArrayElements(jByteArray, jBytes, 0);
 
     return tokens;
 }
@@ -112,7 +128,7 @@ float* LlamaCpp::getLogits(llama_tokens tokens, llama_context* ctx) {
     // llama.cpp example cited below stores multiple tokens from tokenization of the prompt in the first run, single last sampled token in subsequent runs
     // TODO
     //  llama.cpp docs: "NOTE: this is a helper function to facilitate transition to the new batch API - avoid using it"
-    //  But is used like this in https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp
+    //  But is used like this in https://github.com/ggml-org/llama.cpp/blob/master/examples/simple/simple.cpp
     llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens);
 
     // Check if model architecture is encoder-decoder or decoder-only
@@ -128,6 +144,14 @@ float* LlamaCpp::getLogits(llama_tokens tokens, llama_context* ctx) {
 
     // Get pointer to the logit matrix
     float* logits = llama_get_logits(ctx);
+
+    return logits;
+}
+
+float* LlamaCpp::getLogits(llama_token token, llama_context* ctx) {
+    llama_tokens tokens = std::vector<llama_token>{token};
+
+    float* logits = LlamaCpp::getLogits(tokens, ctx);
 
     return logits;
 }

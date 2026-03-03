@@ -13,13 +13,22 @@ private:
     /**
      * Wrapper for the `common_detokenize` function of llama.cpp. Detokenizes a vector of token IDs into a C++ string.
      *
-     * Helper for the public `detokenize` function returning a Java string.
+     * Helper for the public `detokenize` function.
      *
      * @param tokens Vector of token IDs.
      * @param ctx Memory address of the context.
      * @return Detokenization as a C++ string.
      */
     static std::string detokenize(const llama_tokens& tokens, const llama_context* ctx);
+
+    /**
+     * Wrapper for the `common_detokenize` function of llama.cpp. Detokenizes a token ID into a C++ string.
+     *
+     * @param token A token ID.
+     * @param ctx Memory address of the context.
+     * @return Detokenization as a C++ string.
+     */
+    static std::string detokenize(const llama_token& token, const llama_context* ctx);
 
     /**
      * Wrapper for the `llama_vocab_is_eog` and `llama_vocab_is_control` functions of llama.cpp. Checks if a token is a special token.
@@ -41,14 +50,14 @@ private:
 
 public:
     /**
-     * Wrapper for the `common_detokenize` function of llama.cpp. Detokenizes a vector of token IDs into a Java string.
+     * Wrapper for the `common_detokenize` function of llama.cpp. Detokenizes a vector of token IDs into a Java string (byte array storing UTF-8 encoded string to bypass JNI errors).
      *
      * @param env The JNI environment.
      * @param tokens Vector of token IDs.
      * @param ctx Memory address of the context.
-     * @return Detokenization as a Java string.
+     * @return Detokenization as a Java string (byte array storing UTF-8 encoded string to bypass JNI errors).
      */
-    static jstring detokenize(JNIEnv* env, const llama_tokens& tokens, const llama_context* ctx);
+    static jbyteArray detokenize(JNIEnv* env, const llama_tokens& tokens, const llama_context* ctx);
 
     /**
      * Function to suppress special tokens, i.e. end-of-generation (eog) and control tokens.
@@ -59,7 +68,7 @@ public:
      * @param probabilities Probabilities for the last token of the prompt (= last row of logits matrix after normalization).
      * @param model Memory address of the LLM.
      */
-    static void suppressSpecialTokens(float* probabilities, const llama_model* model);
+    static void suppressSpecialTokens(double* probabilities, const llama_model* model);
 
     /**
      * Function to check if a token is the end of a sentence. Needed to complete the last sentence of the cover text.
@@ -100,14 +109,14 @@ public:
     static int32_t getVocabSize(const llama_model* model);
 
     /**
-     * Wrapper for the `common_tokenize` function of llama.cpp. Tokenizes a Java string into a vector of token IDs.
+     * Wrapper for the `common_tokenize` function of llama.cpp. Tokenizes a Java string (byte array storing UTF-8 encoded string to bypass JNI errors) into a vector of token IDs.
      *
      * @param env The JNI environment.
-     * @param jString Java string to be tokenized.
+     * @param jByteArray Java string to be tokenized (byte array storing UTF-8 encoded string to bypass JNI errors).
      * @param ctx Memory address of the context.
      * @return Tokenization as a vector of token IDs.
      */
-    static llama_tokens tokenize(JNIEnv* env, jstring jString, const llama_context* ctx);
+    static llama_tokens tokenize(JNIEnv* env, jbyteArray jByteArray, const llama_context* ctx);
 
     /**
      * Function to calculate the logit matrix (i.e. predictions for every token in the prompt).
@@ -119,6 +128,15 @@ public:
      * @return The last row of the logit matrix.
      */
     static float* getLogits(llama_tokens tokens, llama_context* ctx);
+
+    /**
+     * Function to calculate a vector of logits (i.e. predictions for the last sampled token).
+     *
+     * @param token Token ID of the last sampled token.
+     * @param ctx Memory address of the context.
+     * @return A vector of logits.
+     */
+    static float* getLogits(llama_token token, llama_context* ctx);
 };
 
 #endif

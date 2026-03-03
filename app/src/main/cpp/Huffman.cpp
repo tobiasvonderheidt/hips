@@ -6,7 +6,7 @@
 #include "LlamaCpp.h"
 #include "Statistics.h"
 
-extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Huffman_encode(JNIEnv* env, jobject /* thiz */, jstring jContext, jbyteArray jCipherBits, jint jBitsPerToken, jlong jCtx) {
+extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_encode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCipherBits, jint jBitsPerToken, jlong jCtx) {
     // TODO Abstract state management away in LlamaCpp.{h,cpp}
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
     const llama_model* model = llama_get_model(cppCtx);
@@ -29,13 +29,13 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Huffman_enc
 
     // Sample tokens until all bits of secret message are encoded and last sentence is finished
     while (i < cppCipherBits.size() || !isLastSentenceFinished) {
-        // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp:
+        // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggml-org/llama.cpp/blob/master/examples/simple/simple.cpp:
         // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
         // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
-        float* logits = LlamaCpp::getLogits(isFirstRun ? contextTokens : std::vector<llama_token>{sampledToken}, cppCtx);
+        float* logits = isFirstRun ? LlamaCpp::getLogits(contextTokens, cppCtx) : LlamaCpp::getLogits(sampledToken, cppCtx);
 
         // Normalize logits to probabilities
-        float* probabilities = Statistics::softmax(logits, model);
+        double* probabilities = Statistics::softmax(logits, model);
 
         // Suppress special tokens to avoid early termination before all bits of secret message are encoded
         LlamaCpp::suppressSpecialTokens(probabilities, model);
@@ -43,7 +43,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Huffman_enc
         // Huffman sampling to encode bits of secret message into tokens
         if (i < cppCipherBits.size()) {
             // Get top 2^bitsPerToken probabilities for last token of prompt (= height of Huffman tree)
-            std::vector<std::pair<llama_token, float>> topProbabilities = Huffman::getTopProbabilities(probabilities, jBitsPerToken, model);
+            std::vector<std::pair<llama_token, double>> topProbabilities = Huffman::getTopProbabilities(probabilities, jBitsPerToken, model);
 
             // Construct Huffman tree from top probabilities
             HuffmanCoding huffmanCoding = HuffmanCoding();
@@ -76,6 +76,8 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Huffman_enc
 
             // Update flag
             isFirstRun = false;
+
+            // Destructor for huffmanCoding is called implicitly as it goes out of scope here
         }
         // Greedy sampling to pick most likely token until last sentence is finished
         else {
@@ -88,15 +90,18 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Huffman_enc
 
         // Append last sampled token to cover text tokens
         coverTextTokens.push_back(sampledToken);
+
+        // Free allocated memory
+        delete[] probabilities;
     }
 
     // Detokenize cover text tokens into cover text to return it
-    jstring coverText = LlamaCpp::detokenize(env, coverTextTokens, cppCtx);
+    jbyteArray coverText = LlamaCpp::detokenize(env, coverTextTokens, cppCtx);
 
     return coverText;
 }
 
-extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_decode(JNIEnv* env, jobject /* thiz */, jstring jContext, jstring jCoverText, jint jBitsPerToken, jlong jCtx) {
+extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_decode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCoverText, jint jBitsPerToken, jlong jCtx) {
     // TODO Abstract state management away in LlamaCpp.{h,cpp}
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
     const llama_model* model = llama_get_model(cppCtx);
@@ -117,16 +122,16 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_
     // Decode every cover text token into bitsPerToken bits
     while (i < coverTextTokens.size()) {
         // Calculate the logit matrix again initially from context tokens, then from last cover text token, and get last row
-        float* logits = LlamaCpp::getLogits(isFirstRun ? contextTokens : std::vector<llama_token>{coverTextToken}, cppCtx);
+        float* logits = isFirstRun ? LlamaCpp::getLogits(contextTokens, cppCtx) : LlamaCpp::getLogits(coverTextToken, cppCtx);
 
         // Normalize logits to probabilities
-        float* probabilities = Statistics::softmax(logits, model);
+        double* probabilities = Statistics::softmax(logits, model);
 
         // Suppress special tokens
         LlamaCpp::suppressSpecialTokens(probabilities, model);
 
         // Get top 2^bitsPerToken probabilities
-        std::vector<std::pair<llama_token, float>> topProbabilities = Huffman::getTopProbabilities(probabilities, jBitsPerToken, model);
+        std::vector<std::pair<llama_token, double>> topProbabilities = Huffman::getTopProbabilities(probabilities, jBitsPerToken, model);
 
         // Construct Huffman tree
         HuffmanCoding huffmanCoding = HuffmanCoding();
@@ -146,6 +151,11 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_
         isFirstRun = false;
 
         i++;
+
+        // Destructor for huffmanCoding is called implicitly as it goes out of scope here
+
+        // Free allocated memory
+        delete[] probabilities;
     }
 
     // Create Java ByteArray from bit vector to return cipher bits
@@ -154,10 +164,10 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_
     return jCipherBits;
 }
 
-std::vector<std::pair<llama_token, float>> Huffman::getTopProbabilities(float* probabilities, jint jBitsPerToken, const llama_model* model) {
+std::vector<std::pair<llama_token, double>> Huffman::getTopProbabilities(double* probabilities, jint jBitsPerToken, const llama_model* model) {
     // Vector of token-probability pairs
     // Use vector because unlike Kotlin, C++ sorts maps only by keys and not by values
-    std::vector<std::pair<llama_token, float>> topProbabilities;
+    std::vector<std::pair<llama_token, double>> topProbabilities;
 
     // Fill vector with pairs constructed from probabilities array, effectively maps token IDs to their probabilities to not lose them when sorting
     // Reserve memory ahead of time and construct pairs in place with emplace_back(), better performance than just using push_back(std::pair<>()) in loop

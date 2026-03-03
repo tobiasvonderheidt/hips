@@ -6,7 +6,7 @@
 #include "LlamaCpp.h"
 #include "Statistics.h"
 
-extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_encode(JNIEnv* env, jobject /* thiz */, jstring jContext, jbyteArray jCipherBits, jfloat jTemperature, jint jTopK, jint jPrecision, jlong jCtx) {
+extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_encode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCipherBits, jfloat jTemperature, jint jTopK, jint jPrecision, jlong jCtx) {
     // TODO Abstract state management away in LlamaCpp.{h,cpp}
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
     const llama_model *model = llama_get_model(cppCtx);
@@ -33,7 +33,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_
 
     // Define initial interval as [0, 2^precision)
     // Stegasuras variable "max_val" is redundant
-    std::pair<long long, long long> currentInterval = {0, 1LL << jPrecision};
+    std::pair<long long, long long> currentInterval = {0LL, 1LL << jPrecision};
 
     // </Logic specific to arithmetic coding>
 
@@ -48,13 +48,13 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_
     // But only finish last sentence during encoding, not during decompression, to avoid infinite loop
     // Our use of isDecompression here matches control flow of Stegasuras with its finish_sent parameter
     while (i < cppCipherBits.size() || (!isDecompression && !isLastSentenceFinished)) {
-        // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp:
+        // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggml-org/llama.cpp/blob/master/examples/simple/simple.cpp:
         // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
         // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
-        float* logits = LlamaCpp::getLogits(isFirstRun ? contextTokens : std::vector<llama_token>{sampledToken}, cppCtx);
+        float* logits = isFirstRun ? LlamaCpp::getLogits(contextTokens, cppCtx) : LlamaCpp::getLogits(sampledToken, cppCtx);
 
         // Normalize logits to probabilities
-        float* probabilities = Statistics::softmax(logits, model);
+        double* probabilities = Statistics::softmax(logits, model);
 
         // Suppress special tokens to avoid early termination before all bits of secret message are encoded
         LlamaCpp::suppressSpecialTokens(probabilities, model);
@@ -64,7 +64,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_
             // <Logic specific to arithmetic coding>
 
             // Scale probabilities with 1/temperature and sort descending
-            std::vector<std::pair<llama_token, float>> scaledProbabilities;
+            std::vector<std::pair<llama_token, double>> scaledProbabilities;
             scaledProbabilities.reserve(LlamaCpp::getVocabSize(model));
 
             for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
@@ -80,7 +80,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_
             // Stegasuras: "Cut off low probabilities that would be rounded to 0"
             // currentThreshold needs to be float as it will be compared to probabilities, float division happens implicitly in Python but explicitly in Kotlin
             long long currentIntervalRange = currentInterval.second - currentInterval.first;
-            double currentThreshold = 1.0 / currentIntervalRange;
+            double currentThreshold = 1.0 / static_cast<double>(currentIntervalRange);
 
             // Invert logic of Stegasuras:
             // Stegasuras: Drop all tokens with probability < currentThreshold
@@ -99,7 +99,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_
                     static_cast<int>(std::count_if(
                         scaledProbabilities.begin(),
                         scaledProbabilities.end(),
-                        [currentThreshold](const std::pair<llama_token, float>& pair) { return pair.second >= currentThreshold; }
+                        [currentThreshold](const std::pair<llama_token, double>& pair) { return pair.second >= currentThreshold; }
                     ))
                 ),
                 jTopK
@@ -109,19 +109,19 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_
             // Stegasuras would use variable name roundedScaledProbabilities here already, but requires overwriting one data type with another (List<Pair<Int, Float>> vs List<Pair<Int, Int>>)
             // Possible in Python, but not in Kotlin
             // Use topScaledProbabilities for now to be similar to decode, roundedScaledProbabilities only after rounding probabilities from float to int below
-            std::vector<std::pair<llama_token, float>> topScaledProbabilities = scaledProbabilities;
+            std::vector<std::pair<llama_token, double>> topScaledProbabilities = scaledProbabilities;
             topScaledProbabilities.resize(k);
 
             // Stegasuras: "Rescale to correct range"
             // Top k probabilities sum up to something in [0,1), rescale to [0, 2^precision)
-            float sum = 0.0;
+            double sum = 0.0;
 
             for (const auto& [token, probability] : topScaledProbabilities) {
                 sum += probability;
             }
 
             for (auto& pair : topScaledProbabilities) {
-                pair.second *= currentIntervalRange / sum;
+                pair.second *= static_cast<double>(currentIntervalRange) / sum;
             }
 
             // Stegasuras: "Round probabilities to integers given precision"
@@ -150,7 +150,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_
             int overfill = std::count_if(
                 cumulatedProbabilities.begin(),
                 cumulatedProbabilities.end(),
-                [currentIntervalRange](const std::pair<llama_token, float>& pair) { return pair.second > currentIntervalRange; }
+                [currentIntervalRange](const std::pair<llama_token, double>& pair) { return pair.second > static_cast<double>(currentIntervalRange); }
             );
 
             if (overfill > 0) {
@@ -261,6 +261,9 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_
             isLastSentenceFinished = LlamaCpp::isEndOfSentence(sampledToken, cppCtx);
         }
 
+        // Free allocated memory
+        delete[] probabilities;
+
         // Append last sampled token to cover text tokens
         coverTextTokens.push_back(sampledToken);
 
@@ -272,12 +275,12 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_
     }
 
     // Detokenize cover text tokens into cover text to return it
-    jstring coverText = LlamaCpp::detokenize(env, coverTextTokens, cppCtx);
+    jbyteArray coverText = LlamaCpp::detokenize(env, coverTextTokens, cppCtx);
 
     return coverText;
 }
 
-extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_decode(JNIEnv* env, jobject /* thiz */, jstring jContext, jstring jCoverText, jfloat jTemperature, jint jTopK, jint jPrecision, jlong jCtx) {
+extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_decode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCoverText, jfloat jTemperature, jint jTopK, jint jPrecision, jlong jCtx) {
     // TODO Abstract state management away in LlamaCpp.{h,cpp}
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
     const llama_model* model = llama_get_model(cppCtx);
@@ -298,7 +301,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         // Not done here as ASCII NUL is used instead (see translation of "partial" variable in encode)
     }
 
-    std::pair<long long, long long> currentInterval = {0, 1LL << jPrecision};
+    std::pair<long long, long long> currentInterval = {0LL, 1LL << jPrecision};
 
     // </Logic specific to arithmetic coding>
 
@@ -314,17 +317,17 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
     // Decode every cover text token
     while (i < coverTextTokens.size()) {
         // Calculate the logit matrix again initially from context tokens, then from last cover text token, and get last row
-        float* logits = LlamaCpp::getLogits(isFirstRun ? contextTokens : std::vector<llama_token>{coverTextToken}, cppCtx);
+        float* logits = isFirstRun ? LlamaCpp::getLogits(contextTokens, cppCtx) : LlamaCpp::getLogits(coverTextToken, cppCtx);
 
         // Normalize logits to probabilities
-        float* probabilities = Statistics::softmax(logits, model);
+        double* probabilities = Statistics::softmax(logits, model);
 
         // Suppress special tokens
         LlamaCpp::suppressSpecialTokens(probabilities, model);
 
         // <Logic specific to arithmetic coding>
 
-        std::vector<std::pair<llama_token, float>> scaledProbabilities;
+        std::vector<std::pair<llama_token, double>> scaledProbabilities;
         scaledProbabilities.reserve(LlamaCpp::getVocabSize(model));
 
         for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
@@ -339,7 +342,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
 
         // Stegasuras: "Cut off low probabilities that would be rounded to 0"
         long long currentIntervalRange = currentInterval.second - currentInterval.first;
-        double currentThreshold = 1.0 / currentIntervalRange;
+        double currentThreshold = 1.0 / static_cast<double>(currentIntervalRange);
 
         int k = std::min(
             std::max(
@@ -347,25 +350,25 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
                 static_cast<int>(std::count_if(
                     scaledProbabilities.begin(),
                     scaledProbabilities.end(),
-                    [currentThreshold](const std::pair<llama_token, float>& pair) { return pair.second >= currentThreshold; }
+                    [currentThreshold](const std::pair<llama_token, double>& pair) { return pair.second >= currentThreshold; }
                 ))
             ),
             jTopK
         );
 
         // Don't reassign "scaledProbabilities = scaledProbabilities.take(k)" but introduce new variable topScaledProbabilities as decode needs scaledProbabilities again later
-        std::vector<std::pair<llama_token, float>> topScaledProbabilities = scaledProbabilities;
+        std::vector<std::pair<llama_token, double>> topScaledProbabilities = scaledProbabilities;
         topScaledProbabilities.resize(k);
 
         // Stegasuras: "Rescale to correct range"
-        float sum = 0.0;
+        double sum = 0.0;
 
         for (const auto& [token, probability] : topScaledProbabilities) {
             sum += probability;
         }
 
         for (auto& pair : topScaledProbabilities) {
-            pair.second *= currentIntervalRange / sum;
+            pair.second *= static_cast<double>(currentIntervalRange) / sum;
         }
 
         // Stegasuras: "Round probabilities to integers given precision"
@@ -390,7 +393,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         int overfill = std::count_if(
             cumulatedProbabilities.begin(),
             cumulatedProbabilities.end(),
-            [currentIntervalRange](const std::pair<llama_token, float>& pair) { return pair.second > currentIntervalRange; }
+            [currentIntervalRange](const std::pair<llama_token, double>& pair) { return pair.second > static_cast<double>(currentIntervalRange); }
         );
 
         if (overfill > 0) {
@@ -477,6 +480,9 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         isFirstRun = false;
 
         i++;
+
+        // Free allocated memory
+        delete[] probabilities;
     }
 
     // Create ByteArray from bit vector to return cipher bits
@@ -504,10 +510,10 @@ int Arithmetic::numberOfSameBitsFromBeginning(const std::vector<bool>& bitVector
     return numberOfSameBitsFromBeginning;
 }
 
-llama_token Arithmetic::getTopProbability(float *probabilities, const llama_model* model) {
+llama_token Arithmetic::getTopProbability(double* probabilities, const llama_model* model) {
     // Vector of token-probability pairs
     // Use vector because unlike Kotlin, C++ can sort maps only by keys and not by values
-    std::vector<std::pair<llama_token, float>> topProbabilities;
+    std::vector<std::pair<llama_token, double>> topProbabilities;
 
     // Fill vector with pairs constructed from probabilities array, effectively maps token IDs to their probabilities to not lose them when sorting
     // Reserve memory ahead of time and construct pairs in place with emplace_back(), better performance than just using push_back(std::pair<>()) in loop

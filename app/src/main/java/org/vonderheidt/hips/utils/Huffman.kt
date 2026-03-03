@@ -78,11 +78,18 @@ object Huffman {
      *
      * @param context The context to encode the secret message with.
      * @param cipherBits The encrypted binary representation of the secret message.
-     * @param bitsPerToken Number of bits to encode/decode per cover text token (= height of Huffman tree). Determined by Settings object.
-     * @param ctx Memory address of the context.
      * @return A cover text containing the secret message.
      */
-    external fun encode(context: String, cipherBits: ByteArray, bitsPerToken: Int = Settings.bitsPerToken, ctx: Long = LlamaCpp.getCtx()): String
+    fun encode(context: String, cipherBits: ByteArray): String {
+        val coverTextBytes = encode(
+            context = context.toByteArray(charset = Charsets.UTF_8),
+            cipherBits = cipherBits
+        )
+
+        val coverText = String(bytes = coverTextBytes, charset = Charsets.UTF_8)
+
+        return coverText
+    }
 
     /**
      * Function to decode a cover text into (the encrypted binary representation of) the secret message using Huffman decoding.
@@ -91,11 +98,44 @@ object Huffman {
      *
      * @param context The context to decode the cover text with.
      * @param coverText The cover text containing a secret message.
+     * @return The encrypted binary representation of the secret message.
+     */
+    fun decode(context: String, coverText: String): ByteArray {
+        return decode(
+            context = context.toByteArray(charset = Charsets.UTF_8),
+            coverText = coverText.toByteArray(charset = Charsets.UTF_8),
+        )
+    }
+
+    /**
+     * Function to encode (the encrypted binary representation of) the secret message into a cover text using Huffman encoding.
+     *
+     * Helper for the public `encode` function to bypass JNI errors with strings.
+     *
+     * Corresponds to Stegasuras method `encode_huffman` in `huffman_baseline.py`. Parameter `finish_sent` was removed (<=> is now hard coded to true).
+     *
+     * @param context The context to encode the secret message with (byte array storing UTF-8 encoded string to bypass JNI errors).
+     * @param cipherBits The encrypted binary representation of the secret message.
+     * @param bitsPerToken Number of bits to encode/decode per cover text token (= height of Huffman tree). Determined by Settings object.
+     * @param ctx Memory address of the context.
+     * @return A cover text containing the secret message (byte array storing UTF-8 encoded string to bypass JNI errors).
+     */
+    private external fun encode(context: ByteArray, cipherBits: ByteArray, bitsPerToken: Int = Settings.bitsPerToken, ctx: Long = LlamaCpp.getCtx()): ByteArray
+
+    /**
+     * Function to decode a cover text into (the encrypted binary representation of) the secret message using Huffman decoding.
+     *
+     * Helper for the public `decode` function to bypass JNI errors with strings.
+     *
+     * Corresponds to Stegasuras method `decode_huffman` in `huffman_baseline.py`.
+     *
+     * @param context The context to decode the cover text with (byte array storing UTF-8 encoded string to bypass JNI errors).
+     * @param coverText The cover text containing a secret message (byte array storing UTF-8 encoded string to bypass JNI errors).
      * @param bitsPerToken Number of bits to encode/decode per cover text token (= height of Huffman tree). Determined by Settings object.
      * @param ctx Memory address of the context.
      * @return The encrypted binary representation of the secret message.
      */
-    external fun decode(context: String, coverText: String, bitsPerToken: Int = Settings.bitsPerToken, ctx: Long = LlamaCpp.getCtx()): ByteArray
+    private external fun decode(context: ByteArray, coverText: ByteArray, bitsPerToken: Int = Settings.bitsPerToken, ctx: Long = LlamaCpp.getCtx()): ByteArray
 
     /*
     /**
@@ -126,7 +166,7 @@ object Huffman {
 
         // Sample tokens until all bits of secret message are encoded and last sentence is finished
         while (i < cipherBitString.length || !isLastSentenceFinished) {
-            // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp:
+            // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggml-org/llama.cpp/blob/master/examples/simple/simple.cpp:
             // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
             // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
             val logits = LlamaCpp.getLogits(if (isFirstRun) contextTokens else intArrayOf(sampledToken)).last()
