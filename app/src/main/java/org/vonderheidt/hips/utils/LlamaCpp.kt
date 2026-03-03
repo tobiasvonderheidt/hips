@@ -212,6 +212,24 @@ object LlamaCpp {
     }
 
     /**
+     * Function to get the ASCII STX (start-of-text) character.
+     *
+     * @return The ASCII STX character.
+     */
+    fun getAsciiStx(): String {
+       return "\u0002"
+    }
+
+    /**
+     * Function to get the ASCII ETX (end-of-text) character.
+     *
+     * @return The ASCII ETX character.
+     */
+    fun getAsciiEtx(): String {
+        return "\u0003"
+    }
+
+    /**
      * Function to format a list of messages as a llama.cpp chat (i.e. apply the chat template of the LLM).
      * Creates the context needed to do steganography encoding/decoding in a conversation.
      *

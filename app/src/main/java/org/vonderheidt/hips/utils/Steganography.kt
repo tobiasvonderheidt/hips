@@ -101,9 +101,8 @@ object Steganography {
      * @return The prepared secret message.
      */
     private fun prepare(secretMessage: String): String {
-        // Kotlin doesn't use NUL-terminated strings, instead makes them immutable and stores length
-        // So using NUL as a character in a Kotlin string can't cause any collisions
-        val preparedSecretMessage = secretMessage + '\u0000'
+        // Use ASCII {STX, ETX} as {start, stop} signal to avoid collisions with NUL-terminated strings in C++ and with each other when splitting a cover text
+        val preparedSecretMessage = LlamaCpp.getAsciiStx() + secretMessage + LlamaCpp.getAsciiEtx()
 
         return preparedSecretMessage
     }
@@ -117,9 +116,11 @@ object Steganography {
      * @return The secret message.
      */
     private fun unprepare(preparedSecretMessage: String): String {
+        // Remove {start, stop} signal again
+        // Split returns list that contains empty strings as first and possibly last elements, is intended behaviour because it interprets {start, stop} signal as delimiter between 2 strings
         val secretMessage = preparedSecretMessage
-            .split('\u0000')
-            .first()
+            .split(LlamaCpp.getAsciiStx(), LlamaCpp.getAsciiEtx())
+            .get(1)
 
         return secretMessage
     }
