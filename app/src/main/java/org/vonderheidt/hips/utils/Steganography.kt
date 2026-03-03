@@ -49,6 +49,55 @@ object Steganography {
     }
 
     /**
+     * Function to check if a message is the first of a split cover text. Partially decodes the cover text to see if it contains the start signal.
+     *
+     * @param context The context to decode the cover text with.
+     * @param coverText The cover text containing a secret message.
+     * @return Boolean that is true if the message is the first of a split cover text, false otherwise.
+     */
+    fun isFirstMessageOfSplit(
+        context: String,
+        coverText: String,
+        conversionMode: ConversionMode = Settings.conversionMode,
+        steganographyMode: SteganographyMode = Settings.steganographyMode
+    ): Boolean {
+        // When using UTF-8 encoding, first byte is guaranteed to store first char, no more bytes to consider
+        // But when using Arithmetic compression, padding length and padding are stored in first 2 bytes, so consider at least 3 bytes to find first char in as few iterations as possible
+        var numberOfCipherBits = if (conversionMode == ConversionMode.UTF8) 8 else 24
+        var isFirstCharDecoded = false
+        var isFirstMessageOfSplit = false
+
+        while(!isFirstCharDecoded) {
+            // Invert step 3
+            LlamaCpp.resetInstance()
+
+            val partialCipherBits = when (steganographyMode) {
+                SteganographyMode.Arithmetic -> { Arithmetic.decode(context, coverText, numberOfCipherBits) }
+                SteganographyMode.Huffman -> { Huffman.decode(context, coverText, numberOfCipherBits) }
+            }
+
+            // Invert step 2
+            val partialPlainBits = Crypto.decrypt(partialCipherBits)
+
+            // Invert step 1
+            LlamaCpp.resetInstance()
+
+            val partialPreparedSecretMessage = when (conversionMode) {
+                ConversionMode.Arithmetic -> { Arithmetic.decompress(partialPlainBits) }
+                ConversionMode.UTF8 -> { UTF8.decode(partialPlainBits) }
+            }
+
+            // Don't invert step 0
+            isFirstCharDecoded = partialPreparedSecretMessage.isNotEmpty()
+            isFirstMessageOfSplit = partialPreparedSecretMessage.startsWith(LlamaCpp.getAsciiStx())
+
+            numberOfCipherBits += 8
+        }
+
+        return isFirstMessageOfSplit
+    }
+
+    /**
      * Function to decode secret message from cover text using given context.
      *
      * @param context The context to decode the cover text with.
