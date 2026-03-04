@@ -62,37 +62,31 @@ object Steganography {
         steganographyMode: SteganographyMode = Settings.steganographyMode
     ): Boolean {
         // When using UTF-8 encoding, first byte is guaranteed to store first char, no more bytes to consider
-        // But when using Arithmetic compression, padding length and padding are stored in first 2 bytes, so consider at least 3 bytes to find first char in as few iterations as possible
-        var numberOfCipherBits = if (conversionMode == ConversionMode.UTF8) 8 else 24
-        var isFirstCharDecoded = false
-        var isFirstMessageOfSplit = false
+        // But when using Arithmetic compression, padding length and padding are stored in first 2 bytes, so consider at least 3 bytes to find first char
+        // => Trial-and-error showed that first 4 bytes need to be considered, otherwise Arithmetic decodes incomplete bit sequence to wrong char
+        val numberOfCipherBits = if (conversionMode == ConversionMode.UTF8) 8 else 32
 
-        while(!isFirstCharDecoded) {
-            // Invert step 3
-            LlamaCpp.resetInstance()
+        // Invert step 3
+        LlamaCpp.resetInstance()
 
-            val partialCipherBits = when (steganographyMode) {
-                SteganographyMode.Arithmetic -> { Arithmetic.decode(context, coverText, numberOfCipherBits) }
-                SteganographyMode.Huffman -> { Huffman.decode(context, coverText, numberOfCipherBits) }
-            }
-
-            // Invert step 2
-            val partialPlainBits = Crypto.decrypt(partialCipherBits)
-
-            // Invert step 1
-            LlamaCpp.resetInstance()
-
-            val partialPreparedSecretMessage = when (conversionMode) {
-                ConversionMode.Arithmetic -> { Arithmetic.decompress(partialPlainBits) }
-                ConversionMode.UTF8 -> { UTF8.decode(partialPlainBits) }
-            }
-
-            // Don't invert step 0
-            isFirstCharDecoded = partialPreparedSecretMessage.isNotEmpty()
-            isFirstMessageOfSplit = partialPreparedSecretMessage.startsWith(LlamaCpp.getAsciiStx())
-
-            numberOfCipherBits += 8
+        val partialCipherBits = when (steganographyMode) {
+            SteganographyMode.Arithmetic -> { Arithmetic.decode(context, coverText, numberOfCipherBits) }
+            SteganographyMode.Huffman -> { Huffman.decode(context, coverText, numberOfCipherBits) }
         }
+
+        // Invert step 2
+        val partialPlainBits = Crypto.decrypt(partialCipherBits)
+
+        // Invert step 1
+        LlamaCpp.resetInstance()
+
+        val partialPreparedSecretMessage = when (conversionMode) {
+            ConversionMode.Arithmetic -> { Arithmetic.decompress(partialPlainBits) }
+            ConversionMode.UTF8 -> { UTF8.decode(partialPlainBits) }
+        }
+
+        // Don't invert step 0
+        val isFirstMessageOfSplit = partialPreparedSecretMessage.startsWith(LlamaCpp.getAsciiStx())
 
         return isFirstMessageOfSplit
     }
