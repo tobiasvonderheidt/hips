@@ -431,7 +431,16 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         // Error handling for if the token isn't found in the valid range
         // Small chance but possible as token probability has to be > currentThreshold (~ 1/2^precision)
         if (rank == -1 || rank > cumulatedProbabilities.size()) {
-            throw std::invalid_argument("Cover text cannot be decoded: token mismatch at position " + std::to_string(i));
+            // Throw Kotlin/Java exception instead of C++ exception because we need to catch it on the Kotlin side
+            jclass exceptionClass = env->FindClass("java/lang/IllegalArgumentException");
+            std::string exceptionMessage = "Cover text cannot be decoded: token mismatch at position " + std::to_string(i);
+
+            env->ThrowNew(exceptionClass, exceptionMessage.c_str());
+
+            // Call return to fix C++ control flow
+            // Otherwise throwing Kotlin/Java exception would be pending JNI call, conflicting with JNI call for constructing jbyteArray below
+            // Necessary because for C++, throwing Kotlin/Java exception via JNI is just another instruction that (unlike a C++ exception) doesn't terminate the C++ function
+            return nullptr;
         }
 
         // Sample token at (corrected) rank

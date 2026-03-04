@@ -82,6 +82,7 @@ object Arithmetic {
      * @param numberOfCipherBits Desired number of cipher bits to return. Only needed when searching for start signal in split cover text. Has to be multiple of 8 for decryption.
      * @return The encrypted binary representation of the secret message.
      * @throws IllegalArgumentException If `numberOfCipherBits` is not a multiple of 8.
+     * @throws IllegalArgumentException If a cover text token could not be predicted (e.g. partial decoding with wrong context when trying to find start signal in split cover text).
      */
     fun decode(context: String, coverText: String, numberOfCipherBits: Int = -1): ByteArray {
         if (numberOfCipherBits > 0 && numberOfCipherBits % 8 != 0) {
@@ -127,6 +128,7 @@ object Arithmetic {
      * @param ctx Memory address of the context.
      * @param numberOfCipherBits Desired number of cipher bits to return. Only needed when searching for start signal in split cover text. Has to be multiple of 8 for decryption.
      * @return The encrypted binary representation of the secret message.
+     * @throws IllegalArgumentException If a cover text token could not be predicted (e.g. partial decoding with wrong context when trying to find start signal in split cover text).
      */
     private external fun decode(context: ByteArray, coverText: ByteArray, temperature: Float = Settings.temperature, topK: Int = Settings.topK, precision: Int = Settings.precision, ctx: Long = LlamaCpp.getCtx(), numberOfCipherBits: Int = -1) : ByteArray
 

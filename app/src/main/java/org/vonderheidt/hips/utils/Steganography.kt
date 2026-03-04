@@ -65,13 +65,24 @@ object Steganography {
         // But when using Arithmetic compression, padding length and padding are stored in first 2 bytes, so consider at least 3 bytes to find first char
         // => Trial-and-error showed that first 4 bytes need to be considered, otherwise Arithmetic decodes incomplete bit sequence to wrong char
         val numberOfCipherBits = if (conversionMode == ConversionMode.UTF8) 8 else 32
+        var isFirstMessageOfSplit: Boolean
 
         // Invert step 3
         LlamaCpp.resetInstance()
 
-        val partialCipherBits = when (steganographyMode) {
-            SteganographyMode.Arithmetic -> { Arithmetic.decode(context, coverText, numberOfCipherBits) }
-            SteganographyMode.Huffman -> { Huffman.decode(context, coverText, numberOfCipherBits) }
+        // Wrap this in try-catch because decoding with wrong context is likely to throw exceptions
+        val partialCipherBits: ByteArray
+
+        try {
+            partialCipherBits = when (steganographyMode) {
+                SteganographyMode.Arithmetic -> { Arithmetic.decode(context, coverText, numberOfCipherBits) }
+                SteganographyMode.Huffman -> { Huffman.decode(context, coverText, numberOfCipherBits) }
+            }
+        }
+        catch (exception: Exception) {
+            isFirstMessageOfSplit = false
+
+            return isFirstMessageOfSplit
         }
 
         // Invert step 2
@@ -86,7 +97,7 @@ object Steganography {
         }
 
         // Don't invert step 0
-        val isFirstMessageOfSplit = partialPreparedSecretMessage.startsWith(LlamaCpp.getAsciiStx())
+        isFirstMessageOfSplit = partialPreparedSecretMessage.startsWith(LlamaCpp.getAsciiStx())
 
         return isFirstMessageOfSplit
     }
