@@ -15,7 +15,7 @@ object Steganography {
      * @param steganographyMode Steganography mode, determined by Settings object.
      * @return A cover text containing the secret message.
      */
-    suspend fun encode(
+    fun encode(
         context: String,
         secretMessage: String,
         conversionMode: ConversionMode = Settings.conversionMode,
@@ -107,7 +107,7 @@ object Steganography {
      * @param steganographyMode Steganography mode, determined by Settings object.
      * @return The secret message.
      */
-    suspend fun decode(
+    fun decode(
         context: String,
         coverText: String,
         inverseHuffmanCodes: MutableMap<String, Char>? = null,
