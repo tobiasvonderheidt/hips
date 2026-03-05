@@ -13,12 +13,9 @@ object Settings {
     // Define default values
     private val defaultConversionMode = ConversionMode.Arithmetic
     private val defaultSystemPrompt = """
-        Let's do a role play.
-        You and I are friends, texting with each other.
+        Let's do a role play. You and I are friends, texting with each other.
         We talk about what we did on the weekend.
-        Be brief and casual, but friendly and engaging.
-        Use a few emojis and phrases typical for chat messages, but not too many.
-        Do not use any hashtags.
+        Be brief and casual, but friendly and engaging. Use emojis and phrases typical for chat messages.
     """.trimIndent().replace("\n", " ")
     private val defaultNumberOfMessages = 2
     private val defaultSteganographyMode = SteganographyMode.Arithmetic
