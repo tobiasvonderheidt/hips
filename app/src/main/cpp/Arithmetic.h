@@ -28,7 +28,7 @@ public:
      * @param model Memory address of the LLM.
      * @return ID of the most likely token.
      */
-    static llama_token getTopProbability(double* probabilities, const llama_model* model);
+    static llama_token getTopProbability(const float* probabilities, const llama_model* model);
 };
 
 #endif

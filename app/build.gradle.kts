@@ -20,14 +20,25 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
-                // CLI arguments for CMake
                 arguments += "-DLLAMA_CURL=OFF"
                 arguments += "-DLLAMA_BUILD_COMMON=ON"
                 arguments += "-DCMAKE_BUILD_TYPE=Release"
+                arguments += "-DGGML_LLAMAFILE=OFF"
+                arguments += "-DGGML_AVX=OFF"
+                arguments += "-DGGML_AVX2=OFF"
+                arguments += "-DGGML_FMA=OFF"
+                arguments += "-DGGML_F16C=OFF"
+                arguments += "-DGGML_NEON=ON"
 
-                // CLI flags for C++ compiler called by CMake
-                cppFlags += ""
+                // Fix 16 KB page alignment for modern Android devices
+                cppFlags += "-O3"
+                arguments += "-DCMAKE_EXE_LINKER_FLAGS=-Wl,-z,max-page-size=16384"
+                arguments += "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384"
             }
+        }
+        
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
         }
     }
 
@@ -59,7 +70,6 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
