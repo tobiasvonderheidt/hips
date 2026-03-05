@@ -204,19 +204,21 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                 var coverText = messageToDecode!!.content
                                 val inverseHuffmanCodes = if (messageToDecode!!.inverseHuffmanCodes != null) Json.decodeFromString<MutableMap<String, Char>>(messageToDecode!!.inverseHuffmanCodes!!) else null
 
-                                var isFirstMessageOfSplit = Steganography.isFirstMessageOfSplit(context, coverText)
+                                if (Settings.splitCoverTexts) {
+                                    var isFirstMessageOfSplit = Steganography.isFirstMessageOfSplit(context, coverText)
 
-                                while (!isFirstMessageOfSplit) {
-                                    // Prepend prior message
-                                    val messageToPrepend = priorMessages.last()
-                                    priorMessages = priorMessages.dropLast(1)
+                                    while (!isFirstMessageOfSplit) {
+                                        // Prepend prior message
+                                        val messageToPrepend = priorMessages.last()
+                                        priorMessages = priorMessages.dropLast(1)
 
-                                    context = LlamaCpp.formatChat(priorMessages, isAlice = messageToDecode!!.senderID == User.Alice.id)
-                                    coverText = messageToPrepend.content + "\n\n" + coverText
-                                    // TODO Ignore inverseHuffmanCodes for now as Huffman compression will likely be removed later
+                                        context = LlamaCpp.formatChat(priorMessages, isAlice = messageToDecode!!.senderID == User.Alice.id)
+                                        coverText = messageToPrepend.content + "\n\n" + coverText
+                                        // TODO Ignore inverseHuffmanCodes for now as Huffman compression will likely be removed later
 
-                                    // Update loop variable
-                                    isFirstMessageOfSplit = Steganography.isFirstMessageOfSplit(context, coverText)
+                                        // Update loop variable
+                                        isFirstMessageOfSplit = Steganography.isFirstMessageOfSplit(context, coverText)
+                                    }
                                 }
 
                                 // See if message can be decoded, show toast otherwise
@@ -459,16 +461,18 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                             val newCoverText = if (isPlainText) newSecretMessage else Steganography.encode(context, newSecretMessage)
                                             val newInverseHuffmanCodes = /* if (!isPlainText && Settings.conversionMode == ConversionMode.Huffman) Json.encodeToString(Huffman.getLastInverseHuffmanCodes()) else */ null
 
-                                            // Split cover text into paragraphs
-                                            for (paragraph in newCoverText.split("\n\n")) {
-                                                val newMessage = Message(newSender.id, newReceiver.id, paragraph, newInverseHuffmanCodes)
+                                            // Split cover text into paragraphs based on settings
+                                            val paragraphs = if (!isPlainText && Settings.splitCoverTexts) newCoverText.split("\n\n") else listOf(newCoverText)
 
-                                                // Order is important to avoid violating foreign key relations
-                                                db.userDao.upsertUser(newSender)
-                                                db.userDao.upsertUser(newReceiver)
+                                            // Order is important to avoid violating foreign key relations
+                                            db.userDao.upsertUser(newSender)
+                                            db.userDao.upsertUser(newReceiver)
+
+                                            for (paragraph in paragraphs) {
+                                                val newMessage = Message(newSender.id, newReceiver.id, paragraph, newInverseHuffmanCodes)
                                                 db.messageDao.upsertMessage(newMessage)
 
-                                                // Update state variables
+                                                // Update state variable
                                                 messages += newMessage
                                             }
 

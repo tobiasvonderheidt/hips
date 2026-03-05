@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Restore
+import androidx.compose.material.icons.outlined.Splitscreen
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
@@ -37,6 +38,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -95,6 +97,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
     var selectedPrecision by remember { mutableIntStateOf(Settings.precision) }
     var selectedBlockSize by rememberSaveable { mutableIntStateOf(Settings.blockSize) }
     var selectedBitsPerToken by rememberSaveable { mutableIntStateOf(Settings.bitsPerToken) }
+    var selectedSplitCoverTexts by rememberSaveable { mutableStateOf(Settings.splitCoverTexts) }
     val selectedResetModes = remember { mutableStateListOf(0, 1) }
 
     // Scrolling
@@ -617,6 +620,52 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
 
         Spacer(modifier = modifier.height(16.dp))
 
+        // Split cover texts
+        Row(
+            modifier = modifier.fillMaxWidth(0.9f)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Splitscreen,
+                contentDescription = "Split long cover texts into multiple messages"
+            )
+
+            Spacer(modifier = modifier.width(16.dp))
+
+            Column {
+                Text(
+                    text = "Split cover texts",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(text = "Split long cover texts into multiple messages.")
+
+                Spacer(modifier = modifier.height(16.dp))
+
+                Row (
+                    modifier = modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "Split")
+
+                    Switch(
+                        checked = selectedSplitCoverTexts,
+                        onCheckedChange = {
+                            // Update state variable
+                            selectedSplitCoverTexts = !selectedSplitCoverTexts
+
+                            // Update DataStore
+                            Settings.splitCoverTexts = selectedSplitCoverTexts
+                            coroutineScope.launch { HiPSDataStore.writeSettings() }
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = modifier.height(16.dp))
+
         // Reset settings
         Row(
             modifier = modifier.fillMaxWidth(0.9f)
@@ -697,6 +746,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             selectedTopK = Settings.topK
                             selectedBlockSize = Settings.blockSize
                             selectedBitsPerToken = Settings.bitsPerToken
+                            selectedSplitCoverTexts = Settings.splitCoverTexts
                         },
                         shape = RoundedCornerShape(4.dp)
                     ) {

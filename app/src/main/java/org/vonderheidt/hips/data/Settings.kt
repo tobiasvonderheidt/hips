@@ -28,6 +28,7 @@ object Settings {
     private val defaultPrecision = 0        // Only used if LLM is not in memory
     private val defaultBlockSize = 3
     private val defaultBitsPerToken = 2
+    private val defaultSplitCoverTexts = true
 
     // Initialize current values with defaults
     var conversionMode = defaultConversionMode
@@ -39,6 +40,7 @@ object Settings {
     var precision = defaultPrecision
     var blockSize = defaultBlockSize
     var bitsPerToken = defaultBitsPerToken
+    var splitCoverTexts = defaultSplitCoverTexts
 
     /**
      * Function to reset the settings to their default values.
@@ -55,6 +57,7 @@ object Settings {
             temperature = defaultTemperature
             blockSize = defaultBlockSize
             bitsPerToken = defaultBitsPerToken
+            splitCoverTexts = defaultSplitCoverTexts
         }
         if (llm) {
             topK = if (LlamaCpp.isInMemory()) LlamaCpp.getVocabSize() else defaultTopK
