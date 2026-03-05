@@ -462,7 +462,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                             val newInverseHuffmanCodes = /* if (!isPlainText && Settings.conversionMode == ConversionMode.Huffman) Json.encodeToString(Huffman.getLastInverseHuffmanCodes()) else */ null
 
                                             // Split cover text into paragraphs based on settings
-                                            val paragraphs = if (!isPlainText && Settings.splitCoverTexts) newCoverText.split("\n\n") else listOf(newCoverText)
+                                            val paragraphs = if (!isPlainText && Settings.splitCoverTexts) Steganography.split(newCoverText) else listOf(newCoverText)
 
                                             // Order is important to avoid violating foreign key relations
                                             db.userDao.upsertUser(newSender)

@@ -49,6 +49,58 @@ object Steganography {
     }
 
     /**
+     * Function to split a cover text into paragraphs.
+     *
+     * Uses a regular expression to only split when there are exactly 2 subsequent line breaks between paragraphs.
+     * This avoids leading or trailing whitespaces that would be trimmed in instant messengers like WhatsApp or Signal.
+     *
+     * Example:
+     * - Paragraphs separated by `\n\n` would be split.
+     * - Paragraphs separated by `\n \n\n`, ` \n\n`, `\n \n`, etc. would not be split.
+     *
+     * @param coverText Cover text to split into paragraphs as a string.
+     * @return Paragraphs of cover text as a list of strings.
+     */
+    fun split(coverText: String): List<String> {
+        // Split cover text into paragraphs whenever there are 2 subsequent line breaks, not considering additional line breaks or whitespaces
+        val paragraphsWithWhitespaces = coverText.split("\n\n").toMutableList()
+        val paragraphsWithoutWhitespaces = mutableListOf<String>()
+
+        // Regular expression to find 3 or more line breaks, with arbitrary number of whitespaces between them
+        val regex = Regex("(\\s*\\n\\s*){3,}")
+
+        // Concat adjacent paragraphs again to check for additional line breaks or whitespaces
+        var i = 0
+
+        while (i < paragraphsWithWhitespaces.size - 1) {
+            val concat = paragraphsWithWhitespaces[i] + "\n\n" + paragraphsWithWhitespaces[i+1]
+
+            // Replace split paragraphs that would cause leading or trailing whitespaces with their concatenation
+            if (regex.containsMatchIn(concat)) {
+                paragraphsWithoutWhitespaces.add(concat)
+
+                // Skip next iteration as its paragraph is already added as part of concat
+                i += 2
+            }
+            // Keep split paragraphs that would not cause leading or trailing whitespaces as is
+            // Don't add paragraph at index i+1 here to avoid IndexOutOfBoundsException for last paragraph
+            else {
+                paragraphsWithoutWhitespaces.add(paragraphsWithWhitespaces[i])
+                i++
+            }
+        }
+
+        // Add last paragraph safely here:
+        // If last iteration of loop executed if-case, last paragraph was already added as part of concat and we have i == size
+        // Otherwise last iteration executed else-case, so last paragraph can be added safely as we have i == size-1
+        if (i < paragraphsWithWhitespaces.size) {
+            paragraphsWithoutWhitespaces.add(paragraphsWithWhitespaces[i])
+        }
+
+        return paragraphsWithoutWhitespaces
+    }
+
+    /**
      * Function to check if a message is the first of a split cover text. Partially decodes the cover text to see if it contains the start signal.
      *
      * @param context The context to decode the cover text with.
