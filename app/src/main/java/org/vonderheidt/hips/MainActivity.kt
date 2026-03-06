@@ -43,7 +43,9 @@ class MainActivity : ComponentActivity() {
 
         // Load LLM on app startup
         if (LLM.isDownloaded()) {
-            CoroutineScope(Dispatchers.IO).launch { LlamaCpp.startInstance() }
+            CoroutineScope(Dispatchers.IO).launch {
+                LlamaCpp.startInstance()
+            }
         }
 
         // Instantiate Room database on app startup

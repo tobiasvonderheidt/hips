@@ -186,27 +186,25 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                 Toast.makeText(currentLocalContext, "Arithmetic coding needs topK > 0 and precision > 0", Toast.LENGTH_LONG).show()
                                 return@IconButton
                             }
-                            // Only 1 message can be decoded at a time
-                            if (selectedMessages.size != 1) {
-                                Toast.makeText(currentLocalContext, "Only 1 message can be decoded at a time", Toast.LENGTH_LONG).show()
-                                return@IconButton
-                            }
-
                             // Update state variables
                             isDecoding = true
-                            messageToDecode = selectedMessages[0]
+                            messageToDecode = selectedMessages.first()
+
+                            // Capture before coroutine in case selectedMessages changes
+                            val chunksToDecode = selectedMessages
 
                             CoroutineScope(Dispatchers.Default).launch {
                                 // Decoding needs to reproduce the state the message was encoded in
+                                // Context is everything before the first selected message
                                 val priorMessages = messages.subList(fromIndex = 0, toIndex = messages.indexOf(messageToDecode))    // Start inclusive, end exclusive
 
                                 val context = LlamaCpp.formatChat(priorMessages, isAlice = messageToDecode!!.senderID == User.Alice.id)
-                                val coverText = messageToDecode!!.content
+                                val coverTexts = chunksToDecode.map { it.content }
                                 val inverseHuffmanCodes = if (messageToDecode!!.inverseHuffmanCodes != null) Json.decodeFromString<MutableMap<String, Char>>(messageToDecode!!.inverseHuffmanCodes!!) else null
 
                                 // See if message can be decoded, show toast otherwise
                                 try {
-                                    secretMessage = Steganography.decode(context, coverText, inverseHuffmanCodes)
+                                    secretMessage = Steganography.decode(context, coverTexts, inverseHuffmanCodes)
                                 }
                                 catch (exception: Exception) {
                                     withContext(Dispatchers.Main) {
@@ -440,19 +438,19 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                             // Apply chat template to system prompt and prior messages
                                             val context = LlamaCpp.formatChat(messages, isAlice)
 
-                                            // Generate cover text and update database
-                                            val newCoverText = if (isPlainText) newSecretMessage else Steganography.encode(context, newSecretMessage)
+                                            // Generate cover text(s) and update database
+                                            val newCoverTexts = if (isPlainText) listOf(newSecretMessage) else Steganography.encode(context, newSecretMessage)
                                             val newInverseHuffmanCodes = /* if (!isPlainText && Settings.conversionMode == ConversionMode.Huffman) Json.encodeToString(Huffman.getLastInverseHuffmanCodes()) else */ null
-
-                                            val newMessage = Message(newSender.id, newReceiver.id, newCoverText, newInverseHuffmanCodes)
 
                                             // Order is important to avoid violating foreign key relations
                                             db.userDao.upsertUser(newSender)
                                             db.userDao.upsertUser(newReceiver)
-                                            db.messageDao.upsertMessage(newMessage)
 
-                                            // Update state variables
-                                            messages += newMessage
+                                            for (coverText in newCoverTexts) {
+                                                val newMessage = Message(newSender.id, newReceiver.id, coverText, newInverseHuffmanCodes)
+                                                db.messageDao.upsertMessage(newMessage)
+                                                messages += newMessage
+                                            }
                                             newSecretMessage = ""
                                             isAlice = !isAlice
                                             isEncoding = false

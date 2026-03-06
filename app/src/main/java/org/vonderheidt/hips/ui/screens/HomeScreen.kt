@@ -84,6 +84,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
     var isOutputVisible by rememberSaveable { mutableStateOf(false) }
     var isLoading by rememberSaveable { mutableStateOf(false) }
     var coverText by rememberSaveable { mutableStateOf("") }
+    var naturalnessScore by rememberSaveable { mutableStateOf("") }
 
     // Start button
     val modes = listOf("Encode", "Decode")
@@ -265,6 +266,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                             // Clear both secret message and cover text when mode is changed
                             secretMessage = ""
                             coverText = ""
+                            naturalnessScore = ""
                         },
                         shape = SegmentedButtonDefaults.itemShape(
                             index = index,
@@ -312,6 +314,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                     // Hide old output when start button is pressed again, show loading animation
                     isOutputVisible = false
                     isLoading = true
+                    naturalnessScore = ""
 
                     // Call encode or decode function as coroutine, depending on mode selected
                     // Use Dispatchers.Default since LLM inference is CPU-bound
@@ -342,14 +345,37 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                         }
 
                         if (selectedMode == 0) {
-                            coverText = Steganography.encode(formattedContext, secretMessage)
+                            // Use multi-candidate encoding for better naturalness
+                            val result = Steganography.encodeMultiCandidate(
+                                context = formattedContext,
+                                secretMessage = secretMessage,
+                                numCandidates = 1,
+                                temperatures = listOf(1.0f),
+                                minScore = 0.0
+                            )
+
+                            if (result != null) {
+                                // Join chunks with unit separator (U+001F) — can't appear in LLM output
+                                coverText = result.joinToString("\u001F")
+
+                                // Get the score for display
+                                val score = Steganography.lastScore
+                                if (score != null) {
+                                    naturalnessScore = String.format("%.1f", score.overallScore) + "/100 (" + score.rating + ")"
+                                }
+                            } else {
+                                // Fallback to single encode if multi-candidate fails
+                                coverText = Steganography.encode(formattedContext, secretMessage).joinToString("\u001F")
+                            }
                         }
                         else {
                             // Try-catch should only be necessary when conversation switch is set
                             try {
-                                secretMessage = Steganography.decode(formattedContext, coverText)
+                                // Split by unit separator to recover chunks
+                                secretMessage = Steganography.decode(formattedContext, coverText.split("\u001F"))
                             }
                             catch (exception: Exception) {
+                                android.util.Log.e("HiPS", "Decode failed: ${exception.message}", exception)
                                 withContext(Dispatchers.Main) {
                                     Toast.makeText(currentLocalContext, "Cover text couldn't be decoded", Toast.LENGTH_LONG).show()
                                 }
@@ -384,6 +410,15 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                     text = "Cover text (tap to copy):",
                     fontWeight = FontWeight.Bold
                 )
+
+                // Show naturalness score
+                if (naturalnessScore.isNotEmpty()) {
+                    Spacer(modifier = modifier.height(8.dp))
+
+                    Text(
+                        text = "Naturalness: $naturalnessScore"
+                    )
+                }
 
                 Spacer(modifier = modifier.height(16.dp))
 

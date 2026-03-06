@@ -9,6 +9,10 @@ import kotlin.math.roundToInt
  * Object (i.e. singleton class) that represents steganography using arithmetic encoding.
  */
 object Arithmetic {
+    /** Score from the last encode, computed inline so we don't need a second LLM pass. */
+    var lastScore: SteganographyScoring.NaturalnessScore? = null
+        private set
+
     /**
      * Function to compress the secret message using arithmetic *decoding*. Wrapper for function `decode` of object `Arithmetic`.
      *
@@ -45,7 +49,7 @@ object Arithmetic {
             temperature = 1.0f,
             topK = LlamaCpp.getVocabSize(),
             precision = 40
-            // EDIT 1: Matched precision to the value in compress(), both need to work with same interval size
+            // Matched precision to compress() — both need the same interval size
         )
     }
 
@@ -95,9 +99,16 @@ object Arithmetic {
         var isFirstRun = true                   // llama.cpp batch needs to store context tokens in first run, but only last sampled token in subsequent runs
         var sampledToken = -1                   // Will always be overwritten with last cover text token
 
+        // Collect token stats as we go, so we can score without re-running the LLM
+        val tokenProbs = mutableListOf<Float>()
+        val tokenRanks = mutableListOf<Int>()
+
+        // Track how many tokens are arithmetic vs greedy for logging
+        var arithmeticTokenCount = 0
+        var greedyTokenCount = 0
+
         // Sample tokens until all bits of secret message are encoded and last sentence is finished
-        // EDIT 2: Added a check for isDecompression, we are converting bits back to the string so without a check it would loop
-        // forever, trying to finish a sentence
+        // Don't try to finish sentence during decompression or it loops forever
         while (i < cipherBitString.length || (!isDecompression && !isLastSentenceFinished)) {
             // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggerganov/llama.cpp/blob/master/examples/simple/simple.cpp:
             // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
@@ -242,14 +253,14 @@ object Arithmetic {
                 // Stegasuras: "Consume most significant bits which are now fixed and update interval"
                 // Arithmetic coding encodes data into a number by iteratively narrowing initial interval defined earlier
                 // Therefore most significant bits are fixed first (~ numberOfSameBitsFromBeginning), determining the order of magnitude of the number, less significant bits are fixed later
-                // EDIT 3: Changed val to var. For cases where the LLM is very confident about the next token, interval barely narrows and
-                // numberOfEncodedBits can be 0, so it would loop. Need to force 1 bit of progress during decompression to avoid this.
+                // Changed to var — when the LLM is very confident, the interval barely narrows and
+                // numberOfEncodedBits can be 0, which causes an infinite loop during decompression
                 var numberOfEncodedBits = numberOfSameBitsFromBeginning(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive)
 
+                // Force at least 1 bit of progress during decompression to avoid getting stuck
                 if (isDecompression && numberOfEncodedBits == 0 && i < cipherBitString.length) {
                     numberOfEncodedBits = 1
                 }
-                // ======================================================================
 
                 i += numberOfEncodedBits
 
@@ -265,6 +276,14 @@ object Arithmetic {
                 // Sample token as determined above
                 sampledToken = cumulatedProbabilities[selectedSubinterval].first
 
+                // Record stats for scoring (skip during decompression)
+                if (!isDecompression) {
+                    tokenProbs.add(probabilities[sampledToken])
+                    val selectedRank = scaledProbabilities.indexOfFirst { it.first == sampledToken } + 1
+                    tokenRanks.add(selectedRank)
+                    arithmeticTokenCount++
+                }
+
                 // </Logic specific to arithmetic coding>
 
                 // Update flag
@@ -274,6 +293,11 @@ object Arithmetic {
             else {
                 // Get most likely token
                 sampledToken = getTopProbability(probabilities)
+
+                // Record stats for scoring (greedy = always rank 1)
+                tokenProbs.add(probabilities[sampledToken])
+                tokenRanks.add(1)
+                greedyTokenCount++
 
                 // Update flag
                 isLastSentenceFinished = LlamaCpp.isEndOfSentence(sampledToken)
@@ -291,6 +315,12 @@ object Arithmetic {
 
         // Detokenize cover text tokens into cover text to return it
         val coverText = LlamaCpp.detokenize(coverTextTokens)
+
+        // Score the cover text from the stats we collected (skip during decompression)
+        if (!isDecompression && tokenProbs.isNotEmpty()) {
+            lastScore = SteganographyScoring.computeScore(tokenProbs, tokenRanks, cipherBitString.length)
+            android.util.Log.d("HiPS", "Token breakdown: arithmetic=$arithmeticTokenCount, greedy=$greedyTokenCount, total=${arithmeticTokenCount + greedyTokenCount}, bits=${cipherBitString.length}")
+        }
 
         return coverText
     }
@@ -433,11 +463,10 @@ object Arithmetic {
             // Determine rank of predicted token amongst all tokens based on its probability
             var rank = scaledProbabilities.indexOfFirst { it.first == coverTextTokens[i] }
 
-            // EDIT 4: Error handling for if the token isn't found in the valid range.
+            // If the token isn't in the valid range, decoding can't continue
             if (rank == -1 || rank >= cumulatedProbabilities.size) {
                 throw IllegalArgumentException("Cover text cannot be decoded: token mismatch at position $i")
             }
-            // ==================================================================
 
             /*
             // Stegasuras: "Handle most errors that could happen because of BPE with heuristic"
