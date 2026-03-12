@@ -349,13 +349,10 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                             val result = Steganography.encodeMultiCandidate(
                                 context = formattedContext,
                                 secretMessage = secretMessage,
-                                numCandidates = 1,
-                                temperatures = listOf(1.0f),
-                                minScore = 0.0
+                                temperatures = listOf(0.8f, 0.9f, 1.0f, 1.1f)
                             )
 
                             if (result != null) {
-                                // Join chunks with unit separator (U+001F) — can't appear in LLM output
                                 coverText = result.joinToString("\u001F")
 
                                 // Get the score for display
@@ -371,7 +368,6 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                         else {
                             // Try-catch should only be necessary when conversation switch is set
                             try {
-                                // Split by unit separator to recover chunks
                                 secretMessage = Steganography.decode(formattedContext, coverText.split("\u001F"))
                             }
                             catch (exception: Exception) {
@@ -423,7 +419,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                 Spacer(modifier = modifier.height(16.dp))
 
                 Text(
-                    text = coverText,
+                    text = coverText.replace("\u001F", "\n\n"),
                     modifier = modifier
                         .fillMaxWidth(0.8f)
                         .clickable {

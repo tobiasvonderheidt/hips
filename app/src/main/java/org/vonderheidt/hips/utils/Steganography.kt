@@ -7,12 +7,6 @@ import org.vonderheidt.hips.data.Settings
  */
 object Steganography {
 
-    /** Max characters per chunk. */
-    private const val CHUNK_CHARS = 12
-
-    /** Max cipher bytes before chunking kicks in. */
-    private const val MAX_DIRECT_PAYLOAD = 14
-
     /** Score from the last encode. */
     var lastScore: SteganographyScoring.NaturalnessScore? = null
         private set
@@ -27,7 +21,7 @@ object Steganography {
 
     /**
      * Function to encode secret message into cover text(s) using given context.
-     * Tries direct encoding first, chunks if the payload is too large.
+     * Encodes the full message in one pass, then splits the cover text by sentence boundaries.
      *
      * @param context The context to encode the secret message with.
      * @param secretMessage The secret message to be encoded.
@@ -41,39 +35,12 @@ object Steganography {
         conversionMode: ConversionMode = Settings.conversionMode,
         steganographyMode: SteganographyMode = Settings.steganographyMode
     ): List<String> {
-        // Check if the whole message fits in one go
-        LlamaCpp.resetInstance()
-        val preparedFull = prepare(secretMessage)
-        val plainBitsFull = adaptiveCompress(preparedFull)
-        val cipherBitsFull = Crypto.encrypt(plainBitsFull)
+        val coverText = encodeSingle(context, secretMessage, steganographyMode)
 
-        if (cipherBitsFull.size <= MAX_DIRECT_PAYLOAD) {
-            android.util.Log.d("HiPS", "Direct encode: ${cipherBitsFull.size} cipher bytes")
+        val splitTexts = splitBySentence(coverText)
+        android.util.Log.d("HiPS", "COVER TEXT SPLIT: 1 cover text -> ${splitTexts.size} part(s)")
 
-            LlamaCpp.resetInstance()
-
-            val coverText = when (steganographyMode) {
-                SteganographyMode.Arithmetic -> { Arithmetic.encode(context, cipherBitsFull) }
-                /* SteganographyMode.Bins -> { Bins.encode(context, cipherBitsFull) } */
-                SteganographyMode.Huffman -> { Huffman.encode(context, cipherBitsFull) }
-            }
-
-            return listOf(coverText)
-        }
-
-        // Too large — split into chunks
-        val chunks = secretMessage.chunked(CHUNK_CHARS)
-        android.util.Log.d("HiPS", "Chunked encode: '${secretMessage}' -> ${chunks.size} chunk(s) of up to $CHUNK_CHARS chars")
-
-        val coverTexts = mutableListOf<String>()
-
-        for ((index, chunk) in chunks.withIndex()) {
-            val coverText = encodeSingle(context, chunk, steganographyMode)
-            android.util.Log.d("HiPS", "Chunk ${index + 1}/${chunks.size}: '${chunk}' -> cover text")
-            coverTexts.add(coverText)
-        }
-
-        return coverTexts
+        return splitTexts
     }
 
     /**
@@ -100,67 +67,51 @@ object Steganography {
     ): List<String>? {
         val originalTemperature = Settings.temperature
 
-        // Check if chunking is needed
-        LlamaCpp.resetInstance()
-        val preparedFull = prepare(secretMessage)
-        val plainBitsFull = adaptiveCompress(preparedFull)
-        val cipherBitsFull = Crypto.encrypt(plainBitsFull)
-
-        val textChunks = if (cipherBitsFull.size <= MAX_DIRECT_PAYLOAD) {
-            listOf(secretMessage)
-        } else {
-            secretMessage.chunked(CHUNK_CHARS)
-        }
-
-        android.util.Log.d("HiPS", "Starting multi-candidate encode: ${textChunks.size} part(s), " +
+        android.util.Log.d("HiPS", "Starting multi-candidate encode: " +
                 "${temperatures.size} temperatures, $numCandidates per temp")
 
-        val coverTexts = mutableListOf<String>()
-        val allScores = mutableListOf<SteganographyScoring.NaturalnessScore>()
+        val candidates = mutableListOf<Triple<String, SteganographyScoring.NaturalnessScore, Float>>()
 
-        for ((chunkIndex, textChunk) in textChunks.withIndex()) {
-            val candidates = mutableListOf<Pair<String, SteganographyScoring.NaturalnessScore>>()
+        for (temperature in temperatures) {
+            Settings.temperature = temperature
 
-            for (temperature in temperatures) {
-                Settings.temperature = temperature
+            for (i in 0 until numCandidates) {
+                val coverText = encodeSingle(context, secretMessage, steganographyMode)
 
-                for (i in 0 until numCandidates) {
-                    val coverText = encodeSingle(context, textChunk, steganographyMode)
-
-                    // Use inline score if available (arithmetic), otherwise score separately
-                    val score = Arithmetic.lastScore ?: run {
-                        LlamaCpp.resetInstance()
-                        SteganographyScoring.scoreText(context, coverText)
-                    }
-
-                    val label = if (textChunks.size > 1) "Chunk ${chunkIndex + 1}/${textChunks.size}, candidate" else "Candidate"
-                    android.util.Log.d("HiPS", "$label ${candidates.size + 1} at temp=$temperature: " +
-                            "score=${String.format("%.1f", score.overallScore)} " +
-                            "[perp=${String.format("%.1f", score.perplexity)}] " +
-                            "text=$coverText")
-
-                    candidates.add(Pair(coverText, score))
+                // Use inline score if available (arithmetic), otherwise score separately
+                val score = Arithmetic.lastScore ?: run {
+                    LlamaCpp.resetInstance()
+                    SteganographyScoring.scoreText(context, coverText)
                 }
+
+                android.util.Log.d("HiPS", "Candidate ${candidates.size + 1} at temp=$temperature: " +
+                        "score=${String.format("%.1f", score.overallScore)} " +
+                        "[perp=${String.format("%.1f", score.perplexity)}] " +
+                        "text=$coverText")
+
+                candidates.add(Triple(coverText, score, temperature))
             }
-
-            val bestCandidate = candidates.maxByOrNull { it.second.overallScore }
-
-            if (bestCandidate == null || bestCandidate.second.overallScore < minScore) {
-                android.util.Log.d("HiPS", "Part ${chunkIndex + 1}: no candidate met minimum score")
-                Settings.temperature = originalTemperature
-                return null
-            }
-
-            android.util.Log.d("HiPS", "Selected best: score=${String.format("%.1f", bestCandidate.second.overallScore)}")
-            coverTexts.add(bestCandidate.first)
-            allScores.add(bestCandidate.second)
         }
 
-        Settings.temperature = originalTemperature
-        lastCandidateScores = allScores
-        lastScore = allScores.lastOrNull()
+        val bestCandidate = candidates.maxByOrNull { it.second.overallScore }
 
-        return coverTexts
+        if (bestCandidate == null || bestCandidate.second.overallScore < minScore) {
+            android.util.Log.d("HiPS", "No candidate met minimum score")
+            Settings.temperature = originalTemperature
+            return null
+        }
+
+        // Set temperature to the winning candidate's temperature so decode uses the same distribution
+        Settings.temperature = bestCandidate.third
+        android.util.Log.d("HiPS", "Selected best: score=${String.format("%.1f", bestCandidate.second.overallScore)} temp=${bestCandidate.third}")
+        lastCandidateScores = listOf(bestCandidate.second)
+        lastScore = bestCandidate.second
+
+        // Split the winning cover text by sentence boundaries
+        val splitTexts = splitBySentence(bestCandidate.first)
+        android.util.Log.d("HiPS", "COVER TEXT SPLIT: 1 cover text -> ${splitTexts.size} part(s)")
+
+        return splitTexts
     }
 
     /** Multi-candidate with a single temperature and minimum score threshold. */
@@ -196,15 +147,11 @@ object Steganography {
         conversionMode: ConversionMode = Settings.conversionMode,
         steganographyMode: SteganographyMode = Settings.steganographyMode
     ): String {
-        val parts = mutableListOf<String>()
+        // Rejoin split cover texts back into one for decoding
+        val fullCoverText = coverTexts.joinToString("")
+        android.util.Log.d("HiPS", "COVER TEXT REJOIN: ${coverTexts.size} part(s) -> 1 cover text")
 
-        for ((index, coverText) in coverTexts.withIndex()) {
-            val part = decodeSingle(context, coverText, inverseHuffmanCodes, steganographyMode)
-            android.util.Log.d("HiPS", "Decoded part ${index + 1}/${coverTexts.size}: '$part'")
-            parts.add(part)
-        }
-
-        return parts.joinToString("")
+        return decodeSingle(context, fullCoverText, inverseHuffmanCodes, steganographyMode)
     }
 
     /** Convenience overload for a single cover text. */
@@ -296,6 +243,19 @@ object Steganography {
             byteArrayOf(FLAG_ARITHMETIC) + arithmeticBits
         } else {
             byteArrayOf(FLAG_UTF8) + utf8Bits
+        }
+    }
+
+    /** Splits a cover text into groups of 2 sentences for more natural multi-message output. */
+    private fun splitBySentence(coverText: String): List<String> {
+        // Split after sentence-ending punctuation + space, without consuming any characters
+        val sentences = coverText.split(Regex("(?<=[.!?] )(?=\\S)"))
+
+        // Group into pairs of 2 sentences
+        return if (sentences.size <= 2) {
+            listOf(coverText)
+        } else {
+            sentences.chunked(2).map { it.joinToString("") }
         }
     }
 

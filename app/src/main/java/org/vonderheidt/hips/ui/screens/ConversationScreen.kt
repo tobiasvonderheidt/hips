@@ -439,7 +439,13 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                             val context = LlamaCpp.formatChat(messages, isAlice)
 
                                             // Generate cover text(s) and update database
-                                            val newCoverTexts = if (isPlainText) listOf(newSecretMessage) else Steganography.encode(context, newSecretMessage)
+                                            val newCoverTexts = if (isPlainText) {
+                                                listOf(newSecretMessage)
+                                            } else {
+                                                // Use multi-candidate encoding for better naturalness
+                                                Steganography.encodeMultiCandidate(context, newSecretMessage)
+                                                    ?: Steganography.encode(context, newSecretMessage)
+                                            }
                                             val newInverseHuffmanCodes = /* if (!isPlainText && Settings.conversionMode == ConversionMode.Huffman) Json.encodeToString(Huffman.getLastInverseHuffmanCodes()) else */ null
 
                                             // Order is important to avoid violating foreign key relations
