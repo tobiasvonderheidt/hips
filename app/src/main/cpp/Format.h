@@ -3,6 +3,7 @@
 
 #include <jni.h>
 #include <vector>
+#include <string>
 
 /**
  * Class that represents various functions for bit vector formatting.
@@ -20,6 +21,15 @@ public:
     static std::vector<bool> asBitVector(JNIEnv* env, jbyteArray jByteArray);
 
     /**
+     * Function to format a C++ string as a Java ByteArray.
+     *
+     * @param env The JNI environment.
+     * @param string A C++ string.
+     * @return The Java ByteArray.
+     */
+    static jbyteArray asByteArray(JNIEnv* env, std::string string);
+
+    /**
      * Function to reverse formatting of a Java ByteArray as a bit vector (i.e. to reverse `Format::asBitVector(JNIEnv*, jbyteArray)`).
      * Doesn't add any padding, assumes that length of bit vector already is multiple of 8.
      *
@@ -28,6 +38,15 @@ public:
      * @return The Java ByteArray.
      */
     static jbyteArray asByteArray(JNIEnv* env, std::vector<bool> bitVector);
+
+    /**
+     * Function to format a Java ByteArray as a C++ string.
+     *
+     * @param env The JNI environment.
+     * @param byteArray A Java ByteArray.
+     * @return The C++ string.
+     */
+    static std::string asString(JNIEnv* env, jbyteArray jByteArray);
 
     /**
      * Function to format a Java ByteArray as a bit vector. Assumes that the ByteArray is 0-padded and that the first byte stores the length of the padding in bits.
