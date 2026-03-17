@@ -342,14 +342,27 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                         }
 
                         if (selectedMode == 0) {
-                            coverText = Steganography.encode(formattedContext, secretMessage)
+                            // Use multi-candidate encoding, fall back to single encode
+                            val result = Steganography.encodeMultiCandidate(
+                                context = formattedContext,
+                                secretMessage = secretMessage,
+                                temperatures = listOf(0.8f, 0.9f, 1.0f, 1.1f)
+                            )
+
+                            if (result != null) {
+                                coverText = result.joinToString("\u001F")
+                            } else {
+                                // Fallback to single encode if multi-candidate fails
+                                coverText = Steganography.encode(formattedContext, secretMessage).joinToString("\u001F")
+                            }
                         }
                         else {
                             // Try-catch should only be necessary when conversation switch is set
                             try {
-                                secretMessage = Steganography.decode(formattedContext, coverText)
+                                secretMessage = Steganography.decode(formattedContext, coverText.split("\u001F"))
                             }
                             catch (exception: Exception) {
+                                android.util.Log.e("HiPS", "Decode failed: ${exception.message}", exception)
                                 withContext(Dispatchers.Main) {
                                     Toast.makeText(currentLocalContext, "Cover text couldn't be decoded", Toast.LENGTH_LONG).show()
                                 }
@@ -388,7 +401,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                 Spacer(modifier = modifier.height(16.dp))
 
                 Text(
-                    text = coverText,
+                    text = coverText.replace("\u001F", "\n\n"),
                     modifier = modifier
                         .fillMaxWidth(0.8f)
                         .clickable {

@@ -20,7 +20,7 @@ public:
      * @param model Memory address of the LLM.
      * @return Vector of top 2^bitsPerToken probabilities and the corresponding token IDs.
      */
-    static std::vector<std::pair<llama_token, double>> getTopProbabilities(double* probabilities, jint bitsPerToken, const llama_model* model);
+    static std::vector<std::pair<llama_token, float>> getTopProbabilities(float* probabilities, jint bitsPerToken, const llama_model* model);
 };
 
 #endif

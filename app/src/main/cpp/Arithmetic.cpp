@@ -1,537 +1,352 @@
 #include <algorithm>
 #include <jni.h>
+#include <cmath>
+#include <vector>
+#include <random>
+#include <string>
 #include "Arithmetic.h"
 #include "common.h"
 #include "Format.h"
 #include "LlamaCpp.h"
 #include "Statistics.h"
 
-extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_encode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCipherBits, jfloat jTemperature, jint jTopK, jint jPrecision, jlong jCtx) {
-    // TODO Abstract state management away in LlamaCpp.{h,cpp}
+extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_encodeNative(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCipherBits, jfloat jTemperature, jint jTopK, jint jPrecision, jint jSeed, jlong jCtx) {
+    if (jCipherBits == nullptr) return Format::asByteArray(env, std::string(""));
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
+    if (cppCtx == nullptr) return Format::asByteArray(env, std::string(""));
+
     const llama_model *model = llama_get_model(cppCtx);
+    int32_t n_vocab = LlamaCpp::getVocabSize(model);
 
-    // Tokenize context
-    llama_tokens contextTokens = LlamaCpp::tokenize(env, jContext, cppCtx);
-
-    // Convert cipher bits to bit vector
-    bool isDecompression = contextTokens.empty();
-
+    std::string cppContext = Format::asString(env, jContext);
+    bool isDecompression = (cppContext.empty());
+    llama_tokens contextTokens = LlamaCpp::tokenize(env, cppContext, cppCtx);
     std::vector<bool> cppCipherBits = isDecompression ? Format::asBitVectorWithoutPadding(env, jCipherBits) : Format::asBitVector(env, jCipherBits);
 
-    // Initialize vector to store cover text tokens
     llama_tokens coverTextTokens;
-
-    // <Logic specific to arithmetic coding>
-
-    // Stegasuras paper says that binary conversion happens with empty context, but code actually uses a single end-of-generation (eog) token as context
-    // llama.cpp crashes with empty context anyway
-    // UI doesn't allow empty context for steganography, so no collision possible when calling Arithmetic.{decode,encode} for binary conversion
     if (isDecompression) {
+        contextTokens.clear();
         contextTokens.push_back(LlamaCpp::getEndOfGeneration(model));
     }
 
-    // Define initial interval as [0, 2^precision)
-    // Stegasuras variable "max_val" is redundant
-    std::pair<long long, long long> currentInterval = {0LL, 1LL << jPrecision};
-
-    // </Logic specific to arithmetic coding>
-
-    // Initialize variables and flags for loop
+    std::pair<long long, long long> currentInterval = {0, 1LL << jPrecision};
     int i = 0;
     bool isLastSentenceFinished = false;
+    bool isFirstRun = true;
+    llama_token sampledToken = -1;
+    const int MAX_TOKENS = 512;
 
-    bool isFirstRun = true;             // llama.cpp batch needs to store context tokens in first run, but only last sampled token in subsequent runs
-    llama_token sampledToken = -1;      // Will always be overwritten with last cover text token
+    while ((i < (int)cppCipherBits.size() || (!isDecompression && !isLastSentenceFinished)) && coverTextTokens.size() < MAX_TOKENS) {
+        llama_tokens nextTokens = isFirstRun ? contextTokens : std::vector<llama_token>{sampledToken};
+        int n_past = isFirstRun ? 0 : (int)(contextTokens.size() + coverTextTokens.size() - 1);
+        float* rawLogits = LlamaCpp::getLogits(nextTokens, cppCtx, n_past);
+        
+        if (rawLogits == nullptr) break;
+        
+        std::vector<float> logits(n_vocab);
+        std::copy(rawLogits, rawLogits + n_vocab, logits.begin());
 
-    // Sample tokens until all bits of secret message are encoded
-    // But only finish last sentence during encoding, not during decompression, to avoid infinite loop
-    // Our use of isDecompression here matches control flow of Stegasuras with its finish_sent parameter
-    while (i < cppCipherBits.size() || (!isDecompression && !isLastSentenceFinished)) {
-        // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggml-org/llama.cpp/blob/master/examples/simple/simple.cpp:
-        // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
-        // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
-        float* logits = isFirstRun ? LlamaCpp::getLogits(contextTokens, cppCtx) : LlamaCpp::getLogits(sampledToken, cppCtx);
+        if (!isDecompression) {
+            LlamaCpp::suppressSpecialTokensLogits(logits.data(), model); 
+        }
 
-        // Normalize logits to probabilities
-        double* probabilities = Statistics::softmax(logits, model);
+        float lse = Statistics::logSumExp(logits.data(), n_vocab);
+        std::vector<std::pair<llama_token, float>> allSorted;
+        allSorted.reserve(n_vocab);
+        for (int32_t token = 0; token < n_vocab; token++) {
+            allSorted.emplace_back((llama_token)token, logits[token] / jTemperature);
+        }
 
-        // Suppress special tokens to avoid early termination before all bits of secret message are encoded
-        LlamaCpp::suppressSpecialTokens(probabilities, model);
+        std::sort(allSorted.begin(), allSorted.end(), [](const auto& a, const auto& b) {
+            if (std::abs(a.second - b.second) > 1e-9f) return a.second > b.second;
+            return a.first < b.first; 
+        });
 
-        // Arithmetic sampling to encode bits of secret message into tokens
-        if (i < cppCipherBits.size()) {
-            // <Logic specific to arithmetic coding>
+        std::vector<std::pair<llama_token, float>> pool;
+        if (isDecompression) {
+            pool = allSorted;
+        } else {
+            float cumP = 0.0f;
+            for (const auto& pair : allSorted) {
+                float p = std::exp((pair.second * jTemperature) - lse); 
+                if (p < 0.001f && pool.size() >= 2) break; 
+                pool.push_back(pair);
+                cumP += p;
+                if (cumP >= 0.95f && pool.size() >= 2) break;
+            }
+        }
 
-            // Scale probabilities with 1/temperature and sort descending
-            std::vector<std::pair<llama_token, double>> scaledProbabilities;
-            scaledProbabilities.reserve(LlamaCpp::getVocabSize(model));
+        long long currentIntervalRange = currentInterval.second - currentInterval.first;
+        float logThreshold = -static_cast<float>(std::log(static_cast<double>(currentIntervalRange)));
+        
+        std::vector<float> poolLogits;
+        for(auto& p : pool) poolLogits.push_back(p.second);
+        float poolLse = Statistics::logSumExp(poolLogits.data(), (int32_t)poolLogits.size());
 
-            for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
-                scaledProbabilities.emplace_back(token, probabilities[token] / jTemperature);
+        int k_candidate = 0;
+        for (const auto& pair : pool) {
+            if (pair.second - poolLse >= logThreshold) k_candidate++;
+            else break;
+        }
+
+        int k = std::min(std::max(2, k_candidate), (int)pool.size());
+        if (isDecompression) k = (int)pool.size();
+
+        std::vector<std::pair<llama_token, float>> topKTokens(pool.begin(), pool.begin() + k);
+        if (!isDecompression && jSeed > 0) {
+            std::shuffle(topKTokens.begin(), topKTokens.end(), std::mt19937(jSeed + (int)coverTextTokens.size()));
+        }
+
+        if (i < (int)cppCipherBits.size()) {
+            double probSum = 0.0;
+            for (int j = 0; j < k; j++) {
+                probSum += static_cast<double>(std::exp(topKTokens[j].second - poolLse));
             }
 
-            std::sort(
-                scaledProbabilities.begin(),
-                scaledProbabilities.end(),
-                [](const auto& pair1, const auto& pair2) { return pair1.second > pair2.second; }
-            );
-
-            // Stegasuras: "Cut off low probabilities that would be rounded to 0"
-            // currentThreshold needs to be float as it will be compared to probabilities, float division happens implicitly in Python but explicitly in Kotlin
-            long long currentIntervalRange = currentInterval.second - currentInterval.first;
-            double currentThreshold = 1.0 / static_cast<double>(currentIntervalRange);
-
-            // Invert logic of Stegasuras:
-            // Stegasuras: Drop all tokens with probability < currentThreshold
-            // <=> HiPS: Keep all tokens with probability >= currentThreshold
-
-            // Minimum ensures that k doesn't exceed topK
-            // Maximum ensures that at least the tokens with the top 2 probabilities are considered
-            // => Maximum is relevant if next token is practically certain (e.g. "Albert Einstein was a renowned theoretical" will be continued with " physicist" with > 99.5% probability)
-            //    Probability of second most likely token will already be rounded to 0
-            // => Loop can go through runs that don't encode any information (i.e. secret message bits) because a token is certain, but next token won't be certain and will encode information again
-            //    Not possible with Huffman, where every token encodes bitsPerToken bits of information
-            // => Matches entropy: Events that are certain don't contain any information (<=> Events that are very uncertain contain a lot of information)
-            int k = std::min(
-                std::max(
-                    2,
-                    static_cast<int>(std::count_if(
-                        scaledProbabilities.begin(),
-                        scaledProbabilities.end(),
-                        [currentThreshold](const std::pair<llama_token, double>& pair) { return pair.second >= currentThreshold; }
-                    ))
-                ),
-                jTopK
-            );
-
-            // Keep tokens with top k (!= topK) probabilities
-            // Stegasuras would use variable name roundedScaledProbabilities here already, but requires overwriting one data type with another (List<Pair<Int, Float>> vs List<Pair<Int, Int>>)
-            // Possible in Python, but not in Kotlin
-            // Use topScaledProbabilities for now to be similar to decode, roundedScaledProbabilities only after rounding probabilities from float to int below
-            std::vector<std::pair<llama_token, double>> topScaledProbabilities = scaledProbabilities;
-            topScaledProbabilities.resize(k);
-
-            // Stegasuras: "Rescale to correct range"
-            // Top k probabilities sum up to something in [0,1), rescale to [0, 2^precision)
-            double sum = 0.0;
-
-            for (const auto& [token, probability] : topScaledProbabilities) {
-                sum += probability;
-            }
-
-            for (auto& pair : topScaledProbabilities) {
-                pair.second *= static_cast<double>(currentIntervalRange) / sum;
-            }
-
-            // Stegasuras: "Round probabilities to integers given precision"
-            // Variable name roundedScaledProbabilities is appropriate now
             std::vector<std::pair<llama_token, long long>> roundedScaledProbabilities;
-            roundedScaledProbabilities.reserve(topScaledProbabilities.size());
-
-            for (const auto& pair : topScaledProbabilities) {
-                roundedScaledProbabilities.emplace_back(pair.first, std::round(pair.second));
+            for (const auto& pair : topKTokens) {
+                double rescaled = (std::exp(pair.second - poolLse) / probSum) * static_cast<double>(currentIntervalRange);
+                roundedScaledProbabilities.emplace_back(pair.first, std::max(1LL, (long long)std::llround(rescaled)));
             }
 
-            // Replace probability with cumulated probability
-            // Probabilities that would round to 0 were cut off earlier, so all at least round to 1, no collisions possible
             std::vector<std::pair<llama_token, long long>> cumulatedProbabilities;
-            cumulatedProbabilities.reserve(roundedScaledProbabilities.size());
-
             long long cumulatedProbability = 0;
-
             for (const auto& [token, probability] : roundedScaledProbabilities) {
                 cumulatedProbability += probability;
                 cumulatedProbabilities.emplace_back(token, cumulatedProbability);
             }
 
-            // Stegasuras: "Remove any elements from the bottom if rounding caused the total prob to be too large"
-            // Remove tokens with low probabilities if their cumulated probability is too large
-            int overfill = std::count_if(
-                cumulatedProbabilities.begin(),
-                cumulatedProbabilities.end(),
-                [currentIntervalRange](const std::pair<llama_token, double>& pair) { return pair.second > static_cast<double>(currentIntervalRange); }
-            );
-
-            if (overfill > 0) {
-                cumulatedProbabilities.resize(cumulatedProbabilities.size() - overfill);
+            while(!cumulatedProbabilities.empty() && cumulatedProbabilities.back().second > currentIntervalRange) {
+                cumulatedProbabilities.pop_back();
+            }
+            
+            if (cumulatedProbabilities.empty()) {
+                cumulatedProbabilities.emplace_back(topKTokens[0].first, currentIntervalRange);
+            } else {
+                long long gap = currentIntervalRange - cumulatedProbabilities.back().second;
+                if (gap != 0) {
+                   for (auto& item : cumulatedProbabilities) item.second += gap;
+                }
             }
 
-            // Stegasuras: "Add any mass to the top if removing/rounding causes the total prob to be too small"
-            // Removing tokens might have created a gap at the top, i.e. a sub-interval between cumulated probability of last token and top of current interval, that doesn't correspond to any token
-            // Arithmetic coding only works when current interval is exactly filled, so close the gap by shifting all cumulated probabilities up by its size
-            // Equivalent to first token having larger probability, shifting cumulated probabilities of all subsequent tokens
-            for (auto& item : cumulatedProbabilities) {
-                item.second += currentIntervalRange - cumulatedProbabilities.back().second;
-            }
+            for (auto& item : cumulatedProbabilities) item.second += currentInterval.first;
 
-            // Stegasuras: "Convert to position in range"
-            // Shifts all cumulated probabilities up again by bottom of current interval
-            for (auto& item : cumulatedProbabilities) {
-                item.second += currentInterval.first;
-            }
-
-            // Replace token of last sub-interval with ASCII NUL character so it can be sampled during decompression
-            // Similar to explanation at https://www.youtube.com/watch?v=RFWJM8JMXBs
-            if (isDecompression) {
-                scaledProbabilities[cumulatedProbabilities.size() - 1].first = LlamaCpp::getAsciiNul(model, cppCtx);
-                cumulatedProbabilities[cumulatedProbabilities.size() - 1].first = LlamaCpp::getAsciiNul(model, cppCtx);
-            }
-
-            // Stegasuras: "Get selected index based on binary fraction from message bits"
-            // Process cipher bits in portions of size precision
-            // Unlike Python, Kotlin doesn't handle "cipherBitString.substring(startIndex = i, endIndex = i + precision)" gracefully if i + precision is too large
             std::vector<bool> cipherBitSubvector;
-
-            if (i + jPrecision < cppCipherBits.size()) {
+            if (i + jPrecision < (int)cppCipherBits.size()) {
                 cipherBitSubvector = std::vector<bool>(cppCipherBits.begin() + i, cppCipherBits.begin() + i + jPrecision);
-            }
-            else {
+            } else {
                 cipherBitSubvector = std::vector<bool>(cppCipherBits.begin() + i, cppCipherBits.end());
+                cipherBitSubvector.resize(jPrecision, false);
             }
 
-            // Append 0s to last cipher bits to make last portion of size precision as well
-            if (i + jPrecision > cppCipherBits.size()) {
-                cipherBitSubvector.resize(cipherBitSubvector.size() + i + jPrecision - cppCipherBits.size(), false);
-            }
-
-            // Convert portion of cipher bits to integer for comparison with cumulated probabilities
-            // Find position of first token with cumulated probability larger than this integer, i.e. find relevant sub-interval of current interval
-            // => sampledToken is already determined here, next steps only calculate new interval
-            // Stegasuras variable "message_token" is redundant
-            auto iterator = std::find_if(
-                cumulatedProbabilities.begin(),
-                cumulatedProbabilities.end(),
-                [cipherBitSubvector](const std::pair<llama_token, long long>& pair) { return pair.second > Format::asLong(cipherBitSubvector); }    // Stegasuras would reverse cipherBitSubstring, shouldn't be necessary here
-            );
+            long long messageValue = Format::asLong(cipherBitSubvector);
+            auto iterator = std::find_if(cumulatedProbabilities.begin(), cumulatedProbabilities.end(), [messageValue](const auto& pair) {
+                return pair.second > messageValue;
+            });
 
             int selectedSubinterval = std::distance(cumulatedProbabilities.begin(), iterator);
+            if (selectedSubinterval >= (int)cumulatedProbabilities.size()) selectedSubinterval = (int)cumulatedProbabilities.size() - 1;
 
-            // Stegasuras: "Calculate new range as ints"
-            // Calculate bottom and top of relevant sub-interval for next iteration
-            // New bottom (inclusive) is top of preceding sub-interval (exclusive there) if relevant one is not the first one, old bottom otherwise
-            // New top (exclusive) is top of relevant sub-interval
             long long newIntervalBottom = selectedSubinterval > 0 ? cumulatedProbabilities[selectedSubinterval-1].second : currentInterval.first;
             long long newIntervalTop = cumulatedProbabilities[selectedSubinterval].second;
 
-            // Stegasuras: "Convert range to bits"
-            std::vector<bool> newIntervalBottomBitsInclusive = Format::asBitVector(newIntervalBottom, jPrecision);  // Again, reversing shouldn't be necessary here
-            std::vector<bool> newIntervalTopBitsInclusive = Format::asBitVector(newIntervalTop - 1, jPrecision);    // Stegasuras: "-1 here because upper bound is exclusive" (i.e. newIntervalTopBitsInclusive is inclusive)
+            std::vector<bool> newIntervalBottomBitsInclusive = Format::asBitVector(newIntervalBottom, jPrecision);
+            std::vector<bool> newIntervalTopBitsInclusive = Format::asBitVector(newIntervalTop - 1, jPrecision);
 
-            // Stegasuras: "Consume most significant bits which are now fixed and update interval"
-            // Arithmetic coding encodes data into a number by iteratively narrowing initial interval defined earlier
-            // Therefore most significant bits are fixed first (~ numberOfSameBitsFromBeginning), determining the order of magnitude of the number, less significant bits are fixed later
-            int numberOfEncodedBits = Arithmetic::numberOfSameBitsFromBeginning(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive);
+            int numBits = Arithmetic::numberOfSameBitsFromBeginning(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive);
+            i += numBits;
 
-            // Deviation from Stegasuras:
-            // For cases where the LLM is very confident about the next token, interval barely narrows and numberOfEncodedBits can be 0, so it would loop
-            // Need to force 1 bit of progress during decompression to avoid this
-            if (isDecompression && numberOfEncodedBits == 0) {
-                numberOfEncodedBits = 1;
-            }
+            std::vector<bool> newBottomBits(newIntervalBottomBitsInclusive.begin() + numBits, newIntervalBottomBitsInclusive.end());
+            newBottomBits.resize(jPrecision, false);
+            std::vector<bool> newTopBits(newIntervalTopBitsInclusive.begin() + numBits, newIntervalTopBitsInclusive.end());
+            newTopBits.resize(jPrecision, true);
 
-            i += numberOfEncodedBits;
+            currentInterval.first = Format::asLong(newBottomBits);
+            currentInterval.second = Format::asLong(newTopBits) + 1;
 
-            // New interval is determined by setting unfixed bits to 0 for bottom end, to 1 for top end
-            // Interval boundaries can jump around because first numberOfEncodedBits bits are already processed and therefore cut off
-            // Next portion of cipher bits in general doesn't narrow the interval
-            std::vector<bool> newIntervalBottomBits = std::vector<bool>(newIntervalBottomBitsInclusive.begin() + numberOfEncodedBits, newIntervalBottomBitsInclusive.end());
-            newIntervalBottomBits.resize(newIntervalBottomBits.size() + numberOfEncodedBits, false);
-
-            std::vector<bool> newIntervalTopBits = std::vector<bool>(newIntervalTopBitsInclusive.begin() + numberOfEncodedBits, newIntervalTopBitsInclusive.end());
-            newIntervalTopBits.resize(newIntervalTopBits.size() + numberOfEncodedBits, true);
-
-            currentInterval.first = Format::asLong(newIntervalBottomBits);                      // Again, reversing shouldn't be necessary here
-            currentInterval.second = Format::asLong(newIntervalTopBits) + 1;                    // Stegasuras: "+1 here because upper bound is exclusive"
-
-            // Sample token as determined above
             sampledToken = cumulatedProbabilities[selectedSubinterval].first;
-
-            // </Logic specific to arithmetic coding>
-
-            // Update flag
             isFirstRun = false;
-        }
-        // Greedy sampling to pick most likely token until last sentence is finished
-        else {
-            // Get most likely token
-            sampledToken = Arithmetic::getTopProbability(probabilities, model);
-
-            // Update flag
+            
+            if (i >= (int)cppCipherBits.size() && LlamaCpp::isEndOfSentence(sampledToken, cppCtx)) isLastSentenceFinished = true;
+        } else {
+            sampledToken = pool[0].first; 
             isLastSentenceFinished = LlamaCpp::isEndOfSentence(sampledToken, cppCtx);
         }
-
-        // Free allocated memory
-        delete[] probabilities;
-
-        // Append last sampled token to cover text tokens
         coverTextTokens.push_back(sampledToken);
-
-        // Stegasuras: "For text->bits->text"
-        // Variable "partial" not needed here as cover text isn't appended to context
-        if (coverTextTokens.back() == LlamaCpp::getAsciiNul(model, cppCtx)) {
-            break;
-        }
+        if (coverTextTokens.back() == LlamaCpp::getAsciiNul(model, cppCtx) || LlamaCpp::isEndOfGeneration(sampledToken, model)) break;
     }
-
-    // Detokenize cover text tokens into cover text to return it
-    jbyteArray coverText = LlamaCpp::detokenize(env, coverTextTokens, cppCtx);
-
-    return coverText;
+    std::string resultStr = LlamaCpp::detokenize(coverTextTokens, cppCtx, true);
+    return Format::asByteArray(env, resultStr);
 }
 
-extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_decode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCoverText, jfloat jTemperature, jint jTopK, jint jPrecision, jlong jCtx) {
-    // TODO Abstract state management away in LlamaCpp.{h,cpp}
+extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_decodeNative(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCoverText, jfloat jTemperature, jint jTopK, jint jPrecision, jint jSeed, jlong jCtx) {
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
+    if (cppCtx == nullptr) return nullptr;
+
     const llama_model* model = llama_get_model(cppCtx);
+    int32_t n_vocab = LlamaCpp::getVocabSize(model);
 
-    // Tokenize context and cover text
-    llama_tokens contextTokens = LlamaCpp::tokenize(env, jContext, cppCtx);
-    llama_tokens coverTextTokens = LlamaCpp::tokenize(env, jCoverText, cppCtx);
-
-    // <Logic specific to arithmetic coding>
-
-    // Similar to encode
-    bool isCompression = contextTokens.empty();
+    std::string cppContext = Format::asString(env, jContext);
+    std::string cppCoverText = Format::asString(env, jCoverText);
+    bool isCompression = (cppContext.empty());
+    llama_tokens contextTokens = LlamaCpp::tokenize(env, cppContext, cppCtx);
+    llama_tokens coverTextTokens = LlamaCpp::tokenize(env, cppCoverText, cppCtx);
 
     if (isCompression) {
+        contextTokens.clear();
         contextTokens.push_back(LlamaCpp::getEndOfGeneration(model));
-
-        // During compression, Stegasuras appends eog token ('<eos>') to secret message passed via cover text parameter
-        // Not done here as ASCII NUL is used instead (see translation of "partial" variable in encode)
     }
 
-    std::pair<long long, long long> currentInterval = {0LL, 1LL << jPrecision};
-
-    // </Logic specific to arithmetic coding>
-
-    // Initialize vector to store cipher bits
+    std::pair<long long, long long> currentInterval = {0, 1LL << jPrecision};
     std::vector<bool> cppCipherBits;
-
-    // Initialize variables and flags for loop
     int i = 0;
-
     bool isFirstRun = true;
     llama_token coverTextToken = -1;
 
-    // Decode every cover text token
-    while (i < coverTextTokens.size()) {
-        // Calculate the logit matrix again initially from context tokens, then from last cover text token, and get last row
-        float* logits = isFirstRun ? LlamaCpp::getLogits(contextTokens, cppCtx) : LlamaCpp::getLogits(coverTextToken, cppCtx);
+    while (i < (int)coverTextTokens.size()) {
+        llama_tokens nextTokens = isFirstRun ? contextTokens : std::vector<llama_token>{coverTextToken};
+        int n_past = isFirstRun ? 0 : (int)(contextTokens.size() + i - 1);
+        float* rawLogits = LlamaCpp::getLogits(nextTokens, cppCtx, n_past);
+        
+        if (rawLogits == nullptr) break;
+        
+        std::vector<float> logits(n_vocab);
+        std::copy(rawLogits, rawLogits + n_vocab, logits.begin());
+        if (!isCompression) LlamaCpp::suppressSpecialTokensLogits(logits.data(), model);
 
-        // Normalize logits to probabilities
-        double* probabilities = Statistics::softmax(logits, model);
-
-        // Suppress special tokens
-        LlamaCpp::suppressSpecialTokens(probabilities, model);
-
-        // <Logic specific to arithmetic coding>
-
-        std::vector<std::pair<llama_token, double>> scaledProbabilities;
-        scaledProbabilities.reserve(LlamaCpp::getVocabSize(model));
-
-        for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
-            scaledProbabilities.emplace_back(token, probabilities[token] / jTemperature);
+        float lse = Statistics::logSumExp(logits.data(), n_vocab);
+        std::vector<std::pair<llama_token, float>> allSorted;
+        for (int32_t token = 0; token < n_vocab; token++) {
+            allSorted.emplace_back((llama_token)token, logits[token] / jTemperature);
         }
+        
+        std::sort(allSorted.begin(), allSorted.end(), [](const auto& a, const auto& b) {
+            if (std::abs(a.second - b.second) > 1e-9f) return a.second > b.second;
+            return a.first < b.first; 
+        });
 
-        std::sort(
-                scaledProbabilities.begin(),
-                scaledProbabilities.end(),
-                [](const auto& pair1, const auto& pair2) { return pair1.second > pair2.second; }
-        );
-
-        // Stegasuras: "Cut off low probabilities that would be rounded to 0"
-        long long currentIntervalRange = currentInterval.second - currentInterval.first;
-        double currentThreshold = 1.0 / static_cast<double>(currentIntervalRange);
-
-        int k = std::min(
-            std::max(
-                2,
-                static_cast<int>(std::count_if(
-                    scaledProbabilities.begin(),
-                    scaledProbabilities.end(),
-                    [currentThreshold](const std::pair<llama_token, double>& pair) { return pair.second >= currentThreshold; }
-                ))
-            ),
-            jTopK
-        );
-
-        // Don't reassign "scaledProbabilities = scaledProbabilities.take(k)" but introduce new variable topScaledProbabilities as decode needs scaledProbabilities again later
-        std::vector<std::pair<llama_token, double>> topScaledProbabilities = scaledProbabilities;
-        topScaledProbabilities.resize(k);
-
-        // Stegasuras: "Rescale to correct range"
-        double sum = 0.0;
-
-        for (const auto& [token, probability] : topScaledProbabilities) {
-            sum += probability;
-        }
-
-        for (auto& pair : topScaledProbabilities) {
-            pair.second *= static_cast<double>(currentIntervalRange) / sum;
-        }
-
-        // Stegasuras: "Round probabilities to integers given precision"
-        std::vector<std::pair<llama_token, long long>> roundedScaledProbabilities;
-        roundedScaledProbabilities.reserve(topScaledProbabilities.size());
-
-        for (const auto& pair : topScaledProbabilities) {
-            roundedScaledProbabilities.emplace_back(pair.first, std::round(pair.second));
-        }
-
-        std::vector<std::pair<llama_token, long long>> cumulatedProbabilities;
-        cumulatedProbabilities.reserve(roundedScaledProbabilities.size());
-
-        long long cumulatedProbability = 0;
-
-        for (const auto& [token, probability] : roundedScaledProbabilities) {
-            cumulatedProbability += probability;
-            cumulatedProbabilities.emplace_back(token, cumulatedProbability);
-        }
-
-        // Stegasuras: "Remove any elements from the bottom if rounding caused the total prob to be too large"
-        int overfill = std::count_if(
-            cumulatedProbabilities.begin(),
-            cumulatedProbabilities.end(),
-            [currentIntervalRange](const std::pair<llama_token, double>& pair) { return pair.second > static_cast<double>(currentIntervalRange); }
-        );
-
-        if (overfill > 0) {
-            cumulatedProbabilities.resize(cumulatedProbabilities.size() - overfill);
-        }
-
-        // Stegasuras: "Add any mass to the top if removing/rounding causes the total prob to be too small"
-        for (auto& item : cumulatedProbabilities) {
-            item.second += currentIntervalRange - cumulatedProbabilities.back().second;
-        }
-
-        // Stegasuras: "Convert to position in range"
-        for (auto& item : cumulatedProbabilities) {
-            item.second += currentInterval.first;
-        }
-
-        // Replace token of last sub-interval with ASCII NUL character so it can be sampled during compression
-        // Similar to explanation at https://www.youtube.com/watch?v=RFWJM8JMXBs
+        std::vector<std::pair<llama_token, float>> pool;
         if (isCompression) {
-            scaledProbabilities[cumulatedProbabilities.size() - 1].first = LlamaCpp::getAsciiNul(model, cppCtx);
-            cumulatedProbabilities[cumulatedProbabilities.size() - 1].first = LlamaCpp::getAsciiNul(model, cppCtx);
+            pool = allSorted;
+        } else {
+            float cumP = 0.0f;
+            for (const auto& pair : allSorted) {
+                float p = std::exp((pair.second * jTemperature) - lse);
+                if (p < 0.001f && pool.size() >= 2) break; 
+                pool.push_back(pair);
+                cumP += p;
+                if (cumP >= 0.95f && pool.size() >= 2) break;
+            }
         }
 
-        // Stegasuras: n/a
-        // Determine rank of predicted token amongst all tokens based on its probability
-        auto iterator = std::find_if(
-            scaledProbabilities.begin(),
-            scaledProbabilities.end(),
-            [coverTextTokens, i](const std::pair<llama_token, float>& pair) { return pair.first == coverTextTokens[i]; }
-        );
+        long long currentIntervalRange = currentInterval.second - currentInterval.first;
+        float logThreshold = -static_cast<float>(std::log(static_cast<double>(currentIntervalRange)));
+        std::vector<float> poolLogits;
+        for(auto& p : pool) poolLogits.push_back(p.second);
+        float poolLse = Statistics::logSumExp(poolLogits.data(), (int32_t)poolLogits.size());
 
-        int rank = std::distance(scaledProbabilities.begin(), iterator);
+        int k_candidate = 0;
+        for (const auto& pair : pool) {
+            if (pair.second - poolLse >= logThreshold) k_candidate++;
+            else break;
+        }
+        int k = std::min(std::max(2, k_candidate), (int)pool.size());
+        if (isCompression) k = (int)pool.size();
 
-        // Deviation from Stegasuras:
-        // Error handling for if the token isn't found in the valid range
-        // Small chance but possible as token probability has to be > currentThreshold (~ 1/2^precision)
-        if (rank == -1 || rank > cumulatedProbabilities.size()) {
-            throw std::invalid_argument("Cover text cannot be decoded: token mismatch at position " + std::to_string(i));
+        std::vector<std::pair<llama_token, float>> topKTokens(pool.begin(), pool.begin() + k);
+        if (!isCompression && jSeed > 0) {
+            std::shuffle(topKTokens.begin(), topKTokens.end(), std::mt19937(jSeed + i));
         }
 
-        // Sample token at (corrected) rank
-        int selectedSubinterval = rank;
+        llama_token targetToken = coverTextTokens[i];
+        if (LlamaCpp::isEndOfGeneration(targetToken, model)) break;
 
-        // Stegasuras: "Calculate new range as ints"
-        long long newIntervalBottom = selectedSubinterval > 0 ? cumulatedProbabilities[selectedSubinterval-1].second : currentInterval.first;
-        long long newIntervalTop = cumulatedProbabilities[selectedSubinterval].second;
+        auto rank_it = std::find_if(topKTokens.begin(), topKTokens.end(), [targetToken](const auto& pair) {
+            return pair.first == targetToken;
+        });
+        int rank = (int)std::distance(topKTokens.begin(), rank_it);
 
-        // Stegasuras: "Convert range to bits"
-        std::vector<bool> newIntervalBottomBitsInclusive = Format::asBitVector(newIntervalBottom, jPrecision);
-        std::vector<bool> newIntervalTopBitsInclusive = Format::asBitVector(newIntervalTop - 1, jPrecision);
-
-        // Stegasuras: "Emit most significant bits which are now fixed and update interval"
-        // Inline += operation to eliminate newBits variable
-        int numberOfEncodedBits = Arithmetic::numberOfSameBitsFromBeginning(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive);
-
-        if (i == coverTextTokens.size() - 1) {
-            cppCipherBits.insert(
-                cppCipherBits.end(),
-                newIntervalBottomBitsInclusive.begin(),
-                newIntervalBottomBitsInclusive.end()
-            );
-        }
-        else {
-            cppCipherBits.insert(
-                cppCipherBits.end(),
-                newIntervalTopBitsInclusive.begin(),
-                newIntervalTopBitsInclusive.begin() + numberOfEncodedBits
-            );
+        if (rank >= k) {
+            rank = 0; 
         }
 
-        std::vector<bool> newIntervalBottomBits = std::vector<bool>(newIntervalBottomBitsInclusive.begin() + numberOfEncodedBits, newIntervalBottomBitsInclusive.end());
-        newIntervalBottomBits.resize(newIntervalBottomBits.size() + numberOfEncodedBits, false);
+        double probSum = 0.0;
+        for (int j = 0; j < k; j++) probSum += static_cast<double>(std::exp(topKTokens[j].second - poolLse));
 
-        std::vector<bool> newIntervalTopBits = std::vector<bool>(newIntervalTopBitsInclusive.begin() + numberOfEncodedBits, newIntervalTopBitsInclusive.end());
-        newIntervalTopBits.resize(newIntervalTopBits.size() + numberOfEncodedBits, true);
+        std::vector<std::pair<llama_token, long long>> roundedProbs;
+        for (const auto& pair : topKTokens) {
+            double rescaled = (std::exp(pair.second - poolLse) / probSum) * static_cast<double>(currentIntervalRange);
+            roundedProbs.emplace_back(pair.first, std::max(1LL, (long long)std::llround(rescaled)));
+        }
 
-        currentInterval.first = Format::asLong(newIntervalBottomBits);
-        currentInterval.second = Format::asLong(newIntervalTopBits) + 1;
+        std::vector<std::pair<llama_token, long long>> cumProbs;
+        long long cumPVal = 0;
+        for (const auto& [token, prob] : roundedProbs) {
+            cumPVal += prob;
+            cumProbs.emplace_back(token, cumPVal);
+        }
+        while(!cumProbs.empty() && cumProbs.back().second > currentIntervalRange) cumProbs.pop_back();
+        
+        if (cumProbs.empty()) {
+            cumProbs.emplace_back(topKTokens[0].first, currentIntervalRange);
+        } else {
+            long long gap = currentIntervalRange - cumProbs.back().second;
+            if (gap != 0) {
+                for (auto& item : cumProbs) item.second += gap;
+            }
+        }
+        for (auto& item : cumProbs) item.second += currentInterval.first;
 
-        // </Logic specific to arithmetic coding>
+        long long newBottom = rank > 0 ? cumProbs[rank-1].second : currentInterval.first;
+        long long newTop = cumProbs[rank].second;
 
-        // Update loop variables and flags
-        coverTextToken = coverTextTokens[i];
+        std::vector<bool> newBottomBitsInc = Format::asBitVector(newBottom, (int)jPrecision);
+        std::vector<bool> newTopBitsInc = Format::asBitVector(newTop - 1, (int)jPrecision);
+
+        int numBits = Arithmetic::numberOfSameBitsFromBeginning(newBottomBitsInc, newTopBitsInc);
+
+        if (i == (int)coverTextTokens.size() - 1) {
+            cppCipherBits.insert(cppCipherBits.end(), newBottomBitsInc.begin(), newBottomBitsInc.end());
+        } else {
+            cppCipherBits.insert(cppCipherBits.end(), newTopBitsInc.begin(), newTopBitsInc.begin() + numBits);
+        }
+
+        std::vector<bool> nextBottom(newBottomBitsInc.begin() + numBits, newBottomBitsInc.end());
+        nextBottom.resize((int)jPrecision, false);
+        std::vector<bool> nextTop(newTopBitsInc.begin() + numBits, newTopBitsInc.end());
+        nextTop.resize((int)jPrecision, true);
+
+        currentInterval.first = Format::asLong(nextBottom);
+        currentInterval.second = Format::asLong(nextTop) + 1;
+
+        coverTextToken = coverTextTokens[i++];
         isFirstRun = false;
-
-        i++;
-
-        // Free allocated memory
-        delete[] probabilities;
+        if (LlamaCpp::getAsciiNul(model, cppCtx) == targetToken) break;
     }
-
-    // Create ByteArray from bit vector to return cipher bits
-    jbyteArray jCipherBits = isCompression ? Format::asByteArrayWithPadding(env, cppCipherBits) : Format::asByteArray(env, cppCipherBits);
-
-    return jCipherBits;
+    return isCompression ? Format::asByteArrayWithPadding(env, cppCipherBits) : Format::asByteArray(env, cppCipherBits);
 }
 
 int Arithmetic::numberOfSameBitsFromBeginning(const std::vector<bool>& bitVector1, const std::vector<bool>& bitVector2) {
-    // Only edge case covered in Stegasuras
-    if (bitVector1.size() != bitVector2.size()) {
-        throw std::invalid_argument("The bit vectors are of different length");
+    if (bitVector1.size() != bitVector2.size()) return 0;
+    int count = 0;
+    for (size_t i = 0; i < bitVector1.size(); i++) {
+        if (bitVector1[i] != bitVector2[i]) break;
+        count++;
     }
-
-    int numberOfSameBitsFromBeginning = 0;
-
-    for (int i = 0; i < bitVector1.size(); i++) {
-        if (bitVector1[i] != bitVector2[i]) {
-            break;
-        }
-
-        numberOfSameBitsFromBeginning++;
-    }
-
-    return numberOfSameBitsFromBeginning;
+    return count;
 }
 
-llama_token Arithmetic::getTopProbability(double* probabilities, const llama_model* model) {
-    // Vector of token-probability pairs
-    // Use vector because unlike Kotlin, C++ can sort maps only by keys and not by values
-    std::vector<std::pair<llama_token, double>> topProbabilities;
-
-    // Fill vector with pairs constructed from probabilities array, effectively maps token IDs to their probabilities to not lose them when sorting
-    // Reserve memory ahead of time and construct pairs in place with emplace_back(), better performance than just using push_back(std::pair<>()) in loop
-    topProbabilities.reserve(LlamaCpp::getVocabSize(model));
-
-    for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
-        topProbabilities.emplace_back(token, probabilities[token]);
+llama_token Arithmetic::getTopProbability(const float *probabilities, const llama_model* model) {
+    int32_t n_vocab = LlamaCpp::getVocabSize(model);
+    llama_token best_token = 0;
+    float best_prob = -1.0f;
+    for (int32_t i = 0; i < n_vocab; i++) {
+        if (probabilities[i] > best_prob) {
+            best_prob = probabilities[i];
+            best_token = (llama_token)i;
+        } else if (std::abs(probabilities[i] - best_prob) < 1e-9f) {
+            if (i < (int)best_token) best_token = (llama_token)i;
+        }
     }
-
-    // Sort tokens descending based on probabilities
-    std::sort(
-        topProbabilities.begin(),
-        topProbabilities.end(),
-        [](const auto& pair1, const auto& pair2) { return pair1.second > pair2.second; }
-    );
-
-    // Only keep token with top probability
-    llama_token sampledToken = topProbabilities[0].first;
-
-    return sampledToken;
+    return best_token;
 }
