@@ -223,6 +223,19 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
                                 // See if message can be decoded, show toast otherwise
                                 try {
+                                    // TODO Downward concat of split cover text
+                                    //  The following if is is a simpler solution that doesn't need decoding to be resumable, so we don't have to overcomplicate state management of the LLM
+                                    //  But this approach may decode significantly more cover text than needed, as we just concat all subsequent messages of the same user (i.e. until end-of-turn in the conversation)
+                                    if (Settings.splitCoverTexts) {
+                                        if (messages.indexOf(messageToDecode) + 1 < messages.size) {
+                                            for (messageToAppend in messages.subList(messages.indexOf(messageToDecode) + 1, messages.size)) {
+                                                if (messageToAppend.senderID == messageToDecode!!.senderID) {
+                                                    coverText += "\n\n" + messageToAppend.content
+                                                }
+                                            }
+                                        }
+                                    }
+
                                     secretMessage = Steganography.decode(context, coverText, inverseHuffmanCodes)
                                 }
                                 catch (exception: Exception) {
