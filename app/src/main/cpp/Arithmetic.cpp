@@ -8,6 +8,7 @@
 
 // TODO Downward concat of split cover text
 //  Parameter isResumed in all subsequent functions is to differentiate first from subsequent calls
+//  Assignment of ASCII {STX,ETX} to {first,last} sub-interval caused crash last time I tried it
 extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_encode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCipherBits, jfloat jTemperature, jint jTopK, jint jPrecision, jlong jCtx, jboolean jIsResumed) {
     // TODO Abstract state management away in LlamaCpp.{h,cpp}
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
@@ -176,6 +177,20 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
             // Replace token of last sub-interval with ASCII NUL character so it can be sampled during decompression
             // Similar to explanation at https://www.youtube.com/watch?v=RFWJM8JMXBs
             if (isDecompression) {
+                /*
+                if (isFirstRun) {
+                    llama_token stx = LlamaCpp::getAsciiStx(model, cppCtx);
+
+                    scaledProbabilities[0].first = stx;
+                    cumulatedProbabilities[0].first = stx;
+                }
+
+                llama_token etx = LlamaCpp::getAsciiEtx(model, cppCtx);
+
+                scaledProbabilities[cumulatedProbabilities.size() - 1].first = etx;
+                cumulatedProbabilities[cumulatedProbabilities.size() - 1].first = etx;
+                */
+
                 scaledProbabilities[cumulatedProbabilities.size() - 1].first = LlamaCpp::getAsciiNul(model, cppCtx);
                 cumulatedProbabilities[cumulatedProbabilities.size() - 1].first = LlamaCpp::getAsciiNul(model, cppCtx);
             }
@@ -415,6 +430,20 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         // Replace token of last sub-interval with ASCII NUL character so it can be sampled during compression
         // Similar to explanation at https://www.youtube.com/watch?v=RFWJM8JMXBs
         if (isCompression) {
+            /*
+            if (isFirstRun) {
+                llama_token stx = LlamaCpp::getAsciiStx(model, cppCtx);
+
+                scaledProbabilities[0].first = stx;
+                cumulatedProbabilities[0].first = stx;
+            }
+
+            llama_token etx = LlamaCpp::getAsciiEtx(model, cppCtx);
+
+            scaledProbabilities[cumulatedProbabilities.size() - 1].first = etx;
+            cumulatedProbabilities[cumulatedProbabilities.size() - 1].first = etx;
+            */
+
             scaledProbabilities[cumulatedProbabilities.size() - 1].first = LlamaCpp::getAsciiNul(model, cppCtx);
             cumulatedProbabilities[cumulatedProbabilities.size() - 1].first = LlamaCpp::getAsciiNul(model, cppCtx);
         }
