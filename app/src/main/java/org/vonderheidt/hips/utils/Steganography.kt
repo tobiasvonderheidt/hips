@@ -154,6 +154,21 @@ object Steganography {
         return isFirstMessageOfSplit
     }
 
+    // TODO Downward concat of split cover text
+    //  Function isLastMessageOfSplit checks for stop signal so we can terminate decoding as early as possible
+    /**
+     * Function to check if a message is the last of a split cover text. Takes a partially decoded cover text to see if it contains the stop signal.
+     *
+     * @param partialSecretMessage Partially decoded cover text.
+     * @return Boolean that is true if the message is the last of a split cover text, false otherwise.
+     */
+    fun isLastMessageOfSplit(partialSecretMessage: String): Boolean {
+        // Not .endsWith() because of possible noise following stop signal
+        val isLastMessageOfSplit = partialSecretMessage.contains(LlamaCpp.getAsciiEtx())
+
+        return isLastMessageOfSplit
+    }
+
     /**
      * Function to decode secret message from cover text using given context.
      *
