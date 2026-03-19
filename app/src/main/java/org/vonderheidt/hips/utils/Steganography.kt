@@ -169,6 +169,9 @@ object Steganography {
         return isLastMessageOfSplit
     }
 
+    // TODO Downward concat of split cover text
+    //  Parameter isResumed in decode function is to differentiate first from subsequent calls of decode
+    //  Save and restore of {decode,decompress}Ctx is to resume decoding from last call of decode
     /**
      * Function to decode secret message from cover text using given context.
      *
@@ -177,6 +180,7 @@ object Steganography {
      * @param inverseHuffmanCodes Inverse mapping of Huffman codes to the corresponding characters (if applicable).
      * @param conversionMode Conversion mode, determined by Settings object.
      * @param steganographyMode Steganography mode, determined by Settings object.
+     * @param isResumed Boolean that is true if this call of the `decode` function resumes where the last call terminated, false otherwise.
      * @return The secret message.
      */
     fun decode(
@@ -184,28 +188,49 @@ object Steganography {
         coverText: String,
         inverseHuffmanCodes: MutableMap<String, Char>? = null,
         conversionMode: ConversionMode = Settings.conversionMode,
-        steganographyMode: SteganographyMode = Settings.steganographyMode
+        steganographyMode: SteganographyMode = Settings.steganographyMode,
+        isResumed: Boolean = false
     ): String {
         // Invert step 3
-        LlamaCpp.resetInstance()
+        if (isResumed) {
+            // Restore ctx for decoding
+            LlamaCpp.setCtx(ctx = LlamaCpp.getDecodeCtx())
+        }
+        else {
+            // Reset ctx
+            LlamaCpp.resetInstance()
+        }
 
         val cipherBits = when (steganographyMode) {
-            SteganographyMode.Arithmetic -> { Arithmetic.decode(context, coverText) }
+            SteganographyMode.Arithmetic -> { Arithmetic.decode(context, coverText, isResumed = isResumed) }
             /* SteganographyMode.Bins -> { Bins.decode(context, coverText) } */
-            SteganographyMode.Huffman -> { Huffman.decode(context, coverText) }
+            SteganographyMode.Huffman -> { Huffman.decode(context, coverText, isResumed = isResumed) }
         }
+
+        // Save ctx for decoding
+        LlamaCpp.setDecodeCtx(decodeCtx = LlamaCpp.getCtx())
 
         // Invert step 2
         val plainBits = Crypto.decrypt(cipherBits)
 
         // Invert step 1
-        LlamaCpp.resetInstance()
+        if (isResumed) {
+            // Restore ctx for decompression
+            LlamaCpp.setCtx(ctx = LlamaCpp.getDecompressCtx())
+        }
+        else {
+            // Reset ctx
+            LlamaCpp.resetInstance()
+        }
 
         val preparedSecretMessage = when (conversionMode) {
-            ConversionMode.Arithmetic -> { Arithmetic.decompress(plainBits) }
+            ConversionMode.Arithmetic -> { Arithmetic.decompress(plainBits, isResumed = isResumed) }
             /* ConversionMode.Huffman -> { Huffman.decompress(plainBits, inverseHuffmanCodes!!) } */
             ConversionMode.UTF8 -> { UTF8.decode(plainBits) }
         }
+
+        // Save ctx for decompression
+        LlamaCpp.setDecompressCtx(decompressCtx = LlamaCpp.getCtx())
 
         // Invert step 0
         val secretMessage = unprepare(preparedSecretMessage)
