@@ -237,6 +237,38 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                     }
 
                                     secretMessage = Steganography.decode(context, coverText, inverseHuffmanCodes)
+
+                                    // TODO Downward concat of split cover text
+                                    //  The following if is how I wanted downward concat to work, but it seems to be more complex than I thought - see all other places marked with the above to-do.
+                                    //  - Downward concat of split cover text *with resumable decoding* corrupts end of encoded secret message.
+                                    //      - Consider UTF-8 + Huffman, where we know that every character of the secret message corresponds to 8 cipher bits (*).
+                                    //        If the LLM happens to split our cover text into paragraphs that perfectly decode into n * 8 cipher bits, downward concat should simply work as below.
+                                    //        But the LLM may split our cover text into paragraphs that decode into any other number of cipher bits.
+                                    //        Consider e.g. Huffman coding with bitsPerToken = 2. The LLM may then split our cover text so that we have a paragraph that decodes into e.g. 82 cipher bits.
+                                    //        The last 2 cipher bits of this paragraph would have to be concatenated with the first 6 cipher bits of the next paragraph. Otherwise, we would corrupt the secret message from here on.
+                                    //        This significantly complicates state management of the LLM. We would have to keep a version history of the LLM ctx, one version after every token processed, to resume decoding at the correct token.
+                                    //        Trial-and-error with lots of memory accesses would likely degrade performance and therefore user experience even further.
+                                    //        (*) = This already assumes secret message of only ASCII chars, so no emojis etc.
+                                    //      - This is even worse with Arithmetic + Arithmetic, where we don't know at all how many cipher bits correspond to each token of the secret message.
+                                    //  - Also calling isLastMessageOfSplit here conflicts with calling unprepare in the decode function, but this should be easier to resolve.
+                                    /*
+                                    if (Settings.splitCoverTexts) {
+                                        var isLastMessageOfSplit = Steganography.isLastMessageOfSplit(secretMessage)
+                                        var messageToAppend = messages.getOrNull(messages.indexOf(messageToDecode) + 1)
+
+                                        while (!isLastMessageOfSplit) {
+                                            // Append subsequent messages
+                                            // Ignore context as decode already reuses pointers to {decode,decompress}Ctx from previous call of decode function
+                                            coverText = "\n\n" + messageToAppend!!.content
+                                            // TODO Ignore inverseHuffmanCodes for now as Huffman compression will likely be removed later
+
+                                            secretMessage += Steganography.decode(context, coverText, inverseHuffmanCodes, isResumed = true)
+
+                                            isLastMessageOfSplit = Steganography.isLastMessageOfSplit(secretMessage)
+                                            messageToAppend = messages.getOrNull(messages.indexOf(messageToAppend) + 1)
+                                        }
+                                    }
+                                    */
                                 }
                                 catch (exception: Exception) {
                                     withContext(Dispatchers.Main) {
