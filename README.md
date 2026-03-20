@@ -57,8 +57,6 @@ The reset button at the bottom can be used to find sensible defaults for setting
 - Room: Local SQLite database.
   - KSP: Annotation processing.
 
-To implement Huffman compression, Kotlinx Serialization is used to serialize Huffman codes. As this is still experimental, it is not exposed in the UI.
-
 ## Acknowledgements
 - The steganography is based on the Stegasuras project ([Paper](https://arxiv.org/abs/1909.01496), [Demo](https://steganography.live/), [Code](https://github.com/harvardnlp/NeuralSteganography)).
 - This app was developed as part of [my bachelor's thesis](https://github.com/tobiasvonderheidt/bsc-thesis) under supervision of the [SEEMOO](https://seemoo.de/) group at [TU Darmstadt](https://www.tu-darmstadt.de/).
