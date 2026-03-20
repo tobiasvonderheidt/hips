@@ -46,12 +46,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -60,7 +57,6 @@ import org.vonderheidt.hips.data.Message
 import org.vonderheidt.hips.data.Settings
 import org.vonderheidt.hips.data.User
 import org.vonderheidt.hips.navigation.Screen
-import org.vonderheidt.hips.ui.theme.HiPSTheme
 import org.vonderheidt.hips.utils.ConversionMode
 import org.vonderheidt.hips.utils.LLM
 import org.vonderheidt.hips.utils.LlamaCpp
@@ -417,20 +413,5 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
         }
 
         Spacer(modifier = modifier.height(32.dp))
-    }
-}
-
-/**
- * Function to show preview of the home screen in Android Studio.
- */
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    // No Scaffold, no innerPadding
-    HiPSTheme {
-        val modifier: Modifier = Modifier
-        val navController: NavHostController = rememberNavController()
-
-        HomeScreen(navController, modifier)
     }
 }

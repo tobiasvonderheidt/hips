@@ -49,12 +49,9 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -65,7 +62,6 @@ import org.vonderheidt.hips.data.Message
 import org.vonderheidt.hips.data.Settings
 import org.vonderheidt.hips.data.User
 import org.vonderheidt.hips.navigation.Screen
-import org.vonderheidt.hips.ui.theme.HiPSTheme
 import org.vonderheidt.hips.utils.ConversionMode
 import org.vonderheidt.hips.utils.Huffman
 import org.vonderheidt.hips.utils.LlamaCpp
@@ -553,20 +549,5 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
         }
 
         Spacer(modifier = modifier.height(8.dp))
-    }
-}
-
-/**
- * Function to show preview of the conversation screen in Android Studio.
- */
-@Preview(showBackground = true)
-@Composable
-fun ConversationScreenPreview() {
-    // No Scaffold, no innerPadding
-    HiPSTheme {
-        val modifier: Modifier = Modifier
-        val navController: NavHostController = rememberNavController()
-
-        ConversationScreen(navController, modifier)
     }
 }

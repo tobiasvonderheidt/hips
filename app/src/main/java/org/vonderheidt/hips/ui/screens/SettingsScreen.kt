@@ -55,20 +55,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.vonderheidt.hips.data.HiPSDataStore
 import org.vonderheidt.hips.data.Settings
 import org.vonderheidt.hips.navigation.Screen
-import org.vonderheidt.hips.ui.theme.HiPSTheme
 import org.vonderheidt.hips.utils.ConversionMode
 import org.vonderheidt.hips.utils.LLM
 import org.vonderheidt.hips.utils.LlamaCpp
@@ -789,20 +785,5 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
         }
 
         Spacer(modifier = modifier.height(32.dp))
-    }
-}
-
-/**
- * Function to show preview of the settings screen in Android Studio.
- */
-@Preview(showBackground = true)
-@Composable
-fun SettingsScreenPreview() {
-    // No Scaffold, no innerPadding
-    HiPSTheme {
-        val modifier: Modifier = Modifier
-        val navController: NavHostController = rememberNavController()
-
-        SettingsScreen(navController, modifier)
     }
 }
