@@ -56,14 +56,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
 import org.vonderheidt.hips.data.HiPSDatabase
 import org.vonderheidt.hips.data.Message
 import org.vonderheidt.hips.data.Settings
 import org.vonderheidt.hips.data.User
 import org.vonderheidt.hips.navigation.Screen
-import org.vonderheidt.hips.utils.ConversionMode
-import org.vonderheidt.hips.utils.Huffman
 import org.vonderheidt.hips.utils.LlamaCpp
 import org.vonderheidt.hips.utils.Steganography
 import org.vonderheidt.hips.utils.SteganographyMode
@@ -198,7 +195,6 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
                                 var context = LlamaCpp.formatChat(priorMessages, isAlice = messageToDecode!!.senderID == User.Alice.id)
                                 var coverText = messageToDecode!!.content
-                                val inverseHuffmanCodes = if (messageToDecode!!.inverseHuffmanCodes != null) Json.decodeFromString<MutableMap<String, Char>>(messageToDecode!!.inverseHuffmanCodes!!) else null
 
                                 if (Settings.splitCoverTexts) {
                                     var isFirstMessageOfSplit = Steganography.isFirstMessageOfSplit(context, coverText)
@@ -210,7 +206,6 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
                                         context = LlamaCpp.formatChat(priorMessages, isAlice = messageToDecode!!.senderID == User.Alice.id)
                                         coverText = messageToPrepend.content + "\n\n" + coverText
-                                        // TODO Ignore inverseHuffmanCodes for now as Huffman compression will likely be removed later
 
                                         // Update loop variable
                                         isFirstMessageOfSplit = Steganography.isFirstMessageOfSplit(context, coverText)
@@ -232,7 +227,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                         }
                                     }
 
-                                    secretMessage = Steganography.decode(context, coverText, inverseHuffmanCodes)
+                                    secretMessage = Steganography.decode(context, coverText)
 
                                     // TODO Downward concat of split cover text
                                     //  The following if is how I wanted downward concat to work, but it seems to be more complex than I thought - see all other places marked with the above to-do.
@@ -256,7 +251,6 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                             // Append subsequent messages
                                             // Ignore context as decode already reuses pointers to {decode,decompress}Ctx from previous call of decode function
                                             coverText = "\n\n" + messageToAppend!!.content
-                                            // TODO Ignore inverseHuffmanCodes for now as Huffman compression will likely be removed later
 
                                             secretMessage += Steganography.decode(context, coverText, inverseHuffmanCodes, isResumed = true)
 
@@ -500,7 +494,6 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
                                             // Generate cover text and update database
                                             val newCoverText = if (isPlainText) newSecretMessage else Steganography.encode(context, newSecretMessage)
-                                            val newInverseHuffmanCodes = /* if (!isPlainText && Settings.conversionMode == ConversionMode.Huffman) Json.encodeToString(Huffman.getLastInverseHuffmanCodes()) else */ null
 
                                             // Split cover text into paragraphs based on settings
                                             val paragraphs = if (!isPlainText && Settings.splitCoverTexts) Steganography.split(newCoverText) else listOf(newCoverText)
@@ -510,7 +503,7 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                             db.userDao.upsertUser(newReceiver)
 
                                             for (paragraph in paragraphs) {
-                                                val newMessage = Message(newSender.id, newReceiver.id, paragraph, newInverseHuffmanCodes)
+                                                val newMessage = Message(newSender.id, newReceiver.id, paragraph)
                                                 db.messageDao.upsertMessage(newMessage)
 
                                                 // Update state variable

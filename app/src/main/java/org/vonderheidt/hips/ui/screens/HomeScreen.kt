@@ -57,7 +57,6 @@ import org.vonderheidt.hips.data.Message
 import org.vonderheidt.hips.data.Settings
 import org.vonderheidt.hips.data.User
 import org.vonderheidt.hips.navigation.Screen
-import org.vonderheidt.hips.utils.ConversionMode
 import org.vonderheidt.hips.utils.LLM
 import org.vonderheidt.hips.utils.LlamaCpp
 import org.vonderheidt.hips.utils.Steganography
@@ -281,12 +280,6 @@ fun HomeScreen(navController: NavController, modifier: Modifier) {
                         return@Button
                     }
                     // Check settings
-                    /*
-                    if (Settings.conversionMode == ConversionMode.Huffman) {
-                        Toast.makeText(currentLocalContext, "Huffman compression can't be used here", Toast.LENGTH_LONG).show()
-                        return@Button
-                    }
-                    */
                     if (Settings.steganographyMode == SteganographyMode.Arithmetic && (Settings.topK == 0 || Settings.precision == 0)) {
                         Toast.makeText(currentLocalContext, "Arithmetic coding needs topK > 0 and precision > 0", Toast.LENGTH_LONG).show()
                         return@Button

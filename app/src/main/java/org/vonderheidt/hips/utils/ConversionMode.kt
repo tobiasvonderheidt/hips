@@ -7,7 +7,6 @@ package org.vonderheidt.hips.utils
  */
 enum class ConversionMode(private val displayName: String) {
     Arithmetic("Arithmetic (recommended)"),
-    /* Huffman("Huffman"), */
     UTF8("UTF-8");
 
     /**

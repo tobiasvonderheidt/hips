@@ -29,7 +29,6 @@ object Steganography {
 
         val plainBits = when (conversionMode) {
             ConversionMode.Arithmetic -> { Arithmetic.compress(preparedSecretMessage) }
-            /* ConversionMode.Huffman -> { Huffman.compress(preparedSecretMessage) } */
             ConversionMode.UTF8 -> { UTF8.encode(preparedSecretMessage) }
         }
 
@@ -176,7 +175,6 @@ object Steganography {
      *
      * @param context The context to decode the cover text with.
      * @param coverText The cover text containing a secret message.
-     * @param inverseHuffmanCodes Inverse mapping of Huffman codes to the corresponding characters (if applicable).
      * @param conversionMode Conversion mode, determined by Settings object.
      * @param steganographyMode Steganography mode, determined by Settings object.
      * @param isResumed Boolean that is true if this call of the `decode` function resumes where the last call terminated, false otherwise.
@@ -185,7 +183,6 @@ object Steganography {
     fun decode(
         context: String,
         coverText: String,
-        inverseHuffmanCodes: MutableMap<String, Char>? = null,
         conversionMode: ConversionMode = Settings.conversionMode,
         steganographyMode: SteganographyMode = Settings.steganographyMode,
         isResumed: Boolean = false
@@ -223,7 +220,6 @@ object Steganography {
 
         val preparedSecretMessage = when (conversionMode) {
             ConversionMode.Arithmetic -> { Arithmetic.decompress(plainBits, isResumed = isResumed) }
-            /* ConversionMode.Huffman -> { Huffman.decompress(plainBits, inverseHuffmanCodes!!) } */
             ConversionMode.UTF8 -> { UTF8.decode(plainBits) }
         }
 
