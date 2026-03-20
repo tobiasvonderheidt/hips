@@ -272,7 +272,7 @@ object LlamaCpp {
      * @return The ASCII STX character.
      */
     fun getAsciiStx(): String {
-       return "\u0002"
+        return "\u0002"
     }
 
     /**
