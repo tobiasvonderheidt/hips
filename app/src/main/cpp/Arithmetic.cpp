@@ -6,7 +6,10 @@
 #include "LlamaCpp.h"
 #include "Statistics.h"
 
-extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_encode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCipherBits, jfloat jTemperature, jint jTopK, jint jPrecision, jlong jCtx) {
+// TODO Downward concat of split cover text
+//  Parameter isResumed in all subsequent functions is to differentiate first from subsequent calls
+//  Assignment of ASCII {STX,ETX} to {first,last} sub-interval caused crash last time I tried it
+extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_encode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCipherBits, jfloat jTemperature, jint jTopK, jint jPrecision, jlong jCtx, jboolean jIsResumed) {
     // TODO Abstract state management away in LlamaCpp.{h,cpp}
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
     const llama_model *model = llama_get_model(cppCtx);
@@ -41,7 +44,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
     int i = 0;
     bool isLastSentenceFinished = false;
 
-    bool isFirstRun = true;             // llama.cpp batch needs to store context tokens in first run, but only last sampled token in subsequent runs
+    bool isFirstRun = !jIsResumed;      // llama.cpp batch needs to store context tokens in first run, but only last sampled token in subsequent runs
     llama_token sampledToken = -1;      // Will always be overwritten with last cover text token
 
     // Sample tokens until all bits of secret message are encoded
@@ -174,6 +177,20 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
             // Replace token of last sub-interval with ASCII NUL character so it can be sampled during decompression
             // Similar to explanation at https://www.youtube.com/watch?v=RFWJM8JMXBs
             if (isDecompression) {
+                /*
+                if (isFirstRun) {
+                    llama_token stx = LlamaCpp::getAsciiStx(model, cppCtx);
+
+                    scaledProbabilities[0].first = stx;
+                    cumulatedProbabilities[0].first = stx;
+                }
+
+                llama_token etx = LlamaCpp::getAsciiEtx(model, cppCtx);
+
+                scaledProbabilities[cumulatedProbabilities.size() - 1].first = etx;
+                cumulatedProbabilities[cumulatedProbabilities.size() - 1].first = etx;
+                */
+
                 scaledProbabilities[cumulatedProbabilities.size() - 1].first = LlamaCpp::getAsciiNul(model, cppCtx);
                 cumulatedProbabilities[cumulatedProbabilities.size() - 1].first = LlamaCpp::getAsciiNul(model, cppCtx);
             }
@@ -280,7 +297,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
     return coverText;
 }
 
-extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_decode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCoverText, jfloat jTemperature, jint jTopK, jint jPrecision, jlong jCtx) {
+extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_decode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCoverText, jfloat jTemperature, jint jTopK, jint jPrecision, jlong jCtx, jint jNumberOfCipherBits, jboolean jIsResumed) {
     // TODO Abstract state management away in LlamaCpp.{h,cpp}
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
     const llama_model* model = llama_get_model(cppCtx);
@@ -311,7 +328,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
     // Initialize variables and flags for loop
     int i = 0;
 
-    bool isFirstRun = true;
+    bool isFirstRun = !jIsResumed;
     llama_token coverTextToken = -1;
 
     // Decode every cover text token
@@ -413,6 +430,20 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         // Replace token of last sub-interval with ASCII NUL character so it can be sampled during compression
         // Similar to explanation at https://www.youtube.com/watch?v=RFWJM8JMXBs
         if (isCompression) {
+            /*
+            if (isFirstRun) {
+                llama_token stx = LlamaCpp::getAsciiStx(model, cppCtx);
+
+                scaledProbabilities[0].first = stx;
+                cumulatedProbabilities[0].first = stx;
+            }
+
+            llama_token etx = LlamaCpp::getAsciiEtx(model, cppCtx);
+
+            scaledProbabilities[cumulatedProbabilities.size() - 1].first = etx;
+            cumulatedProbabilities[cumulatedProbabilities.size() - 1].first = etx;
+            */
+
             scaledProbabilities[cumulatedProbabilities.size() - 1].first = LlamaCpp::getAsciiNul(model, cppCtx);
             cumulatedProbabilities[cumulatedProbabilities.size() - 1].first = LlamaCpp::getAsciiNul(model, cppCtx);
         }
@@ -431,7 +462,16 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         // Error handling for if the token isn't found in the valid range
         // Small chance but possible as token probability has to be > currentThreshold (~ 1/2^precision)
         if (rank == -1 || rank > cumulatedProbabilities.size()) {
-            throw std::invalid_argument("Cover text cannot be decoded: token mismatch at position " + std::to_string(i));
+            // Throw Kotlin/Java exception instead of C++ exception because we need to catch it on the Kotlin side
+            jclass exceptionClass = env->FindClass("java/lang/IllegalArgumentException");
+            std::string exceptionMessage = "Cover text cannot be decoded: token mismatch at position " + std::to_string(i);
+
+            env->ThrowNew(exceptionClass, exceptionMessage.c_str());
+
+            // Call return to fix C++ control flow
+            // Otherwise throwing Kotlin/Java exception would be pending JNI call, conflicting with JNI call for constructing jbyteArray below
+            // Necessary because for C++, throwing Kotlin/Java exception via JNI is just another instruction that (unlike a C++ exception) doesn't terminate the C++ function
+            return nullptr;
         }
 
         // Sample token at (corrected) rank
@@ -483,6 +523,13 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
 
         // Free allocated memory
         delete[] probabilities;
+
+        // End decoding early if we are only searching for the start signal
+        if (jNumberOfCipherBits > 0 && cppCipherBits.size() >= jNumberOfCipherBits) {
+            // Discard any incomplete byte at the end because decryption works on byte arrays
+            cppCipherBits.resize(jNumberOfCipherBits);
+            break;
+        }
     }
 
     // Create ByteArray from bit vector to return cipher bits

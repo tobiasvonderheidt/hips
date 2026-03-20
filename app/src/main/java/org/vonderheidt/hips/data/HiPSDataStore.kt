@@ -3,6 +3,7 @@ package org.vonderheidt.hips.data
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -31,6 +32,7 @@ object HiPSDataStore {
     private val precision = intPreferencesKey("precision")
     private val blockSize = intPreferencesKey("blockSize")
     private val bitsPerToken = intPreferencesKey("bitsPerToken")
+    private val splitCoverTexts = booleanPreferencesKey("splitCoverTexts")
 
     // Annotate the variable referencing the DataStore instance as volatile so that r/w to it is atomic and immediately visible to all threads
     // Avoids race conditions, i.e. multiple threads trying to start the DataStore simultaneously
@@ -74,6 +76,7 @@ object HiPSDataStore {
             val precision = settings[precision]
             val blockSize = settings[blockSize]
             val bitsPerToken = settings[bitsPerToken]
+            val splitCoverTexts = settings[splitCoverTexts]
 
             // See if any settings are currently stored by checking for null values
             val isInitialized = conversionMode != null
@@ -85,6 +88,7 @@ object HiPSDataStore {
                     && precision != null
                     && blockSize != null
                     && bitsPerToken != null
+                    && splitCoverTexts != null
 
             // If any settings are stored, return them via .first()
             if (isInitialized) {
@@ -98,6 +102,7 @@ object HiPSDataStore {
                 Settings.precision = precision!!
                 Settings.blockSize = blockSize!!
                 Settings.bitsPerToken = bitsPerToken!!
+                Settings.splitCoverTexts = splitCoverTexts!!
             }
             // Otherwise (i.e. upon installation of this app), store default settings and return them
             else {
@@ -121,6 +126,7 @@ object HiPSDataStore {
             settings[precision] = Settings.precision
             settings[blockSize] = Settings.blockSize
             settings[bitsPerToken] = Settings.bitsPerToken
+            settings[splitCoverTexts] = Settings.splitCoverTexts
         }
     }
 }

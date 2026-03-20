@@ -101,7 +101,9 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_
     return coverText;
 }
 
-extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_decode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCoverText, jint jBitsPerToken, jlong jCtx) {
+// TODO Downward concat of split cover text
+//  Parameter isResumed in decode function is to differentiate first from subsequent calls of decode
+extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_decode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCoverText, jint jBitsPerToken, jlong jCtx, jint jNumberOfCipherBits, jboolean jIsResumed) {
     // TODO Abstract state management away in LlamaCpp.{h,cpp}
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
     const llama_model* model = llama_get_model(cppCtx);
@@ -116,7 +118,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_
     // Initialize variables and flags for loop
     int i = 0;
 
-    bool isFirstRun = true;
+    bool isFirstRun = !jIsResumed;
     llama_token coverTextToken = -1;
 
     // Decode every cover text token into bitsPerToken bits
@@ -156,6 +158,13 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_
 
         // Free allocated memory
         delete[] probabilities;
+
+        // End decoding early if we are only searching for the start signal
+        if (jNumberOfCipherBits > 0 && cppCipherBits.size() >= jNumberOfCipherBits) {
+            // Discard any incomplete byte at the end because decryption works on byte arrays
+            cppCipherBits.resize(jNumberOfCipherBits);
+            break;
+        }
     }
 
     // Create Java ByteArray from bit vector to return cipher bits

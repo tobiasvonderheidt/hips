@@ -92,6 +92,28 @@ llama_token LlamaCpp::getAsciiNul(const llama_model* model, const llama_context*
     throw std::runtime_error("LLM vocabulary doesn't contain ASCII NUL character");
 }
 
+// TODO Downward concat of split cover text
+//  LlamaCpp::getAscii{Stx,Etx} are to get start and stop signal
+llama_token LlamaCpp::getAsciiStx(const llama_model* model, const llama_context* ctx) {
+    for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
+        if (LlamaCpp::detokenize(token, ctx) == "\x02") {
+            return token;
+        }
+    }
+
+    throw std::runtime_error("LLM vocabulary doesn't contain ASCII STX character");
+}
+
+llama_token LlamaCpp::getAsciiEtx(const llama_model* model, const llama_context* ctx) {
+    for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
+        if (LlamaCpp::detokenize(token, ctx) == "\x03") {
+            return token;
+        }
+    }
+
+    throw std::runtime_error("LLM vocabulary doesn't contain ASCII ETX character");
+}
+
 int32_t LlamaCpp::getVocabSize(const llama_model* model) {
     const llama_vocab* vocab = llama_model_get_vocab(model);
     int32_t n_vocab = llama_vocab_n_tokens(vocab);

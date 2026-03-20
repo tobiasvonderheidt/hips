@@ -91,6 +91,8 @@ object Huffman {
         return coverText
     }
 
+    // TODO Downward concat of split cover text
+    //  Parameter isResumed in public and private decode functions is to differentiate first from subsequent calls of decode
     /**
      * Function to decode a cover text into (the encrypted binary representation of) the secret message using Huffman decoding.
      *
@@ -98,12 +100,21 @@ object Huffman {
      *
      * @param context The context to decode the cover text with.
      * @param coverText The cover text containing a secret message.
+     * @param numberOfCipherBits Desired number of cipher bits to return. Only needed when searching for start signal in split cover text. Has to be multiple of 8 for decryption.
+     * @param isResumed Boolean that is true if this call of the `decode` function resumes where the last call terminated, false otherwise.
      * @return The encrypted binary representation of the secret message.
+     * @throws IllegalArgumentException If `numberOfCipherBits` is not a multiple of 8.
      */
-    fun decode(context: String, coverText: String): ByteArray {
+    fun decode(context: String, coverText: String, numberOfCipherBits: Int = -1, isResumed: Boolean = false): ByteArray {
+        if (numberOfCipherBits > 0 && numberOfCipherBits % 8 != 0) {
+            throw IllegalArgumentException("numberOfCipherBits has to be multiple of 8, but is $numberOfCipherBits")
+        }
+
         return decode(
             context = context.toByteArray(charset = Charsets.UTF_8),
             coverText = coverText.toByteArray(charset = Charsets.UTF_8),
+            numberOfCipherBits = numberOfCipherBits,
+            isResumed = isResumed
         )
     }
 
@@ -133,9 +144,11 @@ object Huffman {
      * @param coverText The cover text containing a secret message (byte array storing UTF-8 encoded string to bypass JNI errors).
      * @param bitsPerToken Number of bits to encode/decode per cover text token (= height of Huffman tree). Determined by Settings object.
      * @param ctx Memory address of the context.
+     * @param numberOfCipherBits Desired number of cipher bits to return. Only needed when searching for start signal in split cover text. Has to be multiple of 8 for decryption.
+     * @param isResumed Boolean that is true if this call of the `decode` function resumes where the last call terminated, false otherwise.
      * @return The encrypted binary representation of the secret message.
      */
-    private external fun decode(context: ByteArray, coverText: ByteArray, bitsPerToken: Int = Settings.bitsPerToken, ctx: Long = LlamaCpp.getCtx()): ByteArray
+    private external fun decode(context: ByteArray, coverText: ByteArray, bitsPerToken: Int = Settings.bitsPerToken, ctx: Long = LlamaCpp.getCtx(), numberOfCipherBits: Int = -1, isResumed: Boolean = false): ByteArray
 
     /*
     /**

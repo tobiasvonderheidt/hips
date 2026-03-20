@@ -198,15 +198,77 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
 
                             CoroutineScope(Dispatchers.Default).launch {
                                 // Decoding needs to reproduce the state the message was encoded in
-                                val priorMessages = messages.subList(fromIndex = 0, toIndex = messages.indexOf(messageToDecode))    // Start inclusive, end exclusive
+                                var priorMessages = messages.subList(fromIndex = 0, toIndex = messages.indexOf(messageToDecode))    // Start inclusive, end exclusive
 
-                                val context = LlamaCpp.formatChat(priorMessages, isAlice = messageToDecode!!.senderID == User.Alice.id)
-                                val coverText = messageToDecode!!.content
+                                var context = LlamaCpp.formatChat(priorMessages, isAlice = messageToDecode!!.senderID == User.Alice.id)
+                                var coverText = messageToDecode!!.content
                                 val inverseHuffmanCodes = if (messageToDecode!!.inverseHuffmanCodes != null) Json.decodeFromString<MutableMap<String, Char>>(messageToDecode!!.inverseHuffmanCodes!!) else null
+
+                                if (Settings.splitCoverTexts) {
+                                    var isFirstMessageOfSplit = Steganography.isFirstMessageOfSplit(context, coverText)
+
+                                    while (!isFirstMessageOfSplit) {
+                                        // Prepend prior message
+                                        val messageToPrepend = priorMessages.last()
+                                        priorMessages = priorMessages.dropLast(1)
+
+                                        context = LlamaCpp.formatChat(priorMessages, isAlice = messageToDecode!!.senderID == User.Alice.id)
+                                        coverText = messageToPrepend.content + "\n\n" + coverText
+                                        // TODO Ignore inverseHuffmanCodes for now as Huffman compression will likely be removed later
+
+                                        // Update loop variable
+                                        isFirstMessageOfSplit = Steganography.isFirstMessageOfSplit(context, coverText)
+                                    }
+                                }
 
                                 // See if message can be decoded, show toast otherwise
                                 try {
+                                    // TODO Downward concat of split cover text
+                                    //  The following if is is a simpler solution that doesn't need decoding to be resumable, so we don't have to overcomplicate state management of the LLM
+                                    //  But this approach may decode significantly more cover text than needed, as we just concat all subsequent messages of the same user (i.e. until end-of-turn in the conversation)
+                                    if (Settings.splitCoverTexts) {
+                                        if (messages.indexOf(messageToDecode) + 1 < messages.size) {
+                                            for (messageToAppend in messages.subList(messages.indexOf(messageToDecode) + 1, messages.size)) {
+                                                if (messageToAppend.senderID == messageToDecode!!.senderID) {
+                                                    coverText += "\n\n" + messageToAppend.content
+                                                }
+                                            }
+                                        }
+                                    }
+
                                     secretMessage = Steganography.decode(context, coverText, inverseHuffmanCodes)
+
+                                    // TODO Downward concat of split cover text
+                                    //  The following if is how I wanted downward concat to work, but it seems to be more complex than I thought - see all other places marked with the above to-do.
+                                    //  - Downward concat of split cover text *with resumable decoding* corrupts end of encoded secret message.
+                                    //      - Consider UTF-8 + Huffman, where we know that every character of the secret message corresponds to 8 cipher bits (*).
+                                    //        If the LLM happens to split our cover text into paragraphs that perfectly decode into n * 8 cipher bits, downward concat should simply work as below.
+                                    //        But the LLM may split our cover text into paragraphs that decode into any other number of cipher bits.
+                                    //        Consider e.g. Huffman coding with bitsPerToken = 2. The LLM may then split our cover text so that we have a paragraph that decodes into e.g. 82 cipher bits.
+                                    //        The last 2 cipher bits of this paragraph would have to be concatenated with the first 6 cipher bits of the next paragraph. Otherwise, we would corrupt the secret message from here on.
+                                    //        This significantly complicates state management of the LLM. We would have to keep a version history of the LLM ctx, one version after every token processed, to resume decoding at the correct token.
+                                    //        Trial-and-error with lots of memory accesses would likely degrade performance and therefore user experience even further.
+                                    //        (*) = This already assumes secret message of only ASCII chars, so no emojis etc.
+                                    //      - This is even worse with Arithmetic + Arithmetic, where we don't know at all how many cipher bits correspond to each token of the secret message.
+                                    //  - Also calling isLastMessageOfSplit here conflicts with calling unprepare in the decode function, but this should be easier to resolve.
+                                    /*
+                                    if (Settings.splitCoverTexts) {
+                                        var isLastMessageOfSplit = Steganography.isLastMessageOfSplit(secretMessage)
+                                        var messageToAppend = messages.getOrNull(messages.indexOf(messageToDecode) + 1)
+
+                                        while (!isLastMessageOfSplit) {
+                                            // Append subsequent messages
+                                            // Ignore context as decode already reuses pointers to {decode,decompress}Ctx from previous call of decode function
+                                            coverText = "\n\n" + messageToAppend!!.content
+                                            // TODO Ignore inverseHuffmanCodes for now as Huffman compression will likely be removed later
+
+                                            secretMessage += Steganography.decode(context, coverText, inverseHuffmanCodes, isResumed = true)
+
+                                            isLastMessageOfSplit = Steganography.isLastMessageOfSplit(secretMessage)
+                                            messageToAppend = messages.getOrNull(messages.indexOf(messageToAppend) + 1)
+                                        }
+                                    }
+                                    */
                                 }
                                 catch (exception: Exception) {
                                     withContext(Dispatchers.Main) {
@@ -444,15 +506,22 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                             val newCoverText = if (isPlainText) newSecretMessage else Steganography.encode(context, newSecretMessage)
                                             val newInverseHuffmanCodes = /* if (!isPlainText && Settings.conversionMode == ConversionMode.Huffman) Json.encodeToString(Huffman.getLastInverseHuffmanCodes()) else */ null
 
-                                            val newMessage = Message(newSender.id, newReceiver.id, newCoverText, newInverseHuffmanCodes)
+                                            // Split cover text into paragraphs based on settings
+                                            val paragraphs = if (!isPlainText && Settings.splitCoverTexts) Steganography.split(newCoverText) else listOf(newCoverText)
 
                                             // Order is important to avoid violating foreign key relations
                                             db.userDao.upsertUser(newSender)
                                             db.userDao.upsertUser(newReceiver)
-                                            db.messageDao.upsertMessage(newMessage)
+
+                                            for (paragraph in paragraphs) {
+                                                val newMessage = Message(newSender.id, newReceiver.id, paragraph, newInverseHuffmanCodes)
+                                                db.messageDao.upsertMessage(newMessage)
+
+                                                // Update state variable
+                                                messages += newMessage
+                                            }
 
                                             // Update state variables
-                                            messages += newMessage
                                             newSecretMessage = ""
                                             isAlice = !isAlice
                                             isEncoding = false

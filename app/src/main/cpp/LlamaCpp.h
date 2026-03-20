@@ -100,6 +100,28 @@ public:
      */
     static llama_token getAsciiNul(const llama_model* model, const llama_context* ctx);
 
+    // TODO Downward concat of split cover text
+    //  LlamaCpp::getAscii{Stx,Etx} are to get start and stop signal
+    /**
+     * Function to get the token ID of the ASCII STX (start-of-text) character in the vocabulary of the LLM.
+     *
+     * @param model Memory address of the LLM.
+     * @param ctx Memory address of the context.
+     * @return Token ID of the ASCII STX character.
+     * @throws std::runtime_error If the LLM vocabulary doesn't contain the ASCII STX character.
+     */
+    static llama_token getAsciiStx(const llama_model* model, const llama_context* ctx);
+
+    /**
+     * Function to get the token ID of the ASCII ETX (end-of-text) character in the vocabulary of the LLM.
+     *
+     * @param model Memory address of the LLM.
+     * @param ctx Memory address of the context.
+     * @return Token ID of the ASCII ETX character.
+     * @throws std::runtime_error If the LLM vocabulary doesn't contain the ASCII ETX character.
+     */
+    static llama_token getAsciiEtx(const llama_model* model, const llama_context* ctx);
+
     /**
      * Wrapper for the `llama_vocab_n_tokens` function of llama.cpp. Gets the vocabulary size `n_vocab` of the LLM (i.e. the number of available tokens).
      *

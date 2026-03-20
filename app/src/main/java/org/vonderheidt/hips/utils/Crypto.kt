@@ -1,7 +1,5 @@
 package org.vonderheidt.hips.utils
 
-import kotlinx.coroutines.delay
-
 /**
  * Object (i.e. singleton class) that represents encryption and decryption.
  */
@@ -9,10 +7,7 @@ object Crypto {
     /**
      * Function to encrypt plain bits into cipher bits.
      */
-    suspend fun encrypt(plainBits: ByteArray): ByteArray {
-        // Wait 5 seconds
-        delay(5000)
-
+    fun encrypt(plainBits: ByteArray): ByteArray {
         // Skip encryption for now
         val cipherBits = plainBits
 
@@ -22,10 +17,7 @@ object Crypto {
     /**
      * Function to decrypt cipher bits into plain bits.
      */
-    suspend fun decrypt(cipherBits: ByteArray): ByteArray {
-        // Wait 5 seconds
-        delay(5000)
-
+    fun decrypt(cipherBits: ByteArray): ByteArray {
         // Skip decryption for now
         val plainBits = cipherBits
 

@@ -18,6 +18,14 @@ object LlamaCpp {
     @Volatile
     private var ctx = 0L
 
+    // TODO Downward concat of split cover text
+    //  Attributes {decode,decompress}Ctx are to manage separate ctx for resuming decoding and decompression
+    @Volatile
+    private var decodeCtx = 0L
+
+    @Volatile
+    private var decompressCtx = 0L
+
     @Volatile
     private var smpl = 0L
 
@@ -107,6 +115,53 @@ object LlamaCpp {
      */
     fun getCtx(): Long {
         return ctx
+    }
+
+    // TODO Downward concat of split cover text
+    //  Functions set{Ctx,DecodeCtx,DecompressCtx} and get{DecodeCtx,DecompressCtx} are to manage separate ctx for resuming decoding and decompression
+    /**
+     * Function to set the memory address of the context.
+     *
+     * @param ctx Memory address of the desired context.
+     */
+    fun setCtx(ctx: Long) {
+        this.ctx = ctx
+    }
+
+    /**
+     * Function to get the memory address of the context used for decoding a cover text into the encrypted binary representation of the secret message.
+     *
+     * @return Memory address of the context used for decoding a cover text into the encrypted binary representation of the secret message.
+     */
+    fun getDecodeCtx(): Long {
+        return decodeCtx
+    }
+
+    /**
+     * Function to set the memory address of the context used for decoding a cover text into the encrypted binary representation of the secret message.
+     *
+     * @param decodeCtx Memory address of the desired context used for decoding a cover text into the encrypted binary representation of the secret message. Defaults to current context of the llama.cpp instance.
+     */
+    fun setDecodeCtx(decodeCtx: Long = ctx) {
+        this.decodeCtx = decodeCtx
+    }
+
+    /**
+     * Function to get the memory address of the context used for decompressing a secret message from its binary representation back into a string.
+     *
+     * @return Memory address of the context used for decompressing a secret message from its binary representation back into a string.
+     */
+    fun getDecompressCtx(): Long {
+        return decompressCtx
+    }
+
+    /**
+     * Function to set the memory address of the context used for decompressing a secret message from its binary representation back into a string.
+     *
+     * @param decompressCtx Memory address of the desired context used for decompressing a secret message from its binary representation back into a string. Defaults to current context of the llama.cpp instance.
+     */
+    fun setDecompressCtx(decompressCtx: Long = ctx) {
+        this.decompressCtx = decompressCtx
     }
 
     /**
@@ -209,6 +264,24 @@ object LlamaCpp {
         }
 
         throw NoSuchElementException("LLM vocabulary doesn't contain ASCII NUL character")
+    }
+
+    /**
+     * Function to get the ASCII STX (start-of-text) character.
+     *
+     * @return The ASCII STX character.
+     */
+    fun getAsciiStx(): String {
+       return "\u0002"
+    }
+
+    /**
+     * Function to get the ASCII ETX (end-of-text) character.
+     *
+     * @return The ASCII ETX character.
+     */
+    fun getAsciiEtx(): String {
+        return "\u0003"
     }
 
     /**

@@ -19,6 +19,7 @@ object Settings {
         Be brief and casual, but friendly and engaging.
         Use a few emojis and phrases typical for chat messages, but not too many.
         Do not use any hashtags.
+        Split your output in paragraphs every 2-3 sentences.
     """.trimIndent().replace("\n", " ")
     private val defaultNumberOfMessages = 2
     private val defaultSteganographyMode = SteganographyMode.Arithmetic
@@ -27,6 +28,7 @@ object Settings {
     private val defaultPrecision = 0        // Only used if LLM is not in memory
     private val defaultBlockSize = 3
     private val defaultBitsPerToken = 2
+    private val defaultSplitCoverTexts = true
 
     // Initialize current values with defaults
     var conversionMode = defaultConversionMode
@@ -38,6 +40,7 @@ object Settings {
     var precision = defaultPrecision
     var blockSize = defaultBlockSize
     var bitsPerToken = defaultBitsPerToken
+    var splitCoverTexts = defaultSplitCoverTexts
 
     /**
      * Function to reset the settings to their default values.
@@ -54,6 +57,7 @@ object Settings {
             temperature = defaultTemperature
             blockSize = defaultBlockSize
             bitsPerToken = defaultBitsPerToken
+            splitCoverTexts = defaultSplitCoverTexts
         }
         if (llm) {
             topK = if (LlamaCpp.isInMemory()) LlamaCpp.getVocabSize() else defaultTopK
