@@ -90,15 +90,15 @@ object HiPSDataStore {
             // If any settings are stored, return them via .first()
             if (isInitialized) {
                 // Can be asserted not null because of check with isInitialized
-                Settings.conversionMode = ConversionMode.valueOf(conversionMode!!)
-                Settings.systemPrompt = systemPrompt!!
-                Settings.numberOfMessages = numberOfMessages!!
-                Settings.steganographyMode = SteganographyMode.valueOf(steganographyMode!!)
-                Settings.temperature = temperature!!
-                Settings.topK = topK!!
-                Settings.precision = precision!!
-                Settings.bitsPerToken = bitsPerToken!!
-                Settings.splitCoverTexts = splitCoverTexts!!
+                Settings.conversionMode = ConversionMode.valueOf(conversionMode)
+                Settings.systemPrompt = systemPrompt
+                Settings.numberOfMessages = numberOfMessages
+                Settings.steganographyMode = SteganographyMode.valueOf(steganographyMode)
+                Settings.temperature = temperature
+                Settings.topK = topK
+                Settings.precision = precision
+                Settings.bitsPerToken = bitsPerToken
+                Settings.splitCoverTexts = splitCoverTexts
             }
             // Otherwise (i.e. upon installation of this app), store default settings and return them
             else {
