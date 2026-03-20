@@ -30,7 +30,6 @@ object HiPSDataStore {
     private val temperature = floatPreferencesKey("temperature")
     private val topK = intPreferencesKey("topK")
     private val precision = intPreferencesKey("precision")
-    private val blockSize = intPreferencesKey("blockSize")
     private val bitsPerToken = intPreferencesKey("bitsPerToken")
     private val splitCoverTexts = booleanPreferencesKey("splitCoverTexts")
 
@@ -74,7 +73,6 @@ object HiPSDataStore {
             val temperature = settings[temperature]
             val topK = settings[topK]
             val precision = settings[precision]
-            val blockSize = settings[blockSize]
             val bitsPerToken = settings[bitsPerToken]
             val splitCoverTexts = settings[splitCoverTexts]
 
@@ -86,7 +84,6 @@ object HiPSDataStore {
                     && temperature != null
                     && topK != null
                     && precision != null
-                    && blockSize != null
                     && bitsPerToken != null
                     && splitCoverTexts != null
 
@@ -100,7 +97,6 @@ object HiPSDataStore {
                 Settings.temperature = temperature!!
                 Settings.topK = topK!!
                 Settings.precision = precision!!
-                Settings.blockSize = blockSize!!
                 Settings.bitsPerToken = bitsPerToken!!
                 Settings.splitCoverTexts = splitCoverTexts!!
             }
@@ -124,7 +120,6 @@ object HiPSDataStore {
             settings[temperature] = Settings.temperature
             settings[topK] = Settings.topK
             settings[precision] = Settings.precision
-            settings[blockSize] = Settings.blockSize
             settings[bitsPerToken] = Settings.bitsPerToken
             settings[splitCoverTexts] = Settings.splitCoverTexts
         }
