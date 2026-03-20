@@ -27,17 +27,4 @@ data class Message (
     val content: String,
     @ColumnInfo(name = "inverse_huffman_codes") val inverseHuffmanCodes: String? = null,
     val timestamp: Long = System.currentTimeMillis()
-) {
-    companion object {
-        /**
-         * Some sample messages for the conversation screen.
-         */
-        val Samples = listOf(
-            Message(User.Bob.id, User.Alice.id, "Oi, Lionel! What a match today! I honestly thought we were done for at halftime being 2-0 down, but that second half was brilliant! We really pulled it together, didn’t we?", null, System.currentTimeMillis() - 5982341),
-            Message(User.Alice.id, User.Bob.id, "Absolutely, Cristiano! That comeback was mental! Your goal really got everyone buzzing. And that assist I had? Proper chuffed to finally chip in like that! But can we talk about the ref? What a wanker!", null, System.currentTimeMillis() - 4553793),
-            Message(User.Bob.id, User.Alice.id, "Right? I mean, some of those calls were ridiculous! I thought he was going to cost us the game. Thank goodness we managed to turn it around despite him!", null, System.currentTimeMillis() - 3163455),
-            Message(User.Alice.id, User.Bob.id, "No doubt about it! I reckon we’re finally starting to gel as a team, but we need to work on our communication a bit. I lost track of you a couple of times out there!", null, System.currentTimeMillis() - 2398574),
-            Message(User.Bob.id, User.Alice.id, "Totally agree! Let’s sort out a practice this week to work on that. And afterwards, we should grab a bite and find a pub that shows the highlights! What do you reckon?", null, System.currentTimeMillis() - 1637465)
-        )
-    }
-}
+)
