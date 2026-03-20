@@ -2,10 +2,10 @@ package org.vonderheidt.hips.utils
 
 import android.app.DownloadManager
 import android.content.Context
-import android.net.Uri
 import android.os.Environment
 import android.widget.Toast
 import java.io.File
+import androidx.core.net.toUri
 
 /**
  * Object (i.e. singleton class) to handle LLM download.
@@ -32,7 +32,7 @@ object LLM {
         val downloadManager = currentLocalContext.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
         // Define request to the download manager that downloads the file from the given URL
-        val request = DownloadManager.Request(Uri.parse(DOWNLOAD_LINK))
+        val request = DownloadManager.Request(DOWNLOAD_LINK.toUri())
             .setTitle(FILE_NAME)
             .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, FILE_NAME)
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
