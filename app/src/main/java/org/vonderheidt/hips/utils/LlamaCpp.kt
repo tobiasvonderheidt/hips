@@ -181,43 +181,6 @@ object LlamaCpp {
     }
 
     /**
-     * Function to suppress special tokens, i.e. end-of-generation (eog) and control tokens.
-     *
-     * Suppressing eog tokens is needed to avoid early termination when generating a cover text.
-     * Additionally suppressing control tokens is needed to avoid artefacts when generating a conversation of cover texts.
-     *
-     * @param probabilities Probabilities for the last token of the prompt (= last row of logits matrix after normalization).
-     */
-    fun suppressSpecialTokens(probabilities: FloatArray) {
-        // Suppress special tokens by setting their probabilities to 0
-        for (token in probabilities.indices) {
-            if (isSpecial(token)) {
-                probabilities[token] = 0f
-            }
-        }
-    }
-
-    /**
-     * Function to check if a token is the end of a sentence. Needed to complete the last sentence of the cover text.
-     *
-     * Corresponds to Stegasuras method `is_sent_finish` in `utils.py`.
-     *
-     * @param token Token ID to check.
-     * @return Boolean that is true if the token ends with `.`, `!` or `?` or an emoji, false otherwise.
-     */
-    fun isEndOfSentence(token: Int): Boolean {
-        // Detokenize the token and check if it ends with a punctuation mark or an emoji (covers "?" vs " ?" etc)
-        val detokenization = detokenize(intArrayOf(token))
-
-        val isSentenceFinished = detokenization.endsWith(".")
-                || detokenization.endsWith("!")
-                || detokenization.endsWith("?")
-                // || detokenization.endsWithEmoji()
-
-        return isSentenceFinished
-    }
-
-    /**
      * Function to check if `this` string ends with an emoji.
      *
      * Helper for the `isEndOfSentence` function. May miss some emojis as it relies on a regular expression.
@@ -230,24 +193,6 @@ object LlamaCpp {
         val endsWithEmoji = this.isNotEmpty() && Regex("\\p{So}").containsMatchIn(this.takeLast(1))
 
         return endsWithEmoji
-    }
-
-    /**
-     * Function to get the end-of-generation (eog) token of the LLM.
-     * If the LLM has multiple eog tokens, the first one is returned.
-     *
-     * @return ID of the eog token.
-     */
-    fun getEndOfGeneration(): Int {
-        var eogTokens = intArrayOf()
-
-        for (token in 0 until getVocabSize()) {
-            if (isEndOfGeneration(token)) {
-                eogTokens += token
-            }
-        }
-
-        return eogTokens.first()
     }
 
     /**
@@ -386,15 +331,6 @@ object LlamaCpp {
     external fun getVocabSize(model: Long = this.model): Int
 
     /**
-     * Wrapper for the `common_tokenize` function of llama.cpp. Tokenizes a string into an array of token IDs.
-     *
-     * @param string String to be tokenized.
-     * @param ctx Memory address of the context.
-     * @return Tokenization as an array of token IDs.
-     */
-    external fun tokenize(string: String, ctx: Long = this.ctx): IntArray
-
-    /**
      * Wrapper for the `common_detokenize` function of llama.cpp. Detokenizes an array of token IDs into a byte array storing a UTF-8 encoded string.
      *
      * Helper for the public `detokenize` function returning a string. Bypasses JNI errors caused by different character encodings.
@@ -404,35 +340,6 @@ object LlamaCpp {
      * @return Detokenization as a byte array storing a UTF-8 encoded string.
      */
     private external fun detokenize(tokens: IntArray, ctx: Long = this.ctx): ByteArray
-
-    /**
-     * Wrapper for the `llama_vocab_is_eog` and `llama_vocab_is_control` functions of llama.cpp. Checks if a token is a special token.
-     *
-     * @param token Token ID to check.
-     * @param model Memory address of the LLM.
-     * @return Boolean that is true if the token is special, false otherwise.
-     */
-    private external fun isSpecial(token: Int, model: Long = this.model): Boolean
-
-    /**
-     * Wrapper for the `llama_vocab_is_eog` function of llama.cpp. Checks if a token is an end-of-generation (eog) token.
-     *
-     * @param token Token ID to check.
-     * @param model Memory address of the LLM.
-     * @return Boolean that is true if the token is an eog token, false otherwise.
-     */
-    private external fun isEndOfGeneration(token: Int, model: Long = this.model): Boolean
-
-    /**
-     * Wrapper for the `llama_get_logits` function of llama.cpp. Calculates the logit matrix (i.e. predictions for every token in the prompt).
-     *
-     * Only the last row of the `n_tokens` x `n_vocab` matrix is actually needed as it contains the logits corresponding to the last token of the prompt.
-     *
-     * @param tokens Token IDs from tokenization of the prompt.
-     * @param ctx Memory address of the context.
-     * @return The logit matrix.
-     */
-    external fun getLogits(tokens: IntArray, ctx: Long = this.ctx): Array<FloatArray>
 
     /**
      * Wrapper for the `llama_sampler_sample` function of llama.cpp. Samples the next token based on the last one.
