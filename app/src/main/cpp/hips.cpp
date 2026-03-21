@@ -17,15 +17,9 @@
 //    }
 
 // Notation: <system libs>, "user libs"
-#include <android/log.h>
 #include <jni.h>
 #include "llama.h"
 #include "common.h"
-
-#define TAG "hips.cpp"                                                              // Logcat tag to identify entries from hips.cpp
-#define LOGi(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)           // Log info message
-#define LOGw(...) __android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__)           // Log warning message
-#define LOGe(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)          // Log error message
 
 /**
  * Function to load the LLM into memory.
@@ -46,15 +40,6 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_load
 
     // Load the LLM into memory and save pointer to it
     llama_model* cppModel = llama_model_load_from_file(cppPath, params);
-
-    // Log success or error message
-    // Cast pointer to unsigned long and format it as hex
-    if (cppModel != nullptr) {
-        LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_loadModel: LLM from %s was loaded into memory at address 0x%lx", cppPath, reinterpret_cast<u_long>(cppModel));
-    }
-    else {
-        LOGe("Java_org_vonderheidt_hips_utils_LlamaCpp_loadModel: LLM from %s could not be loaded into memory (address 0x%lx)", cppPath, reinterpret_cast<u_long>(cppModel));
-    }
 
     // Release the memory allocated to the C++ path
     env -> ReleaseStringUTFChars(jPath, cppPath);
@@ -78,10 +63,6 @@ extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloa
 
     // Unload LLM from memory
     llama_model_free(cppModel);
-
-    // Log success message
-    // Java long is used instead of now invalid C++ pointer, needs to formated as C++ long long to get all 64 bits
-    LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_unloadModel: LLM was unloaded from memory address 0x%llx", jModel);
 }
 
 /**
@@ -104,14 +85,6 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_load
     // Create context with the LLM (=> context knows its state) and save pointer to it
     llama_context* cppCtx = llama_init_from_model(cppModel, params);
 
-    // Log success or error message
-    if (cppCtx != nullptr) {
-        LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_loadCtx: Context was loaded into memory at address 0x%lx", reinterpret_cast<u_long>(cppCtx));
-    }
-    else {
-        LOGe("Java_org_vonderheidt_hips_utils_LlamaCpp_loadCtx: Context could not be loaded into memory (address 0x%lx)", reinterpret_cast<u_long>(cppCtx));
-    }
-
     // Cast C++ pointer to Java long to return it
     auto jCtx = reinterpret_cast<jlong>(cppCtx);
 
@@ -133,9 +106,6 @@ extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloa
 
     // Unload context from memory
     llama_free(cppCtx);
-
-    // Log success message
-    LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_unloadCtx: Context was unloaded from memory address 0x%llx", jCtx);
 }
 
 /**
@@ -152,14 +122,6 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_load
 
     // Initialize greedy sampler (no sampler chain needed when using only a single sampler)
     llama_sampler* cppSmpl = llama_sampler_init_greedy();
-
-    // Log success or error message
-    if (cppSmpl != nullptr) {
-        LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_loadSmpl: Greedy sampler was loaded into memory at address 0x%lx", reinterpret_cast<u_long>(cppSmpl));
-    }
-    else {
-        LOGe("Java_org_vonderheidt_hips_utils_LlamaCpp_loadSmpl: Greedy sampler could not be loaded into memory (address 0x%lx)", reinterpret_cast<u_long>(cppSmpl));
-    }
 
     // Convert C++ pointer to Java long to return it
     auto jSmpl = reinterpret_cast<jlong>(cppSmpl);
@@ -183,9 +145,6 @@ extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloa
     // Unload sampler from memory
     // llama.cpp docs: "important: do not free if the sampler has been added to a llama_sampler_chain (via llama_sampler_chain_add)" (not the case here)
     llama_sampler_free(cppSmpl);
-
-    // Log success message
-    LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_unloadSmpl: Sampler was unloaded from memory address 0x%llx", jSmpl);
 }
 
 /**
@@ -273,38 +232,14 @@ extern "C" JNIEXPORT jint JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_sampl
     const llama_model* model = llama_get_model(cppCtx);
 
     if (llama_model_has_encoder(model)) {
-        LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_sample: Encoder-decoder model");
-
         // Run encoder to calculate logits for the next token
         // Return value of llama_encode only indicates success/error, actual result is stored internally in cppCtx
         int32_t encode = llama_encode(cppCtx, batch);
-
-        // Log success/error message from llama.cpp docs
-        if (encode == 0) {
-            LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_sample: encode = %d, success", encode);
-        }
-        else {
-            LOGe("Java_org_vonderheidt_hips_utils_LlamaCpp_sample: encode = %d, error. the KV cache state is restored to the state before this call", encode);
-        }
-    }
-    else {
-        LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_sample: Decoder-only model");
     }
 
     // Run decoder to calculate logits for the next token
     // Return value of llama_decode only indicates success/error, actual result is stored internally in cppCtx
     int32_t decode = llama_decode(cppCtx, batch);
-
-    // Log success or error message
-    if (decode == 0) {
-        LOGi("Java_org_vonderheidt_hips_utils_LlamaCpp_sample: decode = %d, success", decode);
-    }
-    else if (decode == 1) {
-        LOGw("Java_org_vonderheidt_hips_utils_LlamaCpp_sample: decode = %d, could not find a KV slot for the batch", decode);
-    }
-    else {
-        LOGe("Java_org_vonderheidt_hips_utils_LlamaCpp_sample: decode = %d, error. the KV cache state is restored to the state before this call", decode);
-    }
 
     // Sample next token from logits with given sampler and return it
     // Again, casting the next token ID is not necessary
@@ -370,11 +305,6 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_ad
 
         // Apply chat template again with resized buffer
         new_len = llama_chat_apply_template(tmpl, chat.data(), chat.size(), cppAppendAssistant, formatted.data(), (int32_t) formatted.size());
-    }
-
-    // Check if resizing was successful
-    if (new_len < 0) {
-        LOGe("Java_org_vonderheidt_hips_utils_LlamaCpp_addMessage: new_len = %d < 0", new_len);
     }
 
     // Extract prompt to generate the response by removing previous messages
