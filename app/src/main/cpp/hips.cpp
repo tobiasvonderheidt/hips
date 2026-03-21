@@ -74,8 +74,6 @@ extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloa
  * @return Memory address of the context.
  */
 extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_loadCtx(JNIEnv* /* env */, jobject /* thiz */, jlong jModel) {
-    // Similar to loadModel
-
     // Cast memory address of the LLM from Java long to C++ pointer
     auto cppModel = reinterpret_cast<llama_model*>(jModel);
 
@@ -99,8 +97,6 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_load
  * @param jCtx Memory address of the context.
  */
 extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloadCtx(JNIEnv* /* env */, jobject /* thiz */, jlong jCtx) {
-    // Similar to unloadModel
-
     // Cast memory address of context from Java long to C++ pointer
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
 
@@ -118,8 +114,6 @@ extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloa
  * @return Memory address of the sampler.
  */
 extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_loadSmpl(JNIEnv* /* env */, jobject /* thiz */) {
-    // Similar to loadModel
-
     // Initialize greedy sampler (no sampler chain needed when using only a single sampler)
     llama_sampler* cppSmpl = llama_sampler_init_greedy();
 
@@ -137,8 +131,6 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_load
  * @param jSmpl Memory address of the sampler.
  */
 extern "C" JNIEXPORT void JNICALL Java_org_vonderheidt_hips_utils_LlamaCpp_unloadSmpl(JNIEnv* /* env */, jobject /* thiz */, jlong jSmpl) {
-    // Similar to unloadModel
-
     // Cast memory address of sampler from Java long to C++ pointer
     auto cppSmpl = reinterpret_cast<llama_sampler*>(jSmpl);
 
