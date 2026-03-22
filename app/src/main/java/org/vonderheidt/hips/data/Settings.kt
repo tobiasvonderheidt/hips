@@ -26,7 +26,6 @@ object Settings {
     private val defaultTemperature = 1.0f
     private val defaultTopK = 0             // Only used if LLM is not in memory
     private val defaultPrecision = 0        // Only used if LLM is not in memory
-    private val defaultBlockSize = 3
     private val defaultBitsPerToken = 2
     private val defaultSplitCoverTexts = true
 
@@ -38,7 +37,6 @@ object Settings {
     var temperature = defaultTemperature
     var topK = defaultTopK
     var precision = defaultPrecision
-    var blockSize = defaultBlockSize
     var bitsPerToken = defaultBitsPerToken
     var splitCoverTexts = defaultSplitCoverTexts
 
@@ -55,7 +53,6 @@ object Settings {
             numberOfMessages = defaultNumberOfMessages
             steganographyMode = defaultSteganographyMode
             temperature = defaultTemperature
-            blockSize = defaultBlockSize
             bitsPerToken = defaultBitsPerToken
             splitCoverTexts = defaultSplitCoverTexts
         }

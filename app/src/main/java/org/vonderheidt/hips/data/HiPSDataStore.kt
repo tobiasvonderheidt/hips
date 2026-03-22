@@ -30,7 +30,6 @@ object HiPSDataStore {
     private val temperature = floatPreferencesKey("temperature")
     private val topK = intPreferencesKey("topK")
     private val precision = intPreferencesKey("precision")
-    private val blockSize = intPreferencesKey("blockSize")
     private val bitsPerToken = intPreferencesKey("bitsPerToken")
     private val splitCoverTexts = booleanPreferencesKey("splitCoverTexts")
 
@@ -74,7 +73,6 @@ object HiPSDataStore {
             val temperature = settings[temperature]
             val topK = settings[topK]
             val precision = settings[precision]
-            val blockSize = settings[blockSize]
             val bitsPerToken = settings[bitsPerToken]
             val splitCoverTexts = settings[splitCoverTexts]
 
@@ -86,23 +84,21 @@ object HiPSDataStore {
                     && temperature != null
                     && topK != null
                     && precision != null
-                    && blockSize != null
                     && bitsPerToken != null
                     && splitCoverTexts != null
 
             // If any settings are stored, return them via .first()
             if (isInitialized) {
                 // Can be asserted not null because of check with isInitialized
-                Settings.conversionMode = ConversionMode.valueOf(conversionMode!!)
-                Settings.systemPrompt = systemPrompt!!
-                Settings.numberOfMessages = numberOfMessages!!
-                Settings.steganographyMode = SteganographyMode.valueOf(steganographyMode!!)
-                Settings.temperature = temperature!!
-                Settings.topK = topK!!
-                Settings.precision = precision!!
-                Settings.blockSize = blockSize!!
-                Settings.bitsPerToken = bitsPerToken!!
-                Settings.splitCoverTexts = splitCoverTexts!!
+                Settings.conversionMode = ConversionMode.valueOf(conversionMode)
+                Settings.systemPrompt = systemPrompt
+                Settings.numberOfMessages = numberOfMessages
+                Settings.steganographyMode = SteganographyMode.valueOf(steganographyMode)
+                Settings.temperature = temperature
+                Settings.topK = topK
+                Settings.precision = precision
+                Settings.bitsPerToken = bitsPerToken
+                Settings.splitCoverTexts = splitCoverTexts
             }
             // Otherwise (i.e. upon installation of this app), store default settings and return them
             else {
@@ -124,7 +120,6 @@ object HiPSDataStore {
             settings[temperature] = Settings.temperature
             settings[topK] = Settings.topK
             settings[precision] = Settings.precision
-            settings[blockSize] = Settings.blockSize
             settings[bitsPerToken] = Settings.bitsPerToken
             settings[splitCoverTexts] = Settings.splitCoverTexts
         }

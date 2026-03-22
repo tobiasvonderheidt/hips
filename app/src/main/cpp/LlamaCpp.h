@@ -96,7 +96,7 @@ public:
      * @param model Memory address of the LLM.
      * @param ctx Memory address of the context.
      * @return Token ID of the ASCII NUL character.
-     * @throws std::runtime_error When the LLM vocabulary doesn't contain the ASCII NUL character.
+     * @throws std::runtime_error If the LLM vocabulary doesn't contain the ASCII NUL character.
      */
     static llama_token getAsciiNul(const llama_model* model, const llama_context* ctx);
 

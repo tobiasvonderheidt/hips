@@ -55,20 +55,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.vonderheidt.hips.data.HiPSDataStore
 import org.vonderheidt.hips.data.Settings
 import org.vonderheidt.hips.navigation.Screen
-import org.vonderheidt.hips.ui.theme.HiPSTheme
 import org.vonderheidt.hips.utils.ConversionMode
 import org.vonderheidt.hips.utils.LLM
 import org.vonderheidt.hips.utils.LlamaCpp
@@ -95,7 +91,6 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
     var selectedTemperature by rememberSaveable { mutableFloatStateOf(Settings.temperature) }
     var selectedTopK by rememberSaveable { mutableIntStateOf(Settings.topK) }
     var selectedPrecision by remember { mutableIntStateOf(Settings.precision) }
-    var selectedBlockSize by rememberSaveable { mutableIntStateOf(Settings.blockSize) }
     var selectedBitsPerToken by rememberSaveable { mutableIntStateOf(Settings.bitsPerToken) }
     var selectedSplitCoverTexts by rememberSaveable { mutableStateOf(Settings.splitCoverTexts) }
     val selectedResetModes = remember { mutableStateListOf(0, 1) }
@@ -552,41 +547,6 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             )
                         }
                     }
-                    /*
-                    SteganographyMode.Bins -> {
-                        Text(text = "Set the number of bins (higher is more efficient, but less coherent).")
-
-                        Spacer(modifier = modifier.height(16.dp))
-
-                        // Again, do int conversion here as slider only allows floats
-                        Slider(
-                            value = selectedBlockSize.toFloat(),
-                            onValueChange = {
-                                // Update state variable
-                                selectedBlockSize = it.toInt()
-
-                                // Update DataStore
-                                Settings.blockSize = it.toInt()
-                                coroutineScope.launch { HiPSDataStore.writeSettings() }
-                            },
-                            valueRange = 1f..4f,
-                            steps = 2
-                        )
-
-                        Spacer(modifier = modifier.height(8.dp))
-
-                        Text(
-                            text = "2" + when (selectedBlockSize) {
-                                1 -> "¹"
-                                2 -> "²"
-                                3 -> "³"
-                                4 -> "⁴"
-                                else -> throw IllegalStateException("Selected block size has to be between 1 and 4")
-                            } + " bins",
-                            modifier = modifier.align(Alignment.CenterHorizontally)
-                        )
-                    }
-                    */
                     SteganographyMode.Huffman -> {
                         Text(text = "Set the number of bits to encode per cover text token. Higher is more efficient, but less coherent.")
 
@@ -744,7 +704,6 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             selectedTemperature = Settings.temperature
                             selectedPrecision = Settings.precision
                             selectedTopK = Settings.topK
-                            selectedBlockSize = Settings.blockSize
                             selectedBitsPerToken = Settings.bitsPerToken
                             selectedSplitCoverTexts = Settings.splitCoverTexts
                         },
@@ -826,20 +785,5 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
         }
 
         Spacer(modifier = modifier.height(32.dp))
-    }
-}
-
-/**
- * Function to show preview of the settings screen in Android Studio.
- */
-@Preview(showBackground = true)
-@Composable
-fun SettingsScreenPreview() {
-    // No Scaffold, no innerPadding
-    HiPSTheme {
-        val modifier: Modifier = Modifier
-        val navController: NavHostController = rememberNavController()
-
-        SettingsScreen(navController, modifier)
     }
 }

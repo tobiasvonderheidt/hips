@@ -7,7 +7,6 @@ package org.vonderheidt.hips.utils
  */
 enum class SteganographyMode(private val displayName: String) {
     Arithmetic("Arithmetic (recommended)"),
-    /* Bins("Bins"), */
     Huffman("Huffman");
 
     /**
