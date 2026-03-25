@@ -1,4 +1,6 @@
-package org.vonderheidt.hips.utils
+package org.vonderheidt.hips.crypto
+
+import bitmage.BitString
 
 /**
  * Object (i.e. singleton class) that represents encryption and decryption.
@@ -7,7 +9,7 @@ object Crypto {
     /**
      * Function to encrypt plain bits into cipher bits.
      */
-    fun encrypt(plainBits: ByteArray): ByteArray {
+    fun encrypt(plainBits: BitString): BitString {
         // Skip encryption for now
         val cipherBits = plainBits
 
@@ -17,7 +19,7 @@ object Crypto {
     /**
      * Function to decrypt cipher bits into plain bits.
      */
-    fun decrypt(cipherBits: ByteArray): ByteArray {
+    fun decrypt(cipherBits: BitString): BitString {
         // Skip decryption for now
         val plainBits = cipherBits
 

@@ -6,7 +6,7 @@
 #include "LlamaCpp.h"
 #include "Statistics.h"
 
-extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_encode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCipherBits, jint jBitsPerToken, jlong jCtx) {
+extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_encode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCipherBits, jint jBitLength, jint jBitsPerToken, jlong jCtx) {
     // TODO Abstract state management away in LlamaCpp.{h,cpp}
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
     const llama_model* model = llama_get_model(cppCtx);
@@ -15,7 +15,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_
     llama_tokens contextTokens = LlamaCpp::tokenize(env, jContext, cppCtx);
 
     // Convert cipher bits to bit vector
-    std::vector<bool> cppCipherBits = Format::asBitVector(env, jCipherBits);
+    std::vector<bool> cppCipherBits = Format::asBitVector(env, jCipherBits, jBitLength);
 
     // Initialize vector to store cover text token
     llama_tokens coverTextTokens;
@@ -168,7 +168,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_
     }
 
     // Create Java ByteArray from bit vector to return cipher bits
-    jbyteArray jCipherBits = Format::asByteArray(env, cppCipherBits);
+    jbyteArray jCipherBits = Format::asByteArrayWithPadding(env, cppCipherBits);
 
     return jCipherBits;
 }

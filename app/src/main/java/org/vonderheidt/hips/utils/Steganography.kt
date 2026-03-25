@@ -1,5 +1,10 @@
 package org.vonderheidt.hips.utils
 
+import android.util.Log
+import bitmage.BitString
+import org.vonderheidt.hips.compression.Compression
+import org.vonderheidt.hips.compression.CompressionMode
+import org.vonderheidt.hips.crypto.Crypto
 import org.vonderheidt.hips.data.Settings
 
 /**
@@ -11,36 +16,38 @@ object Steganography {
      *
      * @param context The context to encode the secret message with.
      * @param secretMessage The secret message to be encoded.
-     * @param conversionMode Conversion mode, determined by Settings object.
+     * @param compressionMode Conversion mode, determined by Settings object.
      * @param steganographyMode Steganography mode, determined by Settings object.
      * @return A cover text containing the secret message.
      */
     fun encode(
         context: String,
         secretMessage: String,
-        conversionMode: ConversionMode = Settings.conversionMode,
+        compressionMode: CompressionMode = Settings.conversionMode,
         steganographyMode: SteganographyMode = Settings.steganographyMode
     ): String {
-        // Step 0: Prepare secret message by appending ASCII NUL character
-        val preparedSecretMessage = prepare(secretMessage)
 
-        // Step 1: Convert secret message to a (compressed) binary representation
-        LlamaCpp.resetInstance()
+        Log.d("Stego", "encoding secret message: $secretMessage")
 
-        val plainBits = when (conversionMode) {
-            ConversionMode.Arithmetic -> { Arithmetic.compress(preparedSecretMessage) }
-            ConversionMode.UTF8 -> { UTF8.encode(preparedSecretMessage) }
-        }
+        // Step 0: Convert secret message to a (compressed) binary representation
+        val plainBits = Compression.compress(secretMessage, compressionMode)
+        Log.d("Stego", "compressed using $compressionMode to: ${plainBits.bitLength()}b")
+
+        // Step 1: Prepare secret message by appending termination and message start markers
+        val preparedBits = prepare(plainBits)
+        Log.d("Stego", "padded with start, end markers to: ${preparedBits.bitLength()}b")
 
         // Step 2: Encrypt binary representation of secret message
-        val cipherBits = Crypto.encrypt(plainBits)
+        val cipherBits = Crypto.encrypt(preparedBits)
+        Log.d("Stego", "encrypted, payload for stego: $cipherBits")
 
         // Step 3: Encode encrypted binary representation of secret message into cover text
         LlamaCpp.resetInstance()
 
         val coverText = when (steganographyMode) {
-            SteganographyMode.Arithmetic -> { Arithmetic.encode(context, cipherBits) }
+            SteganographyMode.Arithmetic -> { Arithmetic.encode(context, cipherBits, isResumed = false) }
             SteganographyMode.Huffman -> { Huffman.encode(context, cipherBits) }
+            else -> throw Exception("unsupported stego mode: $steganographyMode")
         }
 
         return coverText
@@ -108,46 +115,34 @@ object Steganography {
     fun isFirstMessageOfSplit(
         context: String,
         coverText: String,
-        conversionMode: ConversionMode = Settings.conversionMode,
         steganographyMode: SteganographyMode = Settings.steganographyMode
     ): Boolean {
-        // When using UTF-8 encoding, first byte is guaranteed to store first char, no more bytes to consider
-        // But when using Arithmetic compression, padding length and padding are stored in first 2 bytes, so consider at least 3 bytes to find first char
-        // => Trial-and-error showed that first 4 bytes need to be considered, otherwise Arithmetic decodes incomplete bit sequence to wrong char
-        val numberOfCipherBits = if (conversionMode == ConversionMode.UTF8) 8 else 32
+        val numberOfCipherBits = 8
         var isFirstMessageOfSplit: Boolean
 
         // Invert step 3
         LlamaCpp.resetInstance()
 
         // Wrap this in try-catch because decoding with wrong context is likely to throw exceptions
-        val partialCipherBits: ByteArray
-
+        val partialCipherBits: BitString
         try {
             partialCipherBits = when (steganographyMode) {
                 SteganographyMode.Arithmetic -> { Arithmetic.decode(context, coverText, numberOfCipherBits) }
                 SteganographyMode.Huffman -> { Huffman.decode(context, coverText, numberOfCipherBits) }
+                else -> throw Exception("unsupported stego mode: $steganographyMode")
             }
         }
         catch (exception: Exception) {
             isFirstMessageOfSplit = false
-
             return isFirstMessageOfSplit
         }
 
         // Invert step 2
         val partialPlainBits = Crypto.decrypt(partialCipherBits)
 
-        // Invert step 1
-        LlamaCpp.resetInstance()
-
-        val partialPreparedSecretMessage = when (conversionMode) {
-            ConversionMode.Arithmetic -> { Arithmetic.decompress(partialPlainBits) }
-            ConversionMode.UTF8 -> { UTF8.decode(partialPlainBits) }
-        }
-
-        // Don't invert step 0
-        isFirstMessageOfSplit = partialPreparedSecretMessage.startsWith(LlamaCpp.getAsciiStx())
+        // Check for start marker
+        val firstBits = partialPlainBits.takeFew(8)
+        isFirstMessageOfSplit = firstBits.toInt() == 0x02 // ASCII STX marker is 0x02
 
         return isFirstMessageOfSplit
     }
@@ -175,7 +170,7 @@ object Steganography {
      *
      * @param context The context to decode the cover text with.
      * @param coverText The cover text containing a secret message.
-     * @param conversionMode Conversion mode, determined by Settings object.
+     * @param compressionMode Conversion mode, determined by Settings object.
      * @param steganographyMode Steganography mode, determined by Settings object.
      * @param isResumed Boolean that is true if this call of the `decode` function resumes where the last call terminated, false otherwise.
      * @return The secret message.
@@ -183,7 +178,7 @@ object Steganography {
     fun decode(
         context: String,
         coverText: String,
-        conversionMode: ConversionMode = Settings.conversionMode,
+        compressionMode: CompressionMode = Settings.conversionMode,
         steganographyMode: SteganographyMode = Settings.steganographyMode,
         isResumed: Boolean = false
     ): String {
@@ -205,29 +200,22 @@ object Steganography {
         // Save ctx for decoding
         LlamaCpp.setDecodeCtx(decodeCtx = LlamaCpp.getCtx())
 
+        Log.d("Stego", "decoded cipher bits: $cipherBits")
+        val paddingLen = cipherBits.takeFew(8).toInt()
+        val padding = cipherBits.takeFew(paddingLen)
+        Log.d("Stego", "unpadded bits ($paddingLen pad bits): $cipherBits")
+
         // Invert step 2
-        val plainBits = Crypto.decrypt(cipherBits)
+        val preparedPlainBits = Crypto.decrypt(cipherBits)
+        Log.d("Stego", "plaintext bits: $preparedPlainBits")
 
         // Invert step 1
-        if (isResumed) {
-            // Restore ctx for decompression
-            LlamaCpp.setCtx(ctx = LlamaCpp.getDecompressCtx())
-        }
-        else {
-            // Reset ctx
-            LlamaCpp.resetInstance()
-        }
-
-        val preparedSecretMessage = when (conversionMode) {
-            ConversionMode.Arithmetic -> { Arithmetic.decompress(plainBits, isResumed = isResumed) }
-            ConversionMode.UTF8 -> { UTF8.decode(plainBits) }
-        }
-
-        // Save ctx for decompression
-        LlamaCpp.setDecompressCtx(decompressCtx = LlamaCpp.getCtx())
+        val compressedPlainBits = unprepare(preparedPlainBits)
+        Log.d("Stego", "stripped bits: $compressedPlainBits")
 
         // Invert step 0
-        val secretMessage = unprepare(preparedSecretMessage)
+        val secretMessage = Compression.inflate(compressedPlainBits, compressionMode, isResumed)
+        Log.d("Stego", "decompressed message using $compressionMode: $secretMessage")
 
         return secretMessage
     }
@@ -240,28 +228,39 @@ object Steganography {
      * @param secretMessage A secret message.
      * @return The prepared secret message.
      */
-    private fun prepare(secretMessage: String): String {
-        // Use ASCII {STX, ETX} as {start, stop} signal to avoid collisions with NUL-terminated strings in C++ and with each other when splitting a cover text
-        val preparedSecretMessage = LlamaCpp.getAsciiStx() + secretMessage + LlamaCpp.getAsciiEtx()
-
-        return preparedSecretMessage
+    private fun prepare(bits: BitString): BitString {
+        bits.prepend(BitString.BitFragment(byteArrayOf(2), 8))
+        bits.append(BitString.BitFragment(byteArrayOf(3), 8))
+        return bits
     }
+
 
     /**
      * Function to unprepare a secret message after binary decoding.
      *
      * Strips the ASCII NUL character and everything after it. Therefore removes any artefacts from greedy sampling, rendering the original secret message.
      *
-     * @param preparedSecretMessage A prepared secret message.
+     * @param preparedBits A prepared secret message.
      * @return The secret message.
      */
-    private fun unprepare(preparedSecretMessage: String): String {
-        // Remove {start, stop} signal again
-        // Split returns list that contains empty strings as first and possibly last elements, is intended behaviour because it interprets {start, stop} signal as delimiter between 2 strings
-        val secretMessage = preparedSecretMessage
-            .split(LlamaCpp.getAsciiStx(), LlamaCpp.getAsciiEtx())
-            .get(1)
+    private fun unprepare(preparedBits: BitString): BitString {
+        // removing start marker is easy since it is always at the start
+        val startMarker = preparedBits.takeFew(8)
+        check(startMarker.toInt() == 0x02) { "start marker should be ASCII STX 0x02, got ${startMarker.toString(16)}"}
 
-        return secretMessage
+        val endMarker = BitString(byteArrayOf(0x03), 8)
+        val matchIndex = preparedBits.firstSubsequenceMatchFromEnd(endMarker)
+
+        if(matchIndex == -1)
+            throw Exception("no end marker found")
+
+        Log.d("Stego", "found endMarker at bit-offset $matchIndex")
+
+        val payload = preparedBits.take(matchIndex)
+        Log.d("Stego", "payload $payload, end marker + tail: $preparedBits")
+
+        // stop marker is trickier, ignore for now (:
+
+        return payload
     }
 }

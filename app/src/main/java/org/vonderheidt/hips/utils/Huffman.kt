@@ -1,5 +1,6 @@
 package org.vonderheidt.hips.utils
 
+import bitmage.BitString
 import org.vonderheidt.hips.data.Settings
 
 /**
@@ -15,15 +16,15 @@ object Huffman {
      * @param cipherBits The encrypted binary representation of the secret message.
      * @return A cover text containing the secret message.
      */
-    fun encode(context: String, cipherBits: ByteArray): String {
+    fun encode(context: String, cipherBits: BitString): String {
+        val bits = cipherBits.toBitFragment()
         val coverTextBytes = encode(
-            context = context.toByteArray(charset = Charsets.UTF_8),
-            cipherBits = cipherBits
+            context = context.encodeToByteArray(),
+            cipherBits = bits.bytes,
+            bitLength = bits.bitLength
         )
 
-        val coverText = String(bytes = coverTextBytes, charset = Charsets.UTF_8)
-
-        return coverText
+        return coverTextBytes.decodeToString()
     }
 
     // TODO Downward concat of split cover text
@@ -40,17 +41,19 @@ object Huffman {
      * @return The encrypted binary representation of the secret message.
      * @throws IllegalArgumentException If `numberOfCipherBits` is not a multiple of 8.
      */
-    fun decode(context: String, coverText: String, numberOfCipherBits: Int = -1, isResumed: Boolean = false): ByteArray {
+    fun decode(context: String, coverText: String, numberOfCipherBits: Int = -1, isResumed: Boolean = false): BitString {
         if (numberOfCipherBits > 0 && numberOfCipherBits % 8 != 0) {
             throw IllegalArgumentException("numberOfCipherBits has to be multiple of 8, but is $numberOfCipherBits")
         }
 
-        return decode(
+        val bytes = decode(
             context = context.toByteArray(charset = Charsets.UTF_8),
             coverText = coverText.toByteArray(charset = Charsets.UTF_8),
             numberOfCipherBits = numberOfCipherBits,
             isResumed = isResumed
         )
+
+        return BitString(bytes, bytes.size * 8)
     }
 
     /**
@@ -62,11 +65,12 @@ object Huffman {
      *
      * @param context The context to encode the secret message with (byte array storing UTF-8 encoded string to bypass JNI errors).
      * @param cipherBits The encrypted binary representation of the secret message.
+     * @param bitLength Number of bits in the cipherBits byte array to encode.
      * @param bitsPerToken Number of bits to encode/decode per cover text token (= height of Huffman tree). Determined by Settings object.
      * @param ctx Memory address of the context.
      * @return A cover text containing the secret message (byte array storing UTF-8 encoded string to bypass JNI errors).
      */
-    private external fun encode(context: ByteArray, cipherBits: ByteArray, bitsPerToken: Int = Settings.bitsPerToken, ctx: Long = LlamaCpp.getCtx()): ByteArray
+    private external fun encode(context: ByteArray, cipherBits: ByteArray, bitLength: Int, bitsPerToken: Int = Settings.bitsPerToken, ctx: Long = LlamaCpp.getCtx()): ByteArray
 
     /**
      * Function to decode a cover text into (the encrypted binary representation of) the secret message using Huffman decoding.

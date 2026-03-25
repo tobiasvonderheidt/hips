@@ -11,7 +11,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import org.vonderheidt.hips.utils.ConversionMode
+import org.vonderheidt.hips.compression.Compression
+import org.vonderheidt.hips.compression.CompressionMode
 import org.vonderheidt.hips.utils.SteganographyMode
 
 /**
@@ -90,7 +91,7 @@ object HiPSDataStore {
             // If any settings are stored, return them via .first()
             if (isInitialized) {
                 // Can be asserted not null because of check with isInitialized
-                Settings.conversionMode = ConversionMode.valueOf(conversionMode)
+                Settings.conversionMode = CompressionMode.valueOf(conversionMode)
                 Settings.systemPrompt = systemPrompt
                 Settings.numberOfMessages = numberOfMessages
                 Settings.steganographyMode = SteganographyMode.valueOf(steganographyMode)

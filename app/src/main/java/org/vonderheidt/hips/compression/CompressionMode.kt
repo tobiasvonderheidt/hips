@@ -1,12 +1,14 @@
-package org.vonderheidt.hips.utils
+package org.vonderheidt.hips.compression
 
 /**
  * Class to enumerate all conversion modes.
  *
  * @param displayName Display name of the conversion mode.
  */
-enum class ConversionMode(private val displayName: String) {
-    Arithmetic("Arithmetic (recommended)"),
+enum class CompressionMode(private val displayName: String) {
+    Adaptive("Adaptive (recommended)"),
+    Arithmetic("Arithmetic"),
+    BitCrush("BitCrush"),
     UTF8("UTF-8");
 
     /**

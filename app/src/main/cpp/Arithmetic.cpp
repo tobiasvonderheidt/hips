@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <jni.h>
+#include <android/log.h>
 #include "Arithmetic.h"
 #include "common.h"
 #include "Format.h"
@@ -9,7 +10,7 @@
 // TODO Downward concat of split cover text
 //  Parameter isResumed in all subsequent functions is to differentiate first from subsequent calls
 //  Assignment of ASCII {STX,ETX} to {first,last} sub-interval caused crash last time I tried it
-extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_encode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCipherBits, jfloat jTemperature, jint jTopK, jint jPrecision, jlong jCtx, jboolean jIsResumed) {
+extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_encode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCipherBits, jint jBitLength, jfloat jTemperature, jint jTopK, jint jPrecision, jlong jCtx, jboolean jIsResumed) {
     // TODO Abstract state management away in LlamaCpp.{h,cpp}
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
     const llama_model *model = llama_get_model(cppCtx);
@@ -18,9 +19,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
     llama_tokens contextTokens = LlamaCpp::tokenize(env, jContext, cppCtx);
 
     // Convert cipher bits to bit vector
-    bool isDecompression = contextTokens.empty();
-
-    std::vector<bool> cppCipherBits = isDecompression ? Format::asBitVectorWithoutPadding(env, jCipherBits) : Format::asBitVector(env, jCipherBits);
+    std::vector<bool> cppCipherBits = Format::asBitVector(env, jCipherBits, jBitLength);
 
     // Initialize vector to store cover text tokens
     llama_tokens coverTextTokens;
@@ -30,6 +29,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
     // Stegasuras paper says that binary conversion happens with empty context, but code actually uses a single end-of-generation (eog) token as context
     // llama.cpp crashes with empty context anyway
     // UI doesn't allow empty context for steganography, so no collision possible when calling Arithmetic.{decode,encode} for binary conversion
+    bool isDecompression = contextTokens.empty();
     if (isDecompression) {
         contextTokens.push_back(LlamaCpp::getEndOfGeneration(model));
     }
@@ -51,6 +51,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
     // But only finish last sentence during encoding, not during decompression, to avoid infinite loop
     // Our use of isDecompression here matches control flow of Stegasuras with its finish_sent parameter
     while (i < cppCipherBits.size() || (!isDecompression && !isLastSentenceFinished)) {
+        __android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "encoded %d of %d bits", i, cppCipherBits.size());
         // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggml-org/llama.cpp/blob/master/examples/simple/simple.cpp:
         // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
         // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
@@ -174,6 +175,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
                 item.second += currentInterval.first;
             }
 
+            // TODO: do we need this still?
             // Replace token of last sub-interval with ASCII NUL character so it can be sampled during decompression
             // Similar to explanation at https://www.youtube.com/watch?v=RFWJM8JMXBs
             if (isDecompression) {
@@ -297,7 +299,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
     return coverText;
 }
 
-extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_decode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCoverText, jfloat jTemperature, jint jTopK, jint jPrecision, jlong jCtx, jint jNumberOfCipherBits, jboolean jIsResumed) {
+extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_decode___3B_3BFIIJIZ(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCoverText, jfloat jTemperature, jint jTopK, jint jPrecision, jlong jCtx, jint jNumberOfCipherBits, jboolean jIsResumed) {
     // TODO Abstract state management away in LlamaCpp.{h,cpp}
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
     const llama_model* model = llama_get_model(cppCtx);
@@ -427,6 +429,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
             item.second += currentInterval.first;
         }
 
+        // TODO: can we remove this now?
         // Replace token of last sub-interval with ASCII NUL character so it can be sampled during compression
         // Similar to explanation at https://www.youtube.com/watch?v=RFWJM8JMXBs
         if (isCompression) {
@@ -533,7 +536,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
     }
 
     // Create ByteArray from bit vector to return cipher bits
-    jbyteArray jCipherBits = isCompression ? Format::asByteArrayWithPadding(env, cppCipherBits) : Format::asByteArray(env, cppCipherBits);
+    jbyteArray jCipherBits = Format::asByteArrayWithPadding(env, cppCipherBits);
 
     return jCipherBits;
 }

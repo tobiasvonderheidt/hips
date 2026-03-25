@@ -65,7 +65,7 @@ import kotlinx.coroutines.launch
 import org.vonderheidt.hips.data.HiPSDataStore
 import org.vonderheidt.hips.data.Settings
 import org.vonderheidt.hips.navigation.Screen
-import org.vonderheidt.hips.utils.ConversionMode
+import org.vonderheidt.hips.compression.CompressionMode
 import org.vonderheidt.hips.utils.LLM
 import org.vonderheidt.hips.utils.LlamaCpp
 import org.vonderheidt.hips.utils.SteganographyMode
@@ -258,7 +258,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                 Spacer(modifier = modifier.height(16.dp))
 
                 // Select conversion mode
-                ConversionMode.entries.toTypedArray().forEach { conversionMode ->
+                CompressionMode.entries.toTypedArray().forEach { conversionMode ->
                     Row(
                         modifier = modifier
                             .fillMaxWidth()

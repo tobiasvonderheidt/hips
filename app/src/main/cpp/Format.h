@@ -15,9 +15,10 @@ public:
      *
      * @param env The JNI environment.
      * @param byteArray A Java ByteArray.
+     * @param bitLength Number of bits in the ByteArray to pack into bit vector
      * @return The bit vector.
      */
-    static std::vector<bool> asBitVector(JNIEnv* env, jbyteArray jByteArray);
+    static std::vector<bool> asBitVector(JNIEnv* env, jbyteArray jByteArray, int bitLength);
 
     /**
      * Function to reverse formatting of a Java ByteArray as a bit vector (i.e. to reverse `Format::asBitVector(JNIEnv*, jbyteArray)`).
@@ -28,16 +29,6 @@ public:
      * @return The Java ByteArray.
      */
     static jbyteArray asByteArray(JNIEnv* env, std::vector<bool> bitVector);
-
-    /**
-     * Function to format a Java ByteArray as a bit vector. Assumes that the ByteArray is 0-padded and that the first byte stores the length of the padding in bits.
-     * Removes both the padding length and the padding.
-     *
-     * @param env The JNI environment.
-     * @param jByteArray A Java ByteArray, 0-padded with length of padding in bits stored in first byte.
-     * @return The bit vector, with padding removed.
-     */
-    static std::vector<bool> asBitVectorWithoutPadding(JNIEnv* env, jbyteArray jByteArray);
 
     /**
      * Function to reverse formatting of a padded Java ByteArray as a bit vector (i.e. to reverse `Format::asBitVectorWithoutPadding(JNIEnv*, jbyteArray)`).
