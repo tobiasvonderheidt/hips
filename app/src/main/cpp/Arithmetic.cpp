@@ -175,27 +175,6 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
                 item.second += currentInterval.first;
             }
 
-            // TODO: do we need this still?
-            // Replace token of last sub-interval with ASCII NUL character so it can be sampled during decompression
-            // Similar to explanation at https://www.youtube.com/watch?v=RFWJM8JMXBs
-            if (isDecompression) {
-                /*
-                if (isFirstRun) {
-                    llama_token stx = LlamaCpp::getAsciiStx(model, cppCtx);
-
-                    scaledProbabilities[0].first = stx;
-                    cumulatedProbabilities[0].first = stx;
-                }
-
-                llama_token etx = LlamaCpp::getAsciiEtx(model, cppCtx);
-
-                scaledProbabilities[cumulatedProbabilities.size() - 1].first = etx;
-                cumulatedProbabilities[cumulatedProbabilities.size() - 1].first = etx;
-                */
-
-                scaledProbabilities[cumulatedProbabilities.size() - 1].first = LlamaCpp::getAsciiNul(model, cppCtx);
-                cumulatedProbabilities[cumulatedProbabilities.size() - 1].first = LlamaCpp::getAsciiNul(model, cppCtx);
-            }
 
             // Stegasuras: "Get selected index based on binary fraction from message bits"
             // Process cipher bits in portions of size precision
@@ -266,18 +245,23 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
             // Sample token as determined above
             sampledToken = cumulatedProbabilities[selectedSubinterval].first;
 
+            __android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "sampled: %s", LlamaCpp::detokenize(sampledToken, cppCtx).c_str());
+
             // </Logic specific to arithmetic coding>
 
             // Update flag
             isFirstRun = false;
+            isLastSentenceFinished = LlamaCpp::isEndOfSentence(sampledToken, cppCtx);
         }
         // Greedy sampling to pick most likely token until last sentence is finished
         else {
             // Get most likely token
             sampledToken = Arithmetic::getTopProbability(probabilities, model);
+            __android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "greedy: %s", LlamaCpp::detokenize(sampledToken, cppCtx).c_str());
 
             // Update flag
             isLastSentenceFinished = LlamaCpp::isEndOfSentence(sampledToken, cppCtx);
+            __android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "sentence finished? %d", isLastSentenceFinished);
         }
 
         // Free allocated memory
@@ -332,6 +316,8 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
 
     bool isFirstRun = !jIsResumed;
     llama_token coverTextToken = -1;
+
+    __android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "decoding %d tokens", coverTextTokens.size());
 
     // Decode every cover text token
     while (i < coverTextTokens.size()) {
@@ -429,28 +415,6 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
             item.second += currentInterval.first;
         }
 
-        // TODO: can we remove this now?
-        // Replace token of last sub-interval with ASCII NUL character so it can be sampled during compression
-        // Similar to explanation at https://www.youtube.com/watch?v=RFWJM8JMXBs
-        if (isCompression) {
-            /*
-            if (isFirstRun) {
-                llama_token stx = LlamaCpp::getAsciiStx(model, cppCtx);
-
-                scaledProbabilities[0].first = stx;
-                cumulatedProbabilities[0].first = stx;
-            }
-
-            llama_token etx = LlamaCpp::getAsciiEtx(model, cppCtx);
-
-            scaledProbabilities[cumulatedProbabilities.size() - 1].first = etx;
-            cumulatedProbabilities[cumulatedProbabilities.size() - 1].first = etx;
-            */
-
-            scaledProbabilities[cumulatedProbabilities.size() - 1].first = LlamaCpp::getAsciiNul(model, cppCtx);
-            cumulatedProbabilities[cumulatedProbabilities.size() - 1].first = LlamaCpp::getAsciiNul(model, cppCtx);
-        }
-
         // Stegasuras: n/a
         // Determine rank of predicted token amongst all tokens based on its probability
         auto iterator = std::find_if(
@@ -492,7 +456,10 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         // Inline += operation to eliminate newBits variable
         int numberOfEncodedBits = Arithmetic::numberOfSameBitsFromBeginning(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive);
 
-        if (i == coverTextTokens.size() - 1) {
+        __android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "decoded %d bits from token %d", numberOfEncodedBits, coverTextToken);
+
+        // TODO: why do we make this distinction? seems to work without as well (and save encoding bits?)
+        if (i == coverTextTokens.size() - 1 && false) {
             cppCipherBits.insert(
                 cppCipherBits.end(),
                 newIntervalBottomBitsInclusive.begin(),
@@ -506,6 +473,8 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
                 newIntervalTopBitsInclusive.begin() + numberOfEncodedBits
             );
         }
+
+        __android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "cppCipherBits size now %d", cppCipherBits.size());
 
         std::vector<bool> newIntervalBottomBits = std::vector<bool>(newIntervalBottomBitsInclusive.begin() + numberOfEncodedBits, newIntervalBottomBitsInclusive.end());
         newIntervalBottomBits.resize(newIntervalBottomBits.size() + numberOfEncodedBits, false);

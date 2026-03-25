@@ -145,15 +145,15 @@ class BitString(fragment: BitFragment) {
         val needleFragment = sequence.toBitFragment()
         val needleSize = needleFragment.bitLength
 
-        Log.d("BitString", "searching for $needleSize b needle in $haystackSize b haystack")
+        //Log.d("BitString", "searching for $needleSize b needle in $haystackSize b haystack")
 
         var searchIndex = haystackSize - needleSize
         var matchIndex = 0
         while(searchIndex > 0) {
-            Log.d("BitString", "searching at bit offset $searchIndex")
+            //Log.d("BitString", "searching at bit offset $searchIndex")
             while(haystackFragment.getBit(searchIndex+matchIndex) == needleFragment.getBit(matchIndex)) {
                 matchIndex += 1
-                Log.d("BitString", "$matchIndex bit match")
+                //Log.d("BitString", "$matchIndex bit match")
                 if(matchIndex == needleSize)
                     return searchIndex
             }
