@@ -1,4 +1,5 @@
 #include "LlamaCpp.h"
+#include <android/log.h>
 
 std::string LlamaCpp::detokenize(const llama_tokens& tokens, const llama_context* ctx) {
     // Detokenize vector of tokens to C++ string
@@ -47,11 +48,35 @@ jbyteArray LlamaCpp::detokenize(JNIEnv* env, const llama_tokens& tokens, const l
     return jByteArray;
 }
 
-void LlamaCpp::suppressSpecialTokens(double* probabilities, const llama_model* model) {
+void LlamaCpp::suppressSpecialTokens(double* probabilities, const llama_model* model, bool allowEoG) {
+    static bool specialTokenListInitialized = false;
+    static std::set<llama_token> specialTokens;
+    static std::set<llama_token> eogTokens;
+
+    // loop over vocab once to find special tokens, then use cached set from there
+    if(!specialTokenListInitialized) {
+        const llama_vocab* vocab = llama_model_get_vocab(model);
+
+        for (llama_token token = 0; token < LlamaCpp::getVocabSize(model); token++) {
+            if (llama_vocab_is_eog(vocab, token))
+                eogTokens.insert(token);
+            else if(llama_vocab_is_control(vocab, token))
+                specialTokens.insert(token);
+        }
+        specialTokenListInitialized = true;
+        //__android_log_print(ANDROID_LOG_DEBUG, "LlamaCpp", "gathered %d special tokens, %d eog tokens", specialTokens.size(), eogTokens.size());
+    }
+
     // Suppress special tokens by setting their probabilities to 0
-    for (llama_token token = 0; token < LlamaCpp::getVocabSize(model); token++) {
-        if (LlamaCpp::isSpecial(token, model)) {
-            probabilities[token] = 0;
+    std::set<llama_token>::iterator itr;
+    for (itr = specialTokens.begin(); itr != specialTokens.end(); itr++){
+        probabilities[*itr] = 0;
+    }
+
+    // Suppress end of generation tokens if desired
+    if(!allowEoG) {
+        for (itr = eogTokens.begin(); itr != eogTokens.end(); itr++){
+            probabilities[*itr] = 0;
         }
     }
 }
@@ -68,50 +93,8 @@ bool LlamaCpp::isEndOfSentence(llama_token token, const llama_context* ctx) {
 }
 
 llama_token LlamaCpp::getEndOfGeneration(const llama_model* model) {
-    llama_tokens eogTokens;
-
-    for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
-        if (LlamaCpp::isEndOfGeneration(token, model)) {
-            eogTokens.push_back(token);
-        }
-    }
-
-    return eogTokens.front();
-}
-
-llama_token LlamaCpp::getAsciiNul(const llama_model* model, const llama_context* ctx) {
-    // Only checks if detokenization contains the ASCII NUL character
-    // Checking if it is equal to it would require constructing a string that only contains the NUL char, which conflicts with C/C++ strings being NUL-terminated
-    // TODO llama.cpp's common_detokenize seems to return a string that only contains the NUL char, figure out how they do it
-    for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
-        if (LlamaCpp::detokenize(token, ctx).find('\0') != std::string::npos) {
-            return token;
-        }
-    }
-
-    throw std::runtime_error("LLM vocabulary doesn't contain ASCII NUL character");
-}
-
-// TODO Downward concat of split cover text
-//  LlamaCpp::getAscii{Stx,Etx} are to get start and stop signal
-llama_token LlamaCpp::getAsciiStx(const llama_model* model, const llama_context* ctx) {
-    for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
-        if (LlamaCpp::detokenize(token, ctx) == "\x02") {
-            return token;
-        }
-    }
-
-    throw std::runtime_error("LLM vocabulary doesn't contain ASCII STX character");
-}
-
-llama_token LlamaCpp::getAsciiEtx(const llama_model* model, const llama_context* ctx) {
-    for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
-        if (LlamaCpp::detokenize(token, ctx) == "\x03") {
-            return token;
-        }
-    }
-
-    throw std::runtime_error("LLM vocabulary doesn't contain ASCII ETX character");
+    const llama_vocab* vocab = llama_model_get_vocab(model);
+    return llama_vocab_eos(vocab);
 }
 
 int32_t LlamaCpp::getVocabSize(const llama_model* model) {

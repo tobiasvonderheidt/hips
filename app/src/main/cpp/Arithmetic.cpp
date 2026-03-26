@@ -51,7 +51,8 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
     // But only finish last sentence during encoding, not during decompression, to avoid infinite loop
     // Our use of isDecompression here matches control flow of Stegasuras with its finish_sent parameter
     while (i < cppCipherBits.size() || (!isDecompression && !isLastSentenceFinished)) {
-        __android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "encoded %d of %d bits", i, cppCipherBits.size());
+        //__android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "encoded %d of %d bits", i, cppCipherBits.size());
+
         // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggml-org/llama.cpp/blob/master/examples/simple/simple.cpp:
         // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
         // Only last row of logit matrix is needed as it contains logits corresponding to last token of the prompt
@@ -61,7 +62,8 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         double* probabilities = Statistics::softmax(logits, model);
 
         // Suppress special tokens to avoid early termination before all bits of secret message are encoded
-        LlamaCpp::suppressSpecialTokens(probabilities, model);
+        // (allow EoG in decompression)
+        LlamaCpp::suppressSpecialTokens(probabilities, model, isDecompression);
 
         // Arithmetic sampling to encode bits of secret message into tokens
         if (i < cppCipherBits.size()) {
@@ -225,7 +227,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
             // For cases where the LLM is very confident about the next token, interval barely narrows and numberOfEncodedBits can be 0, so it would loop
             // Need to force 1 bit of progress during decompression to avoid this
             if (isDecompression && numberOfEncodedBits == 0) {
-                numberOfEncodedBits = 1;
+                //numberOfEncodedBits = 1;
             }
 
             i += numberOfEncodedBits;
@@ -245,7 +247,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
             // Sample token as determined above
             sampledToken = cumulatedProbabilities[selectedSubinterval].first;
 
-            __android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "sampled: %s", LlamaCpp::detokenize(sampledToken, cppCtx).c_str());
+            __android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "sampled: %s (%d bits)", LlamaCpp::detokenize(sampledToken, cppCtx).c_str(), numberOfEncodedBits);
 
             // </Logic specific to arithmetic coding>
 
@@ -272,7 +274,8 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
 
         // Stegasuras: "For text->bits->text"
         // Variable "partial" not needed here as cover text isn't appended to context
-        if (coverTextTokens.back() == LlamaCpp::getAsciiNul(model, cppCtx)) {
+        if (LlamaCpp::isEndOfGeneration(coverTextTokens.back(), model)) {
+            coverTextTokens.pop_back(); // remove EoG token from output
             break;
         }
     }
@@ -301,7 +304,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         contextTokens.push_back(LlamaCpp::getEndOfGeneration(model));
 
         // During compression, Stegasuras appends eog token ('<eos>') to secret message passed via cover text parameter
-        // Not done here as ASCII NUL is used instead (see translation of "partial" variable in encode)
+        coverTextTokens.push_back(LlamaCpp::getEndOfGeneration(model));
     }
 
     std::pair<long long, long long> currentInterval = {0LL, 1LL << jPrecision};
@@ -317,7 +320,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
     bool isFirstRun = !jIsResumed;
     llama_token coverTextToken = -1;
 
-    __android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "decoding %d tokens", coverTextTokens.size());
+    //__android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "decoding %d tokens", coverTextTokens.size());
 
     // Decode every cover text token
     while (i < coverTextTokens.size()) {
@@ -327,8 +330,8 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         // Normalize logits to probabilities
         double* probabilities = Statistics::softmax(logits, model);
 
-        // Suppress special tokens
-        LlamaCpp::suppressSpecialTokens(probabilities, model);
+        // Suppress special tokens (allow EoG in compression, suppress otherwise)
+        LlamaCpp::suppressSpecialTokens(probabilities, model, isCompression);
 
         // <Logic specific to arithmetic coding>
 
@@ -417,13 +420,26 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
 
         // Stegasuras: n/a
         // Determine rank of predicted token amongst all tokens based on its probability
-        auto iterator = std::find_if(
-            scaledProbabilities.begin(),
-            scaledProbabilities.end(),
-            [coverTextTokens, i](const std::pair<llama_token, float>& pair) { return pair.first == coverTextTokens[i]; }
-        );
+        // optimization: for sampling end-of-generation tokens, we just use the highest-ranking token of multiple different EoG tokens
+        int rank;
+        if(LlamaCpp::isEndOfGeneration(coverTextTokens[i], model)) {
+            auto iterator = std::find_if(
+                    scaledProbabilities.begin(),
+                    scaledProbabilities.end(),
+                    [coverTextTokens, i, &model](const std::pair<llama_token, float>& pair) { return LlamaCpp::isEndOfGeneration(pair.first, model); }
+            );
+            rank = std::distance(scaledProbabilities.begin(), iterator);
+        }
+        else {
+            auto iterator = std::find_if(
+                    scaledProbabilities.begin(),
+                    scaledProbabilities.end(),
+                    [coverTextTokens, i](const std::pair<llama_token, float>& pair) { return pair.first == coverTextTokens[i]; }
+            );
+            rank = std::distance(scaledProbabilities.begin(), iterator);
+        }
 
-        int rank = std::distance(scaledProbabilities.begin(), iterator);
+        //__android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "token %s has rank %d", LlamaCpp::detokenize(coverTextTokens[i], cppCtx).c_str(), rank);
 
         // Deviation from Stegasuras:
         // Error handling for if the token isn't found in the valid range
@@ -456,14 +472,14 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         // Inline += operation to eliminate newBits variable
         int numberOfEncodedBits = Arithmetic::numberOfSameBitsFromBeginning(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive);
 
-        __android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "decoded %d bits from token %d", numberOfEncodedBits, coverTextToken);
+        //__android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "decoded %d bits from token %s", numberOfEncodedBits, LlamaCpp::detokenize(coverTextTokens[i], cppCtx).c_str());
 
-        // TODO: why do we make this distinction? seems to work without as well (and save encoding bits?)
-        if (i == coverTextTokens.size() - 1 && false) {
+        // TODO: we do not need to encode the entire newIntervalBottomBitsInclusive - topBitsInclusive + encodedBits + 1 seems to be enough. Why?
+        if (i == coverTextTokens.size() - 1) {
             cppCipherBits.insert(
                 cppCipherBits.end(),
-                newIntervalBottomBitsInclusive.begin(),
-                newIntervalBottomBitsInclusive.end()
+                newIntervalTopBitsInclusive.begin(), //newIntervalBottomBitsInclusive.begin(),
+                newIntervalTopBitsInclusive.begin() + numberOfEncodedBits + 1//newIntervalBottomBitsInclusive.end()
             );
         }
         else {
@@ -474,7 +490,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
             );
         }
 
-        __android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "cppCipherBits size now %d", cppCipherBits.size());
+        //__android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "cppCipherBits size now %d", cppCipherBits.size());
 
         std::vector<bool> newIntervalBottomBits = std::vector<bool>(newIntervalBottomBitsInclusive.begin() + numberOfEncodedBits, newIntervalBottomBitsInclusive.end());
         newIntervalBottomBits.resize(newIntervalBottomBits.size() + numberOfEncodedBits, false);

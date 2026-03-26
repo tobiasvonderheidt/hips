@@ -14,9 +14,11 @@ import kotlinx.coroutines.launch
 import org.vonderheidt.hips.data.HiPSDataStore
 import org.vonderheidt.hips.data.HiPSDatabase
 import org.vonderheidt.hips.navigation.NavGraph
+import org.vonderheidt.hips.tests.TestCompression
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 import org.vonderheidt.hips.utils.LLM
 import org.vonderheidt.hips.utils.LlamaCpp
+import java.lang.Thread.sleep
 
 /**
  * Class that defines the entry point into the app and calls the main screen.

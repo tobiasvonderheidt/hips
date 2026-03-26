@@ -15,7 +15,7 @@ object UTF8 : CompressionProvider {
     }
 
 
-    override fun inflate(plainBits: BitString, isResumed: Boolean): String {
+    override fun inflate(plainBits: BitString): String {
         check(plainBits.bitLength() % 8 == 0) { "UTF-8 expects byte-aligned input, got ${plainBits.bitLength()} bits"}
 
         val bytes = plainBits.toBitFragment().bytes

@@ -214,7 +214,7 @@ object Steganography {
         Log.d("Stego", "stripped bits: $compressedPlainBits")
 
         // Invert step 0
-        val secretMessage = Compression.inflate(compressedPlainBits, compressionMode, isResumed)
+        val secretMessage = Compression.inflate(compressedPlainBits, compressionMode)
         Log.d("Stego", "decompressed message using $compressionMode: $secretMessage")
 
         return secretMessage

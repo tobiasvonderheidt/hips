@@ -31,15 +31,6 @@ private:
      */
     static bool isSpecial(llama_token token, const llama_model* model);
 
-    /**
-     * Wrapper for the `llama_vocab_is_eog` function of llama.cpp. Checks if a token is an end-of-generation (eog) token.
-     *
-     * @param token Token ID to check.
-     * @param model Memory address of the LLM.
-     * @return Boolean that is true if the token is an eog token, false otherwise.
-     */
-    static bool isEndOfGeneration(llama_token token, const llama_model* model);
-
 public:
 
     /**
@@ -69,8 +60,9 @@ public:
      *
      * @param probabilities Probabilities for the last token of the prompt (= last row of logits matrix after normalization).
      * @param model Memory address of the LLM.
+     * @param allowEoG Suppress or allow end of generation tokens
      */
-    static void suppressSpecialTokens(double* probabilities, const llama_model* model);
+    static void suppressSpecialTokens(double* probabilities, const llama_model* model, bool allowEoG);
 
     /**
      * Function to check if a token is the end of a sentence. Needed to complete the last sentence of the cover text.
@@ -161,6 +153,15 @@ public:
      * @return A vector of logits.
      */
     static float* getLogits(llama_token token, llama_context* ctx);
+
+/**
+ * Wrapper for the `llama_vocab_is_eog` function of llama.cpp. Checks if a token is an end-of-generation (eog) token.
+ *
+ * @param token Token ID to check.
+ * @param model Memory address of the LLM.
+ * @return Boolean that is true if the token is an eog token, false otherwise.
+ */
+static bool isEndOfGeneration(llama_token token, const llama_model* model);
 };
 
 #endif

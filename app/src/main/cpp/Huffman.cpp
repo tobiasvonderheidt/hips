@@ -38,7 +38,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_
         double* probabilities = Statistics::softmax(logits, model);
 
         // Suppress special tokens to avoid early termination before all bits of secret message are encoded
-        LlamaCpp::suppressSpecialTokens(probabilities, model);
+        LlamaCpp::suppressSpecialTokens(probabilities, model, false);
 
         // Huffman sampling to encode bits of secret message into tokens
         if (i < cppCipherBits.size()) {
@@ -130,7 +130,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Huffman_
         double* probabilities = Statistics::softmax(logits, model);
 
         // Suppress special tokens
-        LlamaCpp::suppressSpecialTokens(probabilities, model);
+        LlamaCpp::suppressSpecialTokens(probabilities, model, false);
 
         // Get top 2^bitsPerToken probabilities
         std::vector<std::pair<llama_token, double>> topProbabilities = Huffman::getTopProbabilities(probabilities, jBitsPerToken, model);

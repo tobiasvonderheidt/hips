@@ -17,5 +17,5 @@ interface CompressionProvider {
      * @param plainBits Binary representation of compressed message.
      * @return Uncompressed plaintext message.
      */
-    fun inflate(plainBits: BitString, isResumed: Boolean = false): String
+    fun inflate(plainBits: BitString): String
 }

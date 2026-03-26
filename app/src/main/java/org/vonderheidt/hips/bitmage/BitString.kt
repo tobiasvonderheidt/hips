@@ -167,6 +167,11 @@ class BitString(fragment: BitFragment) {
         return 0
     }
 
+    fun clone(): BitString {
+        val fragment = toBitFragment()
+        return BitString(fragment.bytes.clone(), fragment.bitLength)
+    }
+
     override fun toString(): String {
         val fragment = toBitFragment()
         return "BitString(${fragment.bytes.hex()}, ${fragment.bitLength}b)"

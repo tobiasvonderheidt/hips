@@ -33,20 +33,10 @@ object ArithmeticCompression : CompressionProvider {
         return bits
     }
 
+    override fun inflate(plainBits: BitString): String {
 
-    // TODO Downward concat of split cover text
-    //  Parameter isResumed in all subsequent functions is to differentiate first from subsequent calls
-    override fun inflate(plainBits: BitString, isResumed: Boolean): String {
-
-        if (isResumed) {
-            // Restore ctx for decompression
-            LlamaCpp.setCtx(ctx = LlamaCpp.getDecompressCtx())
-        }
-        else {
-            // Reset ctx
-            LlamaCpp.resetInstance()
-        }
-
+        // Reset ctx
+        LlamaCpp.resetInstance()
 
         // Stegasuras:
         // Arithmetic decompression is just encoding with empty context
@@ -60,11 +50,8 @@ object ArithmeticCompression : CompressionProvider {
             temperature = 1.0f,
             topK = LlamaCpp.getVocabSize(),
             precision = 40,
-            isResumed = isResumed
+            isResumed = false
         )
-
-        // Save ctx for decompression
-        LlamaCpp.setDecompressCtx(decompressCtx = LlamaCpp.getCtx())
 
         return decodedBytes.decodeToString()
     }

@@ -8,20 +8,22 @@ import bitmage.BitString
 object Compression {
     fun compress(message: String, mode: CompressionMode): BitString {
         val compressedBits = when (mode) {
-            CompressionMode.Arithmetic -> { ArithmeticCompression.compress(message) }
-            CompressionMode.UTF8 -> { UTF8.compress(message) }
-            CompressionMode.BitCrush -> { BitCrush.compress(message) }
+            CompressionMode.Adaptive -> Adaptive.compress(message)
+            CompressionMode.Arithmetic -> ArithmeticCompression.compress(message)
+            CompressionMode.UTF8 -> UTF8.compress(message)
+            CompressionMode.BitCrush -> BitCrush.compress(message)
             else -> throw Exception("unsupported compression mode: $mode")
         }
 
         return compressedBits
     }
 
-    fun inflate(bits: BitString, mode: CompressionMode, isResumed: Boolean): String {
+    fun inflate(bits: BitString, mode: CompressionMode): String {
         val uncompressed = when(mode) {
-            CompressionMode.Arithmetic -> { ArithmeticCompression.inflate(bits, isResumed) }
-            CompressionMode.UTF8 -> { UTF8.inflate(bits, isResumed) }
-            CompressionMode.BitCrush -> { BitCrush.inflate(bits, isResumed) }
+            CompressionMode.Adaptive -> Adaptive.inflate(bits)
+            CompressionMode.Arithmetic -> ArithmeticCompression.inflate(bits)
+            CompressionMode.UTF8 -> UTF8.inflate(bits)
+            CompressionMode.BitCrush -> BitCrush.inflate(bits)
             else -> throw Exception("unsupported compression mode: $mode")
         }
 
