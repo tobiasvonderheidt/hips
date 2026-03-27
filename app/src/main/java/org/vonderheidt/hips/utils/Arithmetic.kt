@@ -36,17 +36,13 @@ object Arithmetic {
      *
      * @param context The context to decode the cover text with.
      * @param coverText The cover text containing a secret message.
-     * @param numberOfCipherBits Desired number of cipher bits to return. Only needed when searching for start signal in split cover text. Has to be multiple of 8 for decryption.
+     * @param numberOfCipherBits Desired number of cipher bits to return. Only needed when searching for start signal in split cover text.
      * @param isResumed Boolean that is true if this call of the `decode` function resumes where the last call terminated, false otherwise.
      * @return The encrypted binary representation of the secret message.
      * @throws IllegalArgumentException If `numberOfCipherBits` is not a multiple of 8.
      * @throws IllegalArgumentException If a cover text token could not be predicted (e.g. partial decoding with wrong context when trying to find start signal in split cover text).
      */
     fun decode(context: String, coverText: String, numberOfCipherBits: Int = -1, isResumed: Boolean = false): BitString {
-        if (numberOfCipherBits > 0 && numberOfCipherBits % 8 != 0) {
-            throw IllegalArgumentException("numberOfCipherBits has to be multiple of 8, but is $numberOfCipherBits")
-        }
-
         val bytes = decode(
             context = context.toByteArray(charset = Charsets.UTF_8),
             coverText = coverText.toByteArray(charset = Charsets.UTF_8),
@@ -54,7 +50,11 @@ object Arithmetic {
             isResumed = isResumed
         )
 
-        return BitString(bytes, bytes.size * 8)
+        val bits = BitString(bytes, bytes.size * 8)
+        val paddingLen = bits.takeFew(8).toInt()
+        bits.takeFew(paddingLen)
+
+        return bits
     }
 
     /**

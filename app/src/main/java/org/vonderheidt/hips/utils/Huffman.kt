@@ -42,10 +42,6 @@ object Huffman {
      * @throws IllegalArgumentException If `numberOfCipherBits` is not a multiple of 8.
      */
     fun decode(context: String, coverText: String, numberOfCipherBits: Int = -1, isResumed: Boolean = false): BitString {
-        if (numberOfCipherBits > 0 && numberOfCipherBits % 8 != 0) {
-            throw IllegalArgumentException("numberOfCipherBits has to be multiple of 8, but is $numberOfCipherBits")
-        }
-
         val bytes = decode(
             context = context.toByteArray(charset = Charsets.UTF_8),
             coverText = coverText.toByteArray(charset = Charsets.UTF_8),
@@ -53,7 +49,11 @@ object Huffman {
             isResumed = isResumed
         )
 
-        return BitString(bytes, bytes.size * 8)
+        val bits = BitString(bytes, bytes.size * 8)
+        val paddingLen = bits.takeFew(8).toInt()
+        bits.takeFew(paddingLen)
+
+        return bits
     }
 
     /**

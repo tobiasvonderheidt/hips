@@ -6,11 +6,16 @@ import org.vonderheidt.hips.compression.Compression
 import org.vonderheidt.hips.compression.CompressionMode
 import org.vonderheidt.hips.crypto.Crypto
 import org.vonderheidt.hips.data.Settings
+import kotlin.time.measureTime
 
 /**
  * Object (i.e. singleton class) that represents steganography encoding and decoding.
  */
 object Steganography {
+
+    private val startMarker = BitString.BitFragment(byteArrayOf(0), 5)
+    private val endMarker = BitString.BitFragment(byteArrayOf(0x94.toByte()), 7)
+
     /**
      * Function to encode secret message into cover text using given context.
      *
@@ -30,8 +35,12 @@ object Steganography {
         Log.d("Stego", "encoding secret message: $secretMessage")
 
         // Step 0: Convert secret message to a (compressed) binary representation
-        val plainBits = Compression.compress(secretMessage, compressionMode)
-        Log.d("Stego", "compressed using $compressionMode to: ${plainBits.bitLength()}b")
+        val plainBits: BitString
+        val compressTime = measureTime {
+            plainBits = Compression.compress(secretMessage, compressionMode)
+        }
+        Log.d("Stego", "compressed using $compressionMode to: ${plainBits.bitLength()}b, took $compressTime")
+
 
         // Step 1: Prepare secret message by appending termination and message start markers
         val preparedBits = prepare(plainBits)
@@ -44,11 +53,16 @@ object Steganography {
         // Step 3: Encode encrypted binary representation of secret message into cover text
         LlamaCpp.resetInstance()
 
-        val coverText = when (steganographyMode) {
-            SteganographyMode.Arithmetic -> { Arithmetic.encode(context, cipherBits, isResumed = false) }
-            SteganographyMode.Huffman -> { Huffman.encode(context, cipherBits) }
-            else -> throw Exception("unsupported stego mode: $steganographyMode")
+        val coverText: String
+        val encodeTime = measureTime {
+            coverText = when (steganographyMode) {
+                SteganographyMode.Arithmetic -> { Arithmetic.encode(context, cipherBits, isResumed = false) }
+                SteganographyMode.Huffman -> { Huffman.encode(context, cipherBits) }
+                else -> throw Exception("unsupported stego mode: $steganographyMode")
+            }
         }
+
+        Log.d("Stego", "encoding took $encodeTime")
 
         return coverText
     }
@@ -117,11 +131,13 @@ object Steganography {
         coverText: String,
         steganographyMode: SteganographyMode = Settings.steganographyMode
     ): Boolean {
-        val numberOfCipherBits = 8
+        val numberOfCipherBits = startMarker.bitLength
         var isFirstMessageOfSplit: Boolean
 
         // Invert step 3
         LlamaCpp.resetInstance()
+
+        Log.d("Stego", "checking '$coverText' for first message of split")
 
         // Wrap this in try-catch because decoding with wrong context is likely to throw exceptions
         val partialCipherBits: BitString
@@ -137,12 +153,14 @@ object Steganography {
             return isFirstMessageOfSplit
         }
 
+        Log.d("Stego", "got partial cipher bits: $partialCipherBits, expecting $startMarker")
+
         // Invert step 2
         val partialPlainBits = Crypto.decrypt(partialCipherBits)
 
         // Check for start marker
-        val firstBits = partialPlainBits.takeFew(8)
-        isFirstMessageOfSplit = firstBits.toInt() == 0x02 // ASCII STX marker is 0x02
+        val firstBits = partialPlainBits.take(numberOfCipherBits)
+        isFirstMessageOfSplit = startMarker == firstBits.toBitFragment()
 
         return isFirstMessageOfSplit
     }
@@ -201,9 +219,6 @@ object Steganography {
         LlamaCpp.setDecodeCtx(decodeCtx = LlamaCpp.getCtx())
 
         Log.d("Stego", "decoded cipher bits: $cipherBits")
-        val paddingLen = cipherBits.takeFew(8).toInt()
-        val padding = cipherBits.takeFew(paddingLen)
-        Log.d("Stego", "unpadded bits ($paddingLen pad bits): $cipherBits")
 
         // Invert step 2
         val preparedPlainBits = Crypto.decrypt(cipherBits)
@@ -223,14 +238,14 @@ object Steganography {
     /**
      * Function to prepare a secret message for binary encoding.
      *
-     * Appends the ASCII NUL character to the original secret message. Needed to remove artefacts from greedy sampling after binary decoding.
+     * Appends the ASCII NUL character to the original secret message. Needed to remove artifacts from greedy sampling after binary decoding.
      *
      * @param secretMessage A secret message.
      * @return The prepared secret message.
      */
     private fun prepare(bits: BitString): BitString {
-        bits.prepend(BitString.BitFragment(byteArrayOf(2), 8))
-        bits.append(BitString.BitFragment(byteArrayOf(3), 8))
+        bits.prepend(startMarker)
+        bits.append(endMarker)
         return bits
     }
 
@@ -238,18 +253,17 @@ object Steganography {
     /**
      * Function to unprepare a secret message after binary decoding.
      *
-     * Strips the ASCII NUL character and everything after it. Therefore removes any artefacts from greedy sampling, rendering the original secret message.
+     * Strips the ASCII NUL character and everything after it. Therefore removes any artifacts from greedy sampling, rendering the original secret message.
      *
      * @param preparedBits A prepared secret message.
      * @return The secret message.
      */
     private fun unprepare(preparedBits: BitString): BitString {
         // removing start marker is easy since it is always at the start
-        val startMarker = preparedBits.takeFew(8)
-        check(startMarker.toInt() == 0x02) { "start marker should be ASCII STX 0x02, got ${startMarker.toString(16)}"}
+        val firstBits = preparedBits.take(startMarker.bitLength).toBitFragment()
+        check(firstBits == startMarker) { "start marker should be $startMarker, got $firstBits"}
 
-        val endMarker = BitString(byteArrayOf(0x03), 8)
-        val matchIndex = preparedBits.firstSubsequenceMatchFromEnd(endMarker)
+        val matchIndex = preparedBits.firstSubsequenceMatchFromEnd(BitString(endMarker))
 
         if(matchIndex == -1)
             throw Exception("no end marker found")

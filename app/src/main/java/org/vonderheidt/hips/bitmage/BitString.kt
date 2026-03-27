@@ -15,6 +15,23 @@ class BitString(fragment: BitFragment) {
             val byte = bytes[position/8].toUByte().toInt()
             return ((byte shr (7 - (position % 8))) and 0x01) == 1
         }
+
+        override fun equals(other: Any?): Boolean {
+            if(other !is BitFragment)
+                return false
+
+            return bitLength == other.bitLength && (0 until bitLength).all { other.getBit(it) == getBit(it) }
+        }
+
+        override fun hashCode(): Int {
+            var result = bitLength
+            result = 31 * result + bytes.contentHashCode()
+            return result
+        }
+
+        override fun toString(): String {
+            return "BitFragment(${bytes.hex()}, ${bitLength}b)"
+        }
     }
 
     private val parts = mutableListOf<BitFragment>(fragment)

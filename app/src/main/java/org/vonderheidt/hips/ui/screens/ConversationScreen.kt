@@ -1,5 +1,6 @@
 package org.vonderheidt.hips.ui.screens
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -261,6 +262,9 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                     */
                                 }
                                 catch (exception: Exception) {
+                                    Log.e("Conversation", exception.toString())
+                                    Log.e("Conversation", exception.stackTraceToString())
+
                                     withContext(Dispatchers.Main) {
                                         Toast.makeText(currentLocalContext, "Message couldn't be decoded", Toast.LENGTH_LONG).show()
                                     }

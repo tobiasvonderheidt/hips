@@ -19,7 +19,7 @@ object LlamaCpp {
     private var ctx = 0L
 
     // TODO Downward concat of split cover text
-    //  Attributes {decode,decompress}Ctx are to manage separate ctx for resuming decoding and decompression
+    //  Attribute decodeCtx is to manage separate ctx for resuming decoding
     @Volatile
     private var decodeCtx = 0L
 
@@ -193,22 +193,6 @@ object LlamaCpp {
         val endsWithEmoji = this.isNotEmpty() && Regex("\\p{So}").containsMatchIn(this.takeLast(1))
 
         return endsWithEmoji
-    }
-
-    /**
-     * Function to get the token ID of the ASCII NUL character in the vocabulary of the LLM.
-     *
-     * @return Token ID of the ASCII NUL character.
-     * @throws NoSuchElementException When the LLM vocabulary doesn't contain the ASCII NUL character.
-     */
-    fun getAsciiNul(): Int {
-        for (token in 0 until getVocabSize()) {
-            if (detokenize(intArrayOf(token)) == "\u0000") {
-                return token
-            }
-        }
-
-        throw NoSuchElementException("LLM vocabulary doesn't contain ASCII NUL character")
     }
 
     /**
