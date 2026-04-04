@@ -4,12 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.absolutePadding
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,11 +14,9 @@ import kotlinx.coroutines.launch
 import org.vonderheidt.hips.data.HiPSDataStore
 import org.vonderheidt.hips.data.HiPSDatabase
 import org.vonderheidt.hips.navigation.NavGraph
-import org.vonderheidt.hips.tests.TestCompression
 import org.vonderheidt.hips.ui.theme.HiPSTheme
 import org.vonderheidt.hips.utils.LLM
 import org.vonderheidt.hips.utils.LlamaCpp
-import java.lang.Thread.sleep
 
 /**
  * Class that defines the entry point into the app and calls the main screen.
