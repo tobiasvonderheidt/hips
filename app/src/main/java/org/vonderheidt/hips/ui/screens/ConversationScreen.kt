@@ -66,6 +66,8 @@ import org.vonderheidt.hips.utils.LlamaCpp
 import org.vonderheidt.hips.utils.Steganography
 import org.vonderheidt.hips.utils.SteganographyMode
 
+private const val TAG = "ConversationScreen.kt"
+
 /**
  * Function that defines the conversation screen.
  *
@@ -262,8 +264,8 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                     */
                                 }
                                 catch (exception: Exception) {
-                                    Log.e("Conversation", exception.toString())
-                                    Log.e("Conversation", exception.stackTraceToString())
+                                    Log.e(TAG, exception.toString())
+                                    Log.e(TAG, exception.stackTraceToString())
 
                                     withContext(Dispatchers.Main) {
                                         Toast.makeText(currentLocalContext, "Message couldn't be decoded", Toast.LENGTH_LONG).show()
