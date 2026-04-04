@@ -1,9 +1,9 @@
 package org.vonderheidt.hips.compression
 
 /**
- * Class to enumerate all conversion modes.
+ * Class to enumerate all compression modes.
  *
- * @param displayName Display name of the conversion mode.
+ * @param displayName Display name of the compression mode.
  */
 enum class CompressionMode(private val displayName: String) {
     Adaptive("Adaptive (recommended)"),
@@ -12,9 +12,9 @@ enum class CompressionMode(private val displayName: String) {
     UTF8("UTF-8");
 
     /**
-     * Function to get the display name of the conversion mode.
+     * Function to get the display name of the compression mode.
      *
-     * @return Display name of the conversion mode.
+     * @return Display name of the compression mode.
      */
     override fun toString(): String {
         return displayName
