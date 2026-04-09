@@ -6,8 +6,8 @@ import org.vonderheidt.hips.bitmage.BitString
  * Singleton that provides convenience wrappers for text compression
  */
 object Compression {
-    fun compress(secretMessage: String, mode: CompressionMode): BitString {
-        val compressedBits = when (mode) {
+    fun compress(secretMessage: String, compressionMode: CompressionMode): BitString {
+        val compressedBits = when (compressionMode) {
             CompressionMode.Adaptive -> Adaptive.compress(secretMessage)
             CompressionMode.Arithmetic -> ArithmeticCompression.compress(secretMessage)
             CompressionMode.UTF8 -> UTF8.compress(secretMessage)
@@ -17,8 +17,8 @@ object Compression {
         return compressedBits
     }
 
-    fun decompress(bits: BitString, mode: CompressionMode): String {
-        val uncompressed = when(mode) {
+    fun decompress(bits: BitString, compressionMode: CompressionMode): String {
+        val uncompressed = when(compressionMode) {
             CompressionMode.Adaptive -> Adaptive.decompress(bits)
             CompressionMode.Arithmetic -> ArithmeticCompression.decompress(bits)
             CompressionMode.UTF8 -> UTF8.decompress(bits)
