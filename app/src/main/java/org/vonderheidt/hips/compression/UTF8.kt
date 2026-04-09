@@ -8,13 +8,24 @@ import org.vonderheidt.hips.bitmage.BitString
  * Renamed from `Unicode` in Stegasuras as UTF-8 is only one of many possible Unicode encodings.
  */
 object UTF8 : CompressionProvider {
-
+    /**
+     * Function to convert a string into its binary representation using UTF-8 encoding.
+     *
+     * @param secretMessage A secret message.
+     * @return The binary representation of the secret message.
+     */
     override fun compress(secretMessage: String): BitString {
         val plainBits = (secretMessage).toByteArray(charset = Charsets.UTF_8)
         return BitString(plainBits, plainBits.size * 8)
     }
 
 
+    /**
+     * Function to convert the binary representation of a string back to the string using UTF-8 decoding.
+     *
+     * @param plainBits The binary representation of a secret message.
+     * @return The secret message.
+     */
     override fun decompress(plainBits: BitString): String {
         check(plainBits.bitLength() % 8 == 0) { "UTF-8 expects byte-aligned input, got ${plainBits.bitLength()} bits"}
 
