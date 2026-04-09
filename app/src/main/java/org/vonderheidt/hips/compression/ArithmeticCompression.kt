@@ -5,12 +5,15 @@ import org.vonderheidt.hips.utils.Arithmetic
 import org.vonderheidt.hips.utils.LlamaCpp
 
 /**
- * Object (i.e. singleton class) that represents the binary conversion of the secret message using UTF-8 encoding.
- *
- * Renamed from `Unicode` in Stegasuras as UTF-8 is only one of many possible Unicode encodings.
+ * Object (i.e. singleton class) that represents arithmetic compression.
  */
 object ArithmeticCompression : CompressionProvider {
-
+    /**
+     * Function to compress the secret message using arithmetic *decoding*. Wrapper for function `decode` of object `Arithmetic`.
+     *
+     * @param secretMessage A secret message.
+     * @return The compressed binary representation of the secret message.
+     */
     override fun compress(secretMessage: String): BitString {
         LlamaCpp.resetInstance()
         // Stegasuras:
@@ -32,6 +35,12 @@ object ArithmeticCompression : CompressionProvider {
         return bits
     }
 
+    /**
+     * Function to decompress the secret message using arithmetic *encoding*. Wrapper for function `encode` of object `Arithmetic`.
+     *
+     * @param plainBits The compressed binary representation of a secret message.
+     * @return The secret message.
+     */
     override fun decompress(plainBits: BitString): String {
 
         // Reset ctx
