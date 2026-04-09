@@ -12,7 +12,7 @@ import org.vonderheidt.hips.utils.LlamaCpp
  */
 object ArithmeticCompression : CompressionProvider {
 
-    override fun compress(message: String): BitString {
+    override fun compress(secretMessage: String): BitString {
         LlamaCpp.resetInstance()
         // Stegasuras:
         // Arithmetic compression is just decoding with empty context
@@ -20,7 +20,7 @@ object ArithmeticCompression : CompressionProvider {
         // While topK is set to the vocabulary size of the LLM, precision is set as high as possible so (ideally) no tokens have probability < 1/2^precision
         val bytes = Arithmetic.decode(
             context = "".toByteArray(charset = Charsets.UTF_8),
-            coverText = message.toByteArray(charset = Charsets.UTF_8),
+            coverText = secretMessage.toByteArray(charset = Charsets.UTF_8),
             temperature = 1.0f,
             topK = LlamaCpp.getVocabSize(),
             precision = 40

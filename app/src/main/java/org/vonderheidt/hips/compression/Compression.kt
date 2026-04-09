@@ -6,12 +6,12 @@ import org.vonderheidt.hips.bitmage.BitString
  * Singleton that provides convenience wrappers for text compression
  */
 object Compression {
-    fun compress(message: String, mode: CompressionMode): BitString {
+    fun compress(secretMessage: String, mode: CompressionMode): BitString {
         val compressedBits = when (mode) {
-            CompressionMode.Adaptive -> Adaptive.compress(message)
-            CompressionMode.Arithmetic -> ArithmeticCompression.compress(message)
-            CompressionMode.UTF8 -> UTF8.compress(message)
-            CompressionMode.BitCrush -> BitCrush.compress(message)
+            CompressionMode.Adaptive -> Adaptive.compress(secretMessage)
+            CompressionMode.Arithmetic -> ArithmeticCompression.compress(secretMessage)
+            CompressionMode.UTF8 -> UTF8.compress(secretMessage)
+            CompressionMode.BitCrush -> BitCrush.compress(secretMessage)
             else -> throw Exception("unsupported compression mode: $mode")
         }
 

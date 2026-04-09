@@ -81,9 +81,9 @@ object BitCrush : CompressionProvider {
     private val inverseLookup = lookup.toList().associate { Pair(it.second, it.first) }
     private val inverseSecondLookup = secondStageLookup.toList().associate { Pair(it.second, it.first) }
     
-    override fun compress(message: String): BitString {
+    override fun compress(secretMessage: String): BitString {
         val encoded = BitString(byteArrayOf(), 0)
-        val lower = message.lowercase().toUnicodeCodepoints()
+        val lower = secretMessage.lowercase().toUnicodeCodepoints()
 
         lower.forEach {
             val code = lookup[it]

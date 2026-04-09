@@ -6,9 +6,9 @@ import org.vonderheidt.hips.bitmage.BitString
 object Adaptive: CompressionProvider {
     private const val TEST_ARITHMETIC_DECOMPRESSION = false
 
-    override fun compress(message: String): BitString {
-        val bitCrushed = BitCrush.compress(message)
-        val arithmetic = ArithmeticCompression.compress(message)
+    override fun compress(secretMessage: String): BitString {
+        val bitCrushed = BitCrush.compress(secretMessage)
+        val arithmetic = ArithmeticCompression.compress(secretMessage)
 
         val arithmeticSize = arithmetic.bitLength()
         val bitcrushSize = bitCrushed.bitLength()
@@ -16,7 +16,7 @@ object Adaptive: CompressionProvider {
         val arithmeticDecodable = if(TEST_ARITHMETIC_DECOMPRESSION) {
             try {
                 val decompressed = ArithmeticCompression.inflate(arithmetic)
-                decompressed.contentEquals(message)
+                decompressed.contentEquals(secretMessage)
             } catch(e: Exception) {
                 false
             }
@@ -24,7 +24,7 @@ object Adaptive: CompressionProvider {
             true
         }
 
-        val bitCrushLossless = message.lowercase().contentEquals(BitCrush.inflate(bitCrushed.clone()))
+        val bitCrushLossless = secretMessage.lowercase().contentEquals(BitCrush.inflate(bitCrushed.clone()))
 
         // all things being equal, prefer BitCrush for faster decoding
         if((bitcrushSize >= arithmeticSize || !bitCrushLossless) && arithmeticDecodable) {

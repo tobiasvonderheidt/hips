@@ -9,10 +9,10 @@ interface CompressionProvider {
     /**
      * Function to compress a secret message from string to binary.
      *
-     * @param message The secret message to compress.
+     * @param secretMessage The secret message to compress.
      * @return The binary representation of the secret message.
      */
-    fun compress(message: String): BitString
+    fun compress(secretMessage: String): BitString
 
     /**
      * Function to decompress a secret message from binary to string.

@@ -9,8 +9,8 @@ import org.vonderheidt.hips.bitmage.BitString
  */
 object UTF8 : CompressionProvider {
 
-    override fun compress(message: String): BitString {
-        val plainBits = (message).toByteArray(charset = Charsets.UTF_8)
+    override fun compress(secretMessage: String): BitString {
+        val plainBits = (secretMessage).toByteArray(charset = Charsets.UTF_8)
         return BitString(plainBits, plainBits.size * 8)
     }
 
