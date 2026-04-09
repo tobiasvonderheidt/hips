@@ -164,10 +164,6 @@ class BitString(fragment: BitFragment) {
         return -1
     }
 
-    fun findMaximumMatchFromEnd(sequence: BitString): Int {
-        return 0
-    }
-
     fun clone(): BitString {
         val fragment = toBitFragment()
         return BitString(fragment.bytes.clone(), fragment.bitLength)
