@@ -10,8 +10,8 @@ object Compression {
         val compressedBits = when (compressionMode) {
             CompressionMode.Adaptive -> Adaptive.compress(secretMessage)
             CompressionMode.Arithmetic -> ArithmeticCompression.compress(secretMessage)
-            CompressionMode.UTF8 -> UTF8.compress(secretMessage)
             CompressionMode.BitCrush -> BitCrush.compress(secretMessage)
+            CompressionMode.UTF8 -> UTF8.compress(secretMessage)
         }
 
         return compressedBits
@@ -21,8 +21,8 @@ object Compression {
         val uncompressed = when (compressionMode) {
             CompressionMode.Adaptive -> Adaptive.decompress(bits)
             CompressionMode.Arithmetic -> ArithmeticCompression.decompress(bits)
-            CompressionMode.UTF8 -> UTF8.decompress(bits)
             CompressionMode.BitCrush -> BitCrush.decompress(bits)
+            CompressionMode.UTF8 -> UTF8.decompress(bits)
         }
 
         return uncompressed
