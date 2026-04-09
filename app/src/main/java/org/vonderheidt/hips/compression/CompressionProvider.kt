@@ -20,5 +20,5 @@ interface CompressionProvider {
      * @param plainBits The binary representation of the secret message.
      * @return The decompressed secret message.
      */
-    fun inflate(plainBits: BitString): String
+    fun decompress(plainBits: BitString): String
 }

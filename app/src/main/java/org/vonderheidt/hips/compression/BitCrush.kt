@@ -149,7 +149,7 @@ object BitCrush : CompressionProvider {
         return encoded
     }
 
-    override fun inflate(plainBits: BitString): String {
+    override fun decompress(plainBits: BitString): String {
         var msg = ""
         while(plainBits.bitLength() > 0) {
             val codepoint = plainBits.takeFew(5).toUByte().toInt() shr 3

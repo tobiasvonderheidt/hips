@@ -18,12 +18,12 @@ object Compression {
         return compressedBits
     }
 
-    fun inflate(bits: BitString, mode: CompressionMode): String {
+    fun decompress(bits: BitString, mode: CompressionMode): String {
         val uncompressed = when(mode) {
-            CompressionMode.Adaptive -> Adaptive.inflate(bits)
-            CompressionMode.Arithmetic -> ArithmeticCompression.inflate(bits)
-            CompressionMode.UTF8 -> UTF8.inflate(bits)
-            CompressionMode.BitCrush -> BitCrush.inflate(bits)
+            CompressionMode.Adaptive -> Adaptive.decompress(bits)
+            CompressionMode.Arithmetic -> ArithmeticCompression.decompress(bits)
+            CompressionMode.UTF8 -> UTF8.decompress(bits)
+            CompressionMode.BitCrush -> BitCrush.decompress(bits)
             else -> throw Exception("unsupported compression mode: $mode")
         }
 

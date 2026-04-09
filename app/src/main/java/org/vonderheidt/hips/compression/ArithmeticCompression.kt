@@ -33,7 +33,7 @@ object ArithmeticCompression : CompressionProvider {
         return bits
     }
 
-    override fun inflate(plainBits: BitString): String {
+    override fun decompress(plainBits: BitString): String {
 
         // Reset ctx
         LlamaCpp.resetInstance()

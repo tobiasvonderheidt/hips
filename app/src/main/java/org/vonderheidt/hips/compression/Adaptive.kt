@@ -15,7 +15,7 @@ object Adaptive: CompressionProvider {
 
         val arithmeticDecodable = if(TEST_ARITHMETIC_DECOMPRESSION) {
             try {
-                val decompressed = ArithmeticCompression.inflate(arithmetic)
+                val decompressed = ArithmeticCompression.decompress(arithmetic)
                 decompressed.contentEquals(secretMessage)
             } catch(e: Exception) {
                 false
@@ -24,7 +24,7 @@ object Adaptive: CompressionProvider {
             true
         }
 
-        val bitCrushLossless = secretMessage.lowercase().contentEquals(BitCrush.inflate(bitCrushed.clone()))
+        val bitCrushLossless = secretMessage.lowercase().contentEquals(BitCrush.decompress(bitCrushed.clone()))
 
         // all things being equal, prefer BitCrush for faster decoding
         if((bitcrushSize >= arithmeticSize || !bitCrushLossless) && arithmeticDecodable) {
@@ -39,12 +39,12 @@ object Adaptive: CompressionProvider {
         }
     }
 
-    override fun inflate(plainBits: BitString): String {
+    override fun decompress(plainBits: BitString): String {
         val selector = plainBits.takeFew(1).toUByte().toInt() shr 7
         Log.d("AdaptiveComp", "selector $selector")
         return when(selector) {
-            0 -> ArithmeticCompression.inflate(plainBits)
-            1 -> BitCrush.inflate(plainBits)
+            0 -> ArithmeticCompression.decompress(plainBits)
+            1 -> BitCrush.decompress(plainBits)
             else -> throw Exception("unreachable")
         }
     }
