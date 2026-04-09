@@ -7,14 +7,14 @@ import org.vonderheidt.hips.bitmage.BitString
  */
 object Compression {
     fun compress(secretMessage: String, compressionMode: CompressionMode): BitString {
-        val compressedBits = when (compressionMode) {
+        val plainBits = when (compressionMode) {
             CompressionMode.Adaptive -> Adaptive.compress(secretMessage)
             CompressionMode.Arithmetic -> ArithmeticCompression.compress(secretMessage)
             CompressionMode.BitCrush -> BitCrush.compress(secretMessage)
             CompressionMode.UTF8 -> UTF8.compress(secretMessage)
         }
 
-        return compressedBits
+        return plainBits
     }
 
     fun decompress(bits: BitString, compressionMode: CompressionMode): String {
