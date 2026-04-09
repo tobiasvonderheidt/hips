@@ -18,7 +18,7 @@ object Compression {
     }
 
     fun decompress(bits: BitString, compressionMode: CompressionMode): String {
-        val uncompressed = when(compressionMode) {
+        val uncompressed = when (compressionMode) {
             CompressionMode.Adaptive -> Adaptive.decompress(bits)
             CompressionMode.Arithmetic -> ArithmeticCompression.decompress(bits)
             CompressionMode.UTF8 -> UTF8.decompress(bits)
