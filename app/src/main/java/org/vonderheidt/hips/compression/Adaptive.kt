@@ -3,6 +3,7 @@ package org.vonderheidt.hips.compression
 import android.util.Log
 import org.vonderheidt.hips.bitmage.BitString
 
+private const val TAG = "Adaptive.kt"
 private const val TEST_ARITHMETIC_DECOMPRESSION = false
 
 object Adaptive : CompressionProvider {
@@ -28,12 +29,14 @@ object Adaptive : CompressionProvider {
 
         // all things being equal, prefer BitCrush for faster decoding
         if((bitcrushSize >= arithmeticSize || !bitCrushLossless) && arithmeticDecodable) {
-            Log.d("AdaptiveComp", "chose arithmetic ($arithmeticSize vs $bitcrushSize)")
+            Log.d(TAG, "Chose arithmetic ($arithmeticSize vs $bitcrushSize bits)")
+
             arithmetic.prepend(BitString.BitFragment(byteArrayOf(0x00), 1)) // prepend 0 bit
             return arithmetic
         }
         else {
-            Log.d("AdaptiveComp", "chose BitCrush (${bitcrushSize} vs $arithmeticSize arithmetic decodable: $arithmeticDecodable)")
+            Log.d(TAG, "Chose BitCrush (${bitcrushSize} vs $arithmeticSize bits), arithmetic decodable: $arithmeticDecodable)")
+
             bitCrushed.prepend(BitString.BitFragment(byteArrayOf(0x80.toByte()), 1)) // prepend 1 bit
             return bitCrushed
         }
@@ -41,7 +44,9 @@ object Adaptive : CompressionProvider {
 
     override fun decompress(plainBits: BitString): String {
         val selector = plainBits.takeFew(1).toUByte().toInt() shr 7
-        Log.d("AdaptiveComp", "selector $selector")
+
+        Log.d(TAG, "selector $selector")
+
         return when(selector) {
             0 -> ArithmeticCompression.decompress(plainBits)
             1 -> BitCrush.decompress(plainBits)
