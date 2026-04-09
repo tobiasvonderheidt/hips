@@ -17,14 +17,14 @@ object Compression {
         return plainBits
     }
 
-    fun decompress(bits: BitString, compressionMode: CompressionMode): String {
-        val uncompressed = when (compressionMode) {
-            CompressionMode.Adaptive -> Adaptive.decompress(bits)
-            CompressionMode.Arithmetic -> ArithmeticCompression.decompress(bits)
-            CompressionMode.BitCrush -> BitCrush.decompress(bits)
-            CompressionMode.UTF8 -> UTF8.decompress(bits)
+    fun decompress(plainBits: BitString, compressionMode: CompressionMode): String {
+        val secretMessage = when (compressionMode) {
+            CompressionMode.Adaptive -> Adaptive.decompress(plainBits)
+            CompressionMode.Arithmetic -> ArithmeticCompression.decompress(plainBits)
+            CompressionMode.BitCrush -> BitCrush.decompress(plainBits)
+            CompressionMode.UTF8 -> UTF8.decompress(plainBits)
         }
 
-        return uncompressed
+        return secretMessage
     }
 }
