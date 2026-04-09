@@ -11,7 +11,7 @@ import kotlin.math.log2
  */
 object Settings {
     // Define default values
-    private val defaultCompressionMode = CompressionMode.Arithmetic
+    private val defaultCompressionMode = CompressionMode.Adaptive
     private val defaultSystemPrompt = """
         Let's do a role play.
         You and I are friends, texting with each other.
