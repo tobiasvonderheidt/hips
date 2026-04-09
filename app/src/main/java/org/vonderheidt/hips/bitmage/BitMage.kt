@@ -32,12 +32,17 @@ fun ByteArray.untilIndex(i: Int) = sliceArray(0 until i)
 fun String.toUnicodeCodepoints(): List<Int> {
     var i = 0
     val codepoints = mutableListOf<Int>()
+
     while (i < this.length) {
         val codepoint = when (val unit = this[i++].code) {
             in Char.MIN_HIGH_SURROGATE.code..Char.MAX_HIGH_SURROGATE.code -> {
-                if (i !in this.indices) throw CharacterCodingException() // unpaired high surrogate
+                if (i !in this.indices) {
+                    throw CharacterCodingException() // unpaired high surrogate
+                }
+
                 val lowSurrogate = this[i++].code
                 val highSurrogate = unit
+
                 if (lowSurrogate !in Char.MIN_LOW_SURROGATE.code..Char.MAX_LOW_SURROGATE.code) {
                     throw CharacterCodingException() // unpaired high surrogate
                 }
@@ -47,6 +52,7 @@ fun String.toUnicodeCodepoints(): List<Int> {
                 if (code !in 0x010000..0x10FFFF) {
                     throw CharacterCodingException() // non-canonical encoding
                 }
+
                 code
             }
 
@@ -56,7 +62,9 @@ fun String.toUnicodeCodepoints(): List<Int> {
 
             else -> unit
         }
+
         codepoints.add(codepoint)
     }
+
     return codepoints
 }
