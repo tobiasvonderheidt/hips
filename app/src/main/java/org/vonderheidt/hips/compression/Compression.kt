@@ -1,6 +1,6 @@
 package org.vonderheidt.hips.compression
 
-import bitmage.BitString
+import org.vonderheidt.hips.bitmage.BitString
 
 /**
  * Singleton that provides convenience wrappers for text compression

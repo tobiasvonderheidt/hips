@@ -1,6 +1,6 @@
 package org.vonderheidt.hips.crypto
 
-import bitmage.BitString
+import org.vonderheidt.hips.bitmage.BitString
 
 /**
  * Object (i.e. singleton class) that represents encryption and decryption.

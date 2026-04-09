@@ -1,7 +1,7 @@
 package org.vonderheidt.hips.utils
 
 import android.util.Log
-import bitmage.BitString
+import org.vonderheidt.hips.bitmage.BitString
 import org.vonderheidt.hips.compression.Compression
 import org.vonderheidt.hips.compression.CompressionMode
 import org.vonderheidt.hips.crypto.Crypto

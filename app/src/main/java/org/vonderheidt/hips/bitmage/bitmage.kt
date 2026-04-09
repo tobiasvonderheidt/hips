@@ -1,4 +1,4 @@
-package bitmage
+package org.vonderheidt.hips.bitmage
 
 enum class ByteOrder {
     BIG, LITTLE

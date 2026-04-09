@@ -1,7 +1,7 @@
 package org.vonderheidt.hips.compression
 
 import android.util.Log
-import bitmage.BitString
+import org.vonderheidt.hips.bitmage.BitString
 import org.vonderheidt.hips.utils.Arithmetic
 import org.vonderheidt.hips.utils.LlamaCpp
 

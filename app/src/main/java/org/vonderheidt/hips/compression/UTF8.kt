@@ -1,6 +1,6 @@
 package org.vonderheidt.hips.compression
 
-import bitmage.BitString
+import org.vonderheidt.hips.bitmage.BitString
 
 /**
  * Object (i.e. singleton class) that represents the binary conversion of the secret message using UTF-8 encoding.

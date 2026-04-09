@@ -1,6 +1,6 @@
 package org.vonderheidt.hips.utils
 
-import bitmage.BitString
+import org.vonderheidt.hips.bitmage.BitString
 import org.vonderheidt.hips.data.Settings
 
 /**

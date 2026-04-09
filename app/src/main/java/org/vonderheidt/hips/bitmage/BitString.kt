@@ -1,4 +1,4 @@
-package bitmage
+package org.vonderheidt.hips.bitmage
 
 import android.util.Log
 import kotlin.math.ceil
