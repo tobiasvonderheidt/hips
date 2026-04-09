@@ -1,10 +1,34 @@
 package org.vonderheidt.hips.bitmage
 
+/**
+ * Function to represent a byte array as a hex string.
+ *
+ * @return Representation of byte array as hex string.
+ */
 @OptIn(ExperimentalUnsignedTypes::class)
 fun ByteArray.hex() = asUByteArray().joinToString("") { it.toString(16).padStart(2, '0') }
+
+/**
+ * Function to copy all elements in a byte array from a given index.
+ *
+ * @param i Index from which to copy all elements.
+ * @return Byte array containing copy of all elements from index `i`.
+ */
 fun ByteArray.fromIndex(i: Int) = sliceArray(i until size)
+
+/**
+ * Function to copy all elements in a byte array until a given index.
+ *
+ * @param i Index until which to copy all elements.
+ * @return Byte array containing copy of all elements until index `i`.
+ */
 fun ByteArray.untilIndex(i: Int) = sliceArray(0 until i)
 
+/**
+ * Function to represent a string as list of the Unicode code points of its characters.
+ *
+ * @return List of the Unicode code points of the characters in the string.
+ */
 fun String.toUnicodeCodepoints(): List<Int> {
     var i = 0
     val codepoints = mutableListOf<Int>()
