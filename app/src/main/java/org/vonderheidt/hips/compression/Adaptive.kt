@@ -6,7 +6,21 @@ import org.vonderheidt.hips.bitmage.BitString
 private const val TAG = "Adaptive.kt"
 private const val TEST_ARITHMETIC_DECOMPRESSION = false
 
+/**
+ * Object (i.e. singleton class) that represents adaptive compression.
+ */
 object Adaptive : CompressionProvider {
+    /**
+     * Function to compress a secret message from string to binary using adaptive compression.
+     * Tries both arithmetic and BitCrush compression, chooses whichever is more efficient and prepends a corresponding `selector` bit for decompression.
+     *
+     * Prefers BitCrush in two cases:
+     * - Arithmetic compresses to same number of bits (for faster decompression)
+     * - Arithmetic would fail during decompression (due to inconsistent token predictions by the LLM)
+     *
+     * @param secretMessage The secret message to compress.
+     * @return The binary representation of the secret message, prepended with a `selector` bit for the compression mode that was used.
+     */
     override fun compress(secretMessage: String): BitString {
         val bitCrushed = BitCrush.compress(secretMessage)
         val arithmetic = ArithmeticCompression.compress(secretMessage)
@@ -44,6 +58,13 @@ object Adaptive : CompressionProvider {
         }
     }
 
+    /**
+     * Function to decompress a secret message from binary to string using adaptive decompression.
+     * Identifies the decompression mode to use based on the `selector` bit prepended to the secret message.
+     *
+     * @param plainBits The binary representation of the secret message, prepended with a `selector` bit for the compression mode that was used.
+     * @return The decompressed secret message.
+     */
     override fun decompress(plainBits: BitString): String {
         val selector = plainBits.takeFew(1).toUByte().toInt() shr 7
 
