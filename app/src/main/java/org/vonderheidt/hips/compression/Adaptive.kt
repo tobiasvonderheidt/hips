@@ -3,9 +3,9 @@ package org.vonderheidt.hips.compression
 import android.util.Log
 import org.vonderheidt.hips.bitmage.BitString
 
-object Adaptive : CompressionProvider {
-    private const val TEST_ARITHMETIC_DECOMPRESSION = false
+private const val TEST_ARITHMETIC_DECOMPRESSION = false
 
+object Adaptive : CompressionProvider {
     override fun compress(secretMessage: String): BitString {
         val bitCrushed = BitCrush.compress(secretMessage)
         val arithmetic = ArithmeticCompression.compress(secretMessage)
