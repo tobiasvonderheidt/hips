@@ -15,10 +15,10 @@ object UTF8 : CompressionProvider {
      * @return The binary representation of the secret message.
      */
     override fun compress(secretMessage: String): BitString {
-        val plainBits = (secretMessage).toByteArray(charset = Charsets.UTF_8)
-        return BitString(plainBits, plainBits.size * 8)
-    }
+        val plainBits = secretMessage.toByteArray(Charsets.UTF_8).let { BitString(it, it.size * 8) }
 
+        return plainBits
+    }
 
     /**
      * Function to convert the binary representation of a string back to the string using UTF-8 decoding.
@@ -29,7 +29,8 @@ object UTF8 : CompressionProvider {
     override fun decompress(plainBits: BitString): String {
         check(plainBits.bitLength() % 8 == 0) { "UTF-8 expects byte-aligned input, got ${plainBits.bitLength()} bits"}
 
-        val bytes = plainBits.toBitFragment().bytes
-        return bytes.decodeToString()
+        val secretMessage = plainBits.toBitFragment().bytes.decodeToString()
+
+        return secretMessage
     }
 }
