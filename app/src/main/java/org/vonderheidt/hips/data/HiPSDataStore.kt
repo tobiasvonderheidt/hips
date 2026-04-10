@@ -11,7 +11,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import org.vonderheidt.hips.compression.Compression
 import org.vonderheidt.hips.compression.CompressionMode
 import org.vonderheidt.hips.utils.SteganographyMode
 
