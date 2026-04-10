@@ -284,7 +284,7 @@ object Steganography {
 
         Log.d(TAG, "payload $payload, stop signal + tail: $preparedPlainBits")
 
-        // stop signal is trickier, ignore for now (:
+        // TODO Stop signal is ignored for now
 
         return payload
     }
