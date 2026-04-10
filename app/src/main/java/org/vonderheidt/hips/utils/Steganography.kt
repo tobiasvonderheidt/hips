@@ -256,20 +256,20 @@ object Steganography {
      * @param preparedBits A prepared secret message.
      * @return The secret message.
      */
-    private fun unprepare(preparedBits: BitString): BitString {
+    private fun unprepare(preparedPlainBits: BitString): BitString {
         // removing start marker is easy since it is always at the start
-        val firstBits = preparedBits.take(startMarker.bitLength).toBitFragment()
+        val firstBits = preparedPlainBits.take(startMarker.bitLength).toBitFragment()
         check(firstBits == startMarker) { "start marker should be $startMarker, got $firstBits"}
 
-        val matchIndex = preparedBits.firstSubsequenceMatchFromEnd(BitString(endMarker))
+        val matchIndex = preparedPlainBits.firstSubsequenceMatchFromEnd(BitString(endMarker))
 
         if(matchIndex == -1)
             throw Exception("no end marker found")
 
         Log.d("Stego", "found endMarker at bit-offset $matchIndex")
 
-        val payload = preparedBits.take(matchIndex)
-        Log.d("Stego", "payload $payload, end marker + tail: $preparedBits")
+        val payload = preparedPlainBits.take(matchIndex)
+        Log.d("Stego", "payload $payload, end marker + tail: $preparedPlainBits")
 
         // stop marker is trickier, ignore for now (:
 
