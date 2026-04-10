@@ -1,7 +1,10 @@
 package org.vonderheidt.hips.compression
 
+import android.util.Log
 import org.vonderheidt.hips.bitmage.BitString
 import org.vonderheidt.hips.bitmage.toUnicodeCodepoints
+
+private const val TAG = "BitCrush.kt"
 
 /**
  * Object (i.e. singleton class) that represents BitCrush compression.
@@ -156,7 +159,7 @@ object BitCrush : CompressionProvider {
                         plainBits.append(BitString.BitFragment(byteArrayOf(codepoint), 8))
                     }
                     else -> {
-                        println("dropping unsupported character: $it")
+                        Log.w(TAG, "Dropping unsupported character: $it")
                     }
                 }
             }
@@ -219,7 +222,7 @@ object BitCrush : CompressionProvider {
                         secretMessage += codepointToString(unicodePoint)
                     }
                     else -> {
-                        println("unknown second stage payload: $secondStage")
+                        Log.w(TAG, "Unknown second stage payload: $secondStage")
                     }
                 }
             }
