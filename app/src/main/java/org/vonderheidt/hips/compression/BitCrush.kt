@@ -8,7 +8,7 @@ import org.vonderheidt.hips.bitmage.toUnicodeCodepoints
  */
 object BitCrush : CompressionProvider {
 
-    private val lookup = mapOf(
+    private val firstStage = mapOf(
         'a'.code to 1,
         'b'.code to 2,
         'c'.code to 3,
@@ -42,7 +42,7 @@ object BitCrush : CompressionProvider {
         '?'.code to 31,
     )
 
-    private val secondStageLookup = mapOf(
+    private val secondStage = mapOf(
         '!'.code to 1,
         '"'.code to 2,
         '&'.code to 3,
@@ -76,8 +76,8 @@ object BitCrush : CompressionProvider {
         '~'.code to 31
     )
 
-    private val inverseLookup = lookup.toList().associate { Pair(it.second, it.first) }
-    private val inverseSecondLookup = secondStageLookup.toList().associate { Pair(it.second, it.first) }
+    private val inverseFirstStage = firstStage.toList().associate { Pair(it.second, it.first) }
+    private val inverseSecondStage = secondStage.toList().associate { Pair(it.second, it.first) }
     
     /**
      * Function to compress a secret message from string to binary using BitCrush compression.
@@ -89,15 +89,15 @@ object BitCrush : CompressionProvider {
         val plainBits = BitString(byteArrayOf(), 0)
 
         secretMessage.lowercase().toUnicodeCodepoints().forEach {
-            val code = lookup[it]
+            val code = firstStage[it]
             if(code != null)
                 plainBits.append(BitString.BitFragment(byteArrayOf((code shl 3).toByte()), 5))
             else {
                 when {
                     // common ascii character present in second stage
-                    secondStageLookup.containsKey(it) -> {
+                    secondStage.containsKey(it) -> {
                         plainBits.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
-                        val secondStageCode = secondStageLookup[it]
+                        val secondStageCode = secondStage[it]
                         plainBits.append(BitString.BitFragment(byteArrayOf((secondStageCode!! shl 3).toByte()), 5))
                     }
                     // latin script char not present in first or second stage
@@ -162,13 +162,13 @@ object BitCrush : CompressionProvider {
         var secretMessage = ""
         while(plainBits.bitLength() > 0) {
             val codepoint = plainBits.takeFew(5).toUByte().toInt() shr 3
-            if(inverseLookup.containsKey(codepoint)) {
-                secretMessage += inverseLookup[codepoint]!!.toChar()
+            if(inverseFirstStage.containsKey(codepoint)) {
+                secretMessage += inverseFirstStage[codepoint]!!.toChar()
             }
             else {
                 val secondStage = plainBits.takeFew(5).toUByte().toInt() shr 3
                 when {
-                    inverseSecondLookup.containsKey(secondStage) -> secretMessage += inverseSecondLookup[secondStage]!!.toChar()
+                    inverseSecondStage.containsKey(secondStage) -> secretMessage += inverseSecondStage[secondStage]!!.toChar()
                     secondStage == 22 -> {
                         val unicodeBits = plainBits.takeFew(8).toUByte().toInt()
                         val unicodePoint = unicodeBits + 0x1F900
