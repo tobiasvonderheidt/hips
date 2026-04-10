@@ -231,12 +231,12 @@ object Steganography {
         Log.d(TAG, "plaintext bits: $preparedPlainBits")
 
         // Invert step 1
-        val compressedPlainBits = unprepare(preparedPlainBits)
+        val plainBits = unprepare(preparedPlainBits)
 
-        Log.d(TAG, "stripped bits: $compressedPlainBits")
+        Log.d(TAG, "stripped bits: $plainBits")
 
         // Invert step 0
-        val secretMessage = Compression.decompress(compressedPlainBits, compressionMode)
+        val secretMessage = Compression.decompress(plainBits, compressionMode)
 
         Log.d(TAG, "decompressed message using $compressionMode: $secretMessage")
 
