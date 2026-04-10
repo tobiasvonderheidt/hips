@@ -241,10 +241,10 @@ object Steganography {
      * @param secretMessage A secret message.
      * @return The prepared secret message.
      */
-    private fun prepare(bits: BitString): BitString {
-        bits.prepend(startMarker)
-        bits.append(endMarker)
-        return bits
+    private fun prepare(plainBits: BitString): BitString {
+        plainBits.prepend(startMarker)
+        plainBits.append(endMarker)
+        return plainBits
     }
 
 
