@@ -280,12 +280,12 @@ object Steganography {
 
         Log.d(TAG, "found stop signal at bit-offset $matchIndex")
 
-        val payload = preparedPlainBits.take(matchIndex)
+        val plainBits = preparedPlainBits.take(matchIndex)
 
-        Log.d(TAG, "payload $payload, stop signal + tail: $preparedPlainBits")
+        Log.d(TAG, "payload $plainBits, stop signal + tail: $preparedPlainBits")
 
         // TODO Stop signal is ignored for now
 
-        return payload
+        return plainBits
     }
 }
