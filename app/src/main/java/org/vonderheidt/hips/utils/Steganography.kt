@@ -14,7 +14,6 @@ private const val TAG = "Steganography.kt"
  * Object (i.e. singleton class) that represents steganography encoding and decoding.
  */
 object Steganography {
-
     private val startSignal = BitString.BitFragment(byteArrayOf(0), 5)
     private val stopSignal = BitString.BitFragment(byteArrayOf(0x94.toByte()), 7)
 
@@ -33,29 +32,32 @@ object Steganography {
         compressionMode: CompressionMode = Settings.compressionMode,
         steganographyMode: SteganographyMode = Settings.steganographyMode
     ): String {
-
         Log.d(TAG, "encoding secret message: $secretMessage")
 
         // Step 0: Convert secret message to a (compressed) binary representation
         val plainBits: BitString
+
         val compressTime = measureTime {
             plainBits = Compression.compress(secretMessage, compressionMode)
         }
-        Log.d(TAG, "compressed using $compressionMode to: ${plainBits.bitLength()}b, took $compressTime")
 
+        Log.d(TAG, "compressed using $compressionMode to: ${plainBits.bitLength()}b, took $compressTime")
 
         // Step 1: Prepare secret message by prepending start and appending stop signal
         val preparedBits = prepare(plainBits)
+
         Log.d(TAG, "padded with start, stop signals to: ${preparedBits.bitLength()}b")
 
         // Step 2: Encrypt binary representation of secret message
         val cipherBits = Crypto.encrypt(preparedBits)
+
         Log.d(TAG, "encrypted, payload for stego: $cipherBits")
 
         // Step 3: Encode encrypted binary representation of secret message into cover text
         LlamaCpp.resetInstance()
 
         val coverText: String
+
         val encodeTime = measureTime {
             coverText = when (steganographyMode) {
                 SteganographyMode.Arithmetic -> { Arithmetic.encode(context, cipherBits, isResumed = false) }
@@ -142,6 +144,7 @@ object Steganography {
 
         // Wrap this in try-catch because decoding with wrong context is likely to throw exceptions
         val partialCipherBits: BitString
+
         try {
             partialCipherBits = when (steganographyMode) {
                 SteganographyMode.Arithmetic -> { Arithmetic.decode(context, coverText, numberOfCipherBits) }
@@ -150,6 +153,7 @@ object Steganography {
         }
         catch (exception: Exception) {
             isFirstMessageOfSplit = false
+
             return isFirstMessageOfSplit
         }
 
@@ -160,6 +164,7 @@ object Steganography {
 
         // Check for start signal
         val firstBits = partialPlainBits.take(numberOfCipherBits)
+
         isFirstMessageOfSplit = startSignal == firstBits.toBitFragment()
 
         return isFirstMessageOfSplit
@@ -222,14 +227,17 @@ object Steganography {
 
         // Invert step 2
         val preparedPlainBits = Crypto.decrypt(cipherBits)
+
         Log.d(TAG, "plaintext bits: $preparedPlainBits")
 
         // Invert step 1
         val compressedPlainBits = unprepare(preparedPlainBits)
+
         Log.d(TAG, "stripped bits: $compressedPlainBits")
 
         // Invert step 0
         val secretMessage = Compression.decompress(compressedPlainBits, compressionMode)
+
         Log.d(TAG, "decompressed message using $compressionMode: $secretMessage")
 
         return secretMessage
@@ -246,9 +254,9 @@ object Steganography {
     private fun prepare(plainBits: BitString): BitString {
         plainBits.prepend(startSignal)
         plainBits.append(stopSignal)
+
         return plainBits
     }
-
 
     /**
      * Function to unprepare plain bits after steganography decoding.
@@ -261,16 +269,19 @@ object Steganography {
     private fun unprepare(preparedPlainBits: BitString): BitString {
         // removing start signal is easy since it is always at the start
         val firstBits = preparedPlainBits.take(startSignal.bitLength).toBitFragment()
+
         check(firstBits == startSignal) { "start signal should be $startSignal, got $firstBits"}
 
         val matchIndex = preparedPlainBits.firstSubsequenceMatchFromEnd(BitString(stopSignal))
 
-        if(matchIndex == -1)
+        if (matchIndex == -1) {
             throw Exception("no stop signal found")
+        }
 
         Log.d(TAG, "found stop signal at bit-offset $matchIndex")
 
         val payload = preparedPlainBits.take(matchIndex)
+
         Log.d(TAG, "payload $payload, stop signal + tail: $preparedPlainBits")
 
         // stop signal is trickier, ignore for now (:
