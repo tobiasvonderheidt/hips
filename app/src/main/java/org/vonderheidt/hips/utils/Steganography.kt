@@ -234,12 +234,12 @@ object Steganography {
     }
 
     /**
-     * Function to prepare a secret message for binary encoding.
+     * Function to prepare the plain bits for steganography encoding.
      *
-     * Appends the ASCII NUL character to the original secret message. Needed to remove artifacts from greedy sampling after binary decoding.
+     * Appends both a start and a stop signal. Needed to decode split cover texts and remove artefacts from greedy sampling, respectively.
      *
-     * @param secretMessage A secret message.
-     * @return The prepared secret message.
+     * @param plainBits The original plain bits.
+     * @return The prepared plain bits.
      */
     private fun prepare(plainBits: BitString): BitString {
         plainBits.prepend(startMarker)
