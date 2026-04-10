@@ -21,14 +21,14 @@ object Steganography {
      *
      * @param context The context to encode the secret message with.
      * @param secretMessage The secret message to be encoded.
-     * @param compressionMode Conversion mode, determined by Settings object.
+     * @param compressionMode Compression mode, determined by Settings object.
      * @param steganographyMode Steganography mode, determined by Settings object.
      * @return A cover text containing the secret message.
      */
     fun encode(
         context: String,
         secretMessage: String,
-        compressionMode: CompressionMode = Settings.conversionMode,
+        compressionMode: CompressionMode = Settings.compressionMode,
         steganographyMode: SteganographyMode = Settings.steganographyMode
     ): String {
 
@@ -188,7 +188,7 @@ object Steganography {
      *
      * @param context The context to decode the cover text with.
      * @param coverText The cover text containing a secret message.
-     * @param compressionMode Conversion mode, determined by Settings object.
+     * @param compressionMode Compression mode, determined by Settings object.
      * @param steganographyMode Steganography mode, determined by Settings object.
      * @param isResumed Boolean that is true if this call of the `decode` function resumes where the last call terminated, false otherwise.
      * @return The secret message.
@@ -196,7 +196,7 @@ object Steganography {
     fun decode(
         context: String,
         coverText: String,
-        compressionMode: CompressionMode = Settings.conversionMode,
+        compressionMode: CompressionMode = Settings.compressionMode,
         steganographyMode: SteganographyMode = Settings.steganographyMode,
         isResumed: Boolean = false
     ): String {

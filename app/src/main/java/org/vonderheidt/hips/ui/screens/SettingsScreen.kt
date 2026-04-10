@@ -84,7 +84,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
     // State variables
     var isDownloaded by rememberSaveable { mutableStateOf(LLM.isDownloaded()) }
     var isInMemory by rememberSaveable { mutableStateOf(LlamaCpp.isInMemory()) }
-    var selectedConversionMode by rememberSaveable { mutableStateOf(Settings.conversionMode) }
+    var selectedCompressionMode by rememberSaveable { mutableStateOf(Settings.compressionMode) }
     var systemPrompt by rememberSaveable { mutableStateOf(Settings.systemPrompt) }
     var selectedNumberOfMessages by rememberSaveable { mutableIntStateOf(Settings.numberOfMessages) }
     var selectedSteganographyMode by rememberSaveable { mutableStateOf(Settings.steganographyMode) }
@@ -235,42 +235,42 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
             Spacer(modifier = modifier.height(16.dp))
         }
 
-        // Conversion settings
+        // Compression settings
         Row(
             modifier = modifier.fillMaxWidth(0.9f)
         ) {
             Icon(
                 imageVector = Icons.Outlined.Key,
-                contentDescription = "Conversion settings"
+                contentDescription = "Compression settings"
             )
 
             Spacer(modifier = modifier.width(16.dp))
 
             Column {
                 Text(
-                    text = "Conversion",
+                    text = "Compression",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
 
-                Text(text = "Select how to convert the secret message from string to binary.")
+                Text(text = "Select how to compress the secret message from string to binary.")
 
                 Spacer(modifier = modifier.height(16.dp))
 
-                // Select conversion mode
-                CompressionMode.entries.toTypedArray().forEach { conversionMode ->
+                // Select compression mode
+                CompressionMode.entries.toTypedArray().forEach { compressionMode ->
                     Row(
                         modifier = modifier
                             .fillMaxWidth()
                             .selectable(
                                 // Make the whole row selectable instead of just the button for better accessibility
-                                selected = conversionMode == selectedConversionMode,
+                                selected = compressionMode == selectedCompressionMode,
                                 onClick = {
                                     // Update state variable
-                                    selectedConversionMode = conversionMode
+                                    selectedCompressionMode = compressionMode
 
                                     // Update DataStore
-                                    Settings.conversionMode = conversionMode
+                                    Settings.compressionMode = compressionMode
                                     coroutineScope.launch { HiPSDataStore.writeSettings() }
                                 }
                             ),
@@ -278,18 +278,18 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
-                            selected = conversionMode == selectedConversionMode,
+                            selected = compressionMode == selectedCompressionMode,
                             onClick = {
                                 // Same as row onClick
-                                selectedConversionMode = conversionMode
+                                selectedCompressionMode = compressionMode
 
-                                Settings.conversionMode = conversionMode
+                                Settings.compressionMode = compressionMode
                                 coroutineScope.launch { HiPSDataStore.writeSettings() }
                             }
                         )
 
                         // Use .toString() instead of .name to get display name
-                        Text(text = conversionMode.toString())
+                        Text(text = compressionMode.toString())
                     }
                 }
             }
@@ -697,7 +697,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier) {
                             coroutineScope.launch { HiPSDataStore.writeSettings() }
 
                             // Update state variables
-                            selectedConversionMode = Settings.conversionMode
+                            selectedCompressionMode = Settings.compressionMode
                             systemPrompt = Settings.systemPrompt
                             selectedNumberOfMessages = Settings.numberOfMessages
                             selectedSteganographyMode = Settings.steganographyMode

@@ -23,7 +23,7 @@ object HiPSDataStore {
     private val Context.dataStore by preferencesDataStore(name = "settings")
 
     // Define the data type of the values for each setting by declaring the corresponding keys
-    private val conversionMode = stringPreferencesKey("conversionMode")
+    private val compressionMode = stringPreferencesKey("compressionMode")
     private val systemPrompt = stringPreferencesKey("systemPrompt")
     private val numberOfMessages = intPreferencesKey("numberOfMessages")
     private val steganographyMode = stringPreferencesKey("steganographyMode")
@@ -66,7 +66,7 @@ object HiPSDataStore {
     suspend fun readSettings() {
         // Instance can be asserted not null because startInstance initializes it in MainActivity (i.e. on app startup)
         instance!!.data.map { settings ->
-            val conversionMode = settings[conversionMode]
+            val compressionMode = settings[compressionMode]
             val systemPrompt = settings[systemPrompt]
             val numberOfMessages = settings[numberOfMessages]
             val steganographyMode = settings[steganographyMode]
@@ -77,7 +77,7 @@ object HiPSDataStore {
             val splitCoverTexts = settings[splitCoverTexts]
 
             // See if any settings are currently stored by checking for null values
-            val isInitialized = conversionMode != null
+            val isInitialized = compressionMode != null
                     && systemPrompt != null
                     && numberOfMessages != null
                     && steganographyMode != null
@@ -90,7 +90,7 @@ object HiPSDataStore {
             // If any settings are stored, return them via .first()
             if (isInitialized) {
                 // Can be asserted not null because of check with isInitialized
-                Settings.conversionMode = CompressionMode.valueOf(conversionMode)
+                Settings.compressionMode = CompressionMode.valueOf(compressionMode)
                 Settings.systemPrompt = systemPrompt
                 Settings.numberOfMessages = numberOfMessages
                 Settings.steganographyMode = SteganographyMode.valueOf(steganographyMode)
@@ -113,7 +113,7 @@ object HiPSDataStore {
     suspend fun writeSettings() {
         // Instance can be asserted not null because startInstance initializes it in MainActivity (i.e. on app startup)
         instance!!.edit { settings ->
-            settings[conversionMode] = Settings.conversionMode.name
+            settings[compressionMode] = Settings.compressionMode.name
             settings[systemPrompt] = Settings.systemPrompt
             settings[numberOfMessages] = Settings.numberOfMessages
             settings[steganographyMode] = Settings.steganographyMode.name

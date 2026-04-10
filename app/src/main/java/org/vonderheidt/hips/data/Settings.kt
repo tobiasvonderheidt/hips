@@ -30,7 +30,7 @@ object Settings {
     private val defaultSplitCoverTexts = true
 
     // Initialize current values with defaults
-    var conversionMode = defaultCompressionMode
+    var compressionMode = defaultCompressionMode
     var systemPrompt = defaultSystemPrompt
     var numberOfMessages = defaultNumberOfMessages
     var steganographyMode = defaultSteganographyMode
@@ -48,7 +48,7 @@ object Settings {
      */
     fun reset(general: Boolean, llm: Boolean) {
         if (general) {
-            conversionMode = defaultCompressionMode
+            compressionMode = defaultCompressionMode
             systemPrompt = defaultSystemPrompt
             numberOfMessages = defaultNumberOfMessages
             steganographyMode = defaultSteganographyMode
