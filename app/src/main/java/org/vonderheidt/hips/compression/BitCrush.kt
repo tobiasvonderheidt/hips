@@ -82,62 +82,62 @@ object BitCrush : CompressionProvider {
     private val inverseSecondLookup = secondStageLookup.toList().associate { Pair(it.second, it.first) }
     
     override fun compress(secretMessage: String): BitString {
-        val encoded = BitString(byteArrayOf(), 0)
+        val plainBits = BitString(byteArrayOf(), 0)
         val lower = secretMessage.lowercase().toUnicodeCodepoints()
 
         lower.forEach {
             val code = lookup[it]
             if(code != null)
-                encoded.append(BitString.BitFragment(byteArrayOf((code shl 3).toByte()), 5))
+                plainBits.append(BitString.BitFragment(byteArrayOf((code shl 3).toByte()), 5))
             else {
                 when {
                     // common ascii character present in second stage
                     secondStageLookup.containsKey(it) -> {
-                        encoded.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
+                        plainBits.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
                         val secondStageCode = secondStageLookup[it]
-                        encoded.append(BitString.BitFragment(byteArrayOf((secondStageCode!! shl 3).toByte()), 5))
+                        plainBits.append(BitString.BitFragment(byteArrayOf((secondStageCode!! shl 3).toByte()), 5))
                     }
                     // latin script char not present in first or second stage
                     it in 0x000..0x02af -> {
-                        encoded.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
+                        plainBits.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
                         // top two bits get encoded into second stage code, remaining 8 follow
                         val bmpCode = 0xc0 or ((it shr 8) shl 3)
-                        encoded.append(BitString.BitFragment(byteArrayOf(bmpCode.toByte()), 5))
+                        plainBits.append(BitString.BitFragment(byteArrayOf(bmpCode.toByte()), 5))
                         val remainder = it and 0xff
-                        encoded.append(BitString.BitFragment(byteArrayOf(remainder.toByte()), 8))
+                        plainBits.append(BitString.BitFragment(byteArrayOf(remainder.toByte()), 8))
                     }
                     // support for Emoticons and Miscellaneous Symbols and Pictographs, main emoji blocks
                     it in 0x1F300..0x1F64F -> {
-                        encoded.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
+                        plainBits.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
                         // top two bits get encoded into second stage code, remaining 8 follow
                         val uniRefCode = (27 + ((it - 0x1F300) shr 8)) shl 3
                         val codepoint = (it - 0x1F300).toByte()
-                        encoded.append(BitString.BitFragment(byteArrayOf(uniRefCode.toByte()), 5))
-                        encoded.append(BitString.BitFragment(byteArrayOf(codepoint), 8))
+                        plainBits.append(BitString.BitFragment(byteArrayOf(uniRefCode.toByte()), 5))
+                        plainBits.append(BitString.BitFragment(byteArrayOf(codepoint), 8))
                     }
                     // support for Supplemental Symbols and Pictographs
                     it in 0x1F900..0x1F9FF -> {
-                        encoded.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
+                        plainBits.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
                         val uniRefCode = 22 shl 3
                         val codepoint = (it - 0x1F900).toByte() // range can be encoded in 8b
-                        encoded.append(BitString.BitFragment(byteArrayOf(uniRefCode.toByte()), 5))
-                        encoded.append(BitString.BitFragment(byteArrayOf(codepoint), 8))
+                        plainBits.append(BitString.BitFragment(byteArrayOf(uniRefCode.toByte()), 5))
+                        plainBits.append(BitString.BitFragment(byteArrayOf(codepoint), 8))
                     }
                     // partial support for Dingbats block, covers all emoji in it
                     it in 0x2700..0x276F -> {
-                        encoded.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
+                        plainBits.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
                         val uniRefCode = 23 shl 3
                         val codepoint = (it - 0x2700).toByte() // range can be encoded in 8b (will be 0x00-0x6F)
-                        encoded.append(BitString.BitFragment(byteArrayOf(uniRefCode.toByte()), 5))
-                        encoded.append(BitString.BitFragment(byteArrayOf(codepoint), 8))
+                        plainBits.append(BitString.BitFragment(byteArrayOf(uniRefCode.toByte()), 5))
+                        plainBits.append(BitString.BitFragment(byteArrayOf(codepoint), 8))
                     }
                     // support for Symbols and Pictographs Extended-A block, contains recent emoji
                     it in 0x1FA70..0x1FAFF -> {
-                        encoded.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
+                        plainBits.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
                         val uniRefCode = 23 shl 3
                         val codepoint = (it - 0x1FA00).toByte() // range can be encoded in 8b (will be 0x70-0xFF)
-                        encoded.append(BitString.BitFragment(byteArrayOf(uniRefCode.toByte()), 5))
-                        encoded.append(BitString.BitFragment(byteArrayOf(codepoint), 8))
+                        plainBits.append(BitString.BitFragment(byteArrayOf(uniRefCode.toByte()), 5))
+                        plainBits.append(BitString.BitFragment(byteArrayOf(codepoint), 8))
                     }
                     else -> {
                         println("dropping unsupported character: $it")
@@ -146,7 +146,7 @@ object BitCrush : CompressionProvider {
             }
         }
 
-        return encoded
+        return plainBits
     }
 
     override fun decompress(plainBits: BitString): String {
