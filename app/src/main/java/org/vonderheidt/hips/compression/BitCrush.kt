@@ -150,48 +150,48 @@ object BitCrush : CompressionProvider {
     }
 
     override fun decompress(plainBits: BitString): String {
-        var msg = ""
+        var secretMessage = ""
         while(plainBits.bitLength() > 0) {
             val codepoint = plainBits.takeFew(5).toUByte().toInt() shr 3
             if(inverseLookup.containsKey(codepoint)) {
-                msg += inverseLookup[codepoint]!!.toChar()
+                secretMessage += inverseLookup[codepoint]!!.toChar()
             }
             else {
                 val secondStage = plainBits.takeFew(5).toUByte().toInt() shr 3
                 when {
-                    inverseSecondLookup.containsKey(secondStage) -> msg += inverseSecondLookup[secondStage]!!.toChar()
+                    inverseSecondLookup.containsKey(secondStage) -> secretMessage += inverseSecondLookup[secondStage]!!.toChar()
                     secondStage == 22 -> {
                         val unicodeBits = plainBits.takeFew(8).toUByte().toInt()
                         val unicodePoint = unicodeBits + 0x1F900
-                        msg += codepointToString(unicodePoint)
+                        secretMessage += codepointToString(unicodePoint)
                     }
                     secondStage == 23 -> {
                         val unicodeBits = plainBits.takeFew(8).toUByte().toInt()
                         val unicodePoint = if(unicodeBits < 0x70) unicodeBits + 0x2700 else unicodeBits + 0x1FA00
-                        msg += codepointToString(unicodePoint)
+                        secretMessage += codepointToString(unicodePoint)
 
                         // special case for read heart with missing variant selector (we choose to support emoji hearts and not black text hearts)
                         if(unicodePoint == 0x2764)
-                            msg += Char(0xFE0F)
+                            secretMessage += Char(0xFE0F)
                     }
                     secondStage in 24..26 -> {
                         val topBits = (secondStage - 24) shl 8
                         val unicodeBits = plainBits.takeFew(8).toUByte().toInt()
                         val unicodePoint = 0x0000 + (topBits or unicodeBits)
-                        msg += codepointToString(unicodePoint)
+                        secretMessage += codepointToString(unicodePoint)
                     }
                     secondStage in 27..30 -> {
                         val topBits = (secondStage - 27) shl 8
                         val unicodeBits = plainBits.takeFew(8).toUByte().toInt()
                         val unicodePoint = 0x1F300 + (topBits or unicodeBits)
-                        msg += codepointToString(unicodePoint)
+                        secretMessage += codepointToString(unicodePoint)
                     }
                     else -> println("unknown second stage payload: $secondStage")
                 }
             }
         }
 
-        return msg
+        return secretMessage
     }
 
     private fun codepointToString(codepoint: Int): String {
