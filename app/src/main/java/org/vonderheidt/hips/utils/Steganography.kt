@@ -13,8 +13,8 @@ import kotlin.time.measureTime
  */
 object Steganography {
 
-    private val startMarker = BitString.BitFragment(byteArrayOf(0), 5)
-    private val endMarker = BitString.BitFragment(byteArrayOf(0x94.toByte()), 7)
+    private val startSignal = BitString.BitFragment(byteArrayOf(0), 5)
+    private val stopSignal = BitString.BitFragment(byteArrayOf(0x94.toByte()), 7)
 
     /**
      * Function to encode secret message into cover text using given context.
@@ -42,9 +42,9 @@ object Steganography {
         Log.d("Stego", "compressed using $compressionMode to: ${plainBits.bitLength()}b, took $compressTime")
 
 
-        // Step 1: Prepare secret message by appending termination and message start markers
+        // Step 1: Prepare secret message by prepending start and appending stop signal
         val preparedBits = prepare(plainBits)
-        Log.d("Stego", "padded with start, end markers to: ${preparedBits.bitLength()}b")
+        Log.d("Stego", "padded with start, stop signals to: ${preparedBits.bitLength()}b")
 
         // Step 2: Encrypt binary representation of secret message
         val cipherBits = Crypto.encrypt(preparedBits)
@@ -130,7 +130,7 @@ object Steganography {
         coverText: String,
         steganographyMode: SteganographyMode = Settings.steganographyMode
     ): Boolean {
-        val numberOfCipherBits = startMarker.bitLength
+        val numberOfCipherBits = startSignal.bitLength
         var isFirstMessageOfSplit: Boolean
 
         // Invert step 3
@@ -151,14 +151,14 @@ object Steganography {
             return isFirstMessageOfSplit
         }
 
-        Log.d("Stego", "got partial cipher bits: $partialCipherBits, expecting $startMarker")
+        Log.d("Stego", "got partial cipher bits: $partialCipherBits, expecting $startSignal")
 
         // Invert step 2
         val partialPlainBits = Crypto.decrypt(partialCipherBits)
 
-        // Check for start marker
+        // Check for start signal
         val firstBits = partialPlainBits.take(numberOfCipherBits)
-        isFirstMessageOfSplit = startMarker == firstBits.toBitFragment()
+        isFirstMessageOfSplit = startSignal == firstBits.toBitFragment()
 
         return isFirstMessageOfSplit
     }
@@ -242,8 +242,8 @@ object Steganography {
      * @return The prepared plain bits.
      */
     private fun prepare(plainBits: BitString): BitString {
-        plainBits.prepend(startMarker)
-        plainBits.append(endMarker)
+        plainBits.prepend(startSignal)
+        plainBits.append(stopSignal)
         return plainBits
     }
 
@@ -257,21 +257,21 @@ object Steganography {
      * @return The original plain bits.
      */
     private fun unprepare(preparedPlainBits: BitString): BitString {
-        // removing start marker is easy since it is always at the start
-        val firstBits = preparedPlainBits.take(startMarker.bitLength).toBitFragment()
-        check(firstBits == startMarker) { "start marker should be $startMarker, got $firstBits"}
+        // removing start signal is easy since it is always at the start
+        val firstBits = preparedPlainBits.take(startSignal.bitLength).toBitFragment()
+        check(firstBits == startSignal) { "start signal should be $startSignal, got $firstBits"}
 
-        val matchIndex = preparedPlainBits.firstSubsequenceMatchFromEnd(BitString(endMarker))
+        val matchIndex = preparedPlainBits.firstSubsequenceMatchFromEnd(BitString(stopSignal))
 
         if(matchIndex == -1)
-            throw Exception("no end marker found")
+            throw Exception("no stop signal found")
 
-        Log.d("Stego", "found endMarker at bit-offset $matchIndex")
+        Log.d("Stego", "found stop signal at bit-offset $matchIndex")
 
         val payload = preparedPlainBits.take(matchIndex)
-        Log.d("Stego", "payload $payload, end marker + tail: $preparedPlainBits")
+        Log.d("Stego", "payload $payload, stop signal + tail: $preparedPlainBits")
 
-        // stop marker is trickier, ignore for now (:
+        // stop signal is trickier, ignore for now (:
 
         return payload
     }
