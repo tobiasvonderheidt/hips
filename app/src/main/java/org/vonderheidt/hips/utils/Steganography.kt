@@ -58,7 +58,6 @@ object Steganography {
             coverText = when (steganographyMode) {
                 SteganographyMode.Arithmetic -> { Arithmetic.encode(context, cipherBits, isResumed = false) }
                 SteganographyMode.Huffman -> { Huffman.encode(context, cipherBits) }
-                else -> throw Exception("unsupported stego mode: $steganographyMode")
             }
         }
 
@@ -145,7 +144,6 @@ object Steganography {
             partialCipherBits = when (steganographyMode) {
                 SteganographyMode.Arithmetic -> { Arithmetic.decode(context, coverText, numberOfCipherBits) }
                 SteganographyMode.Huffman -> { Huffman.decode(context, coverText, numberOfCipherBits) }
-                else -> throw Exception("unsupported stego mode: $steganographyMode")
             }
         }
         catch (exception: Exception) {
