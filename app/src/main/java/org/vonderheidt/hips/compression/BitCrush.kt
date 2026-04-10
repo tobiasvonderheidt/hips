@@ -83,9 +83,8 @@ object BitCrush : CompressionProvider {
     
     override fun compress(secretMessage: String): BitString {
         val plainBits = BitString(byteArrayOf(), 0)
-        val lower = secretMessage.lowercase().toUnicodeCodepoints()
 
-        lower.forEach {
+        secretMessage.lowercase().toUnicodeCodepoints().forEach {
             val code = lookup[it]
             if(code != null)
                 plainBits.append(BitString.BitFragment(byteArrayOf((code shl 3).toByte()), 5))
