@@ -8,6 +8,8 @@ import org.vonderheidt.hips.crypto.Crypto
 import org.vonderheidt.hips.data.Settings
 import kotlin.time.measureTime
 
+private const val TAG = "Steganography.kt"
+
 /**
  * Object (i.e. singleton class) that represents steganography encoding and decoding.
  */
@@ -32,23 +34,23 @@ object Steganography {
         steganographyMode: SteganographyMode = Settings.steganographyMode
     ): String {
 
-        Log.d("Stego", "encoding secret message: $secretMessage")
+        Log.d(TAG, "encoding secret message: $secretMessage")
 
         // Step 0: Convert secret message to a (compressed) binary representation
         val plainBits: BitString
         val compressTime = measureTime {
             plainBits = Compression.compress(secretMessage, compressionMode)
         }
-        Log.d("Stego", "compressed using $compressionMode to: ${plainBits.bitLength()}b, took $compressTime")
+        Log.d(TAG, "compressed using $compressionMode to: ${plainBits.bitLength()}b, took $compressTime")
 
 
         // Step 1: Prepare secret message by prepending start and appending stop signal
         val preparedBits = prepare(plainBits)
-        Log.d("Stego", "padded with start, stop signals to: ${preparedBits.bitLength()}b")
+        Log.d(TAG, "padded with start, stop signals to: ${preparedBits.bitLength()}b")
 
         // Step 2: Encrypt binary representation of secret message
         val cipherBits = Crypto.encrypt(preparedBits)
-        Log.d("Stego", "encrypted, payload for stego: $cipherBits")
+        Log.d(TAG, "encrypted, payload for stego: $cipherBits")
 
         // Step 3: Encode encrypted binary representation of secret message into cover text
         LlamaCpp.resetInstance()
@@ -61,7 +63,7 @@ object Steganography {
             }
         }
 
-        Log.d("Stego", "encoding took $encodeTime")
+        Log.d(TAG, "encoding took $encodeTime")
 
         return coverText
     }
@@ -136,7 +138,7 @@ object Steganography {
         // Invert step 3
         LlamaCpp.resetInstance()
 
-        Log.d("Stego", "checking '$coverText' for first message of split")
+        Log.d(TAG, "checking '$coverText' for first message of split")
 
         // Wrap this in try-catch because decoding with wrong context is likely to throw exceptions
         val partialCipherBits: BitString
@@ -151,7 +153,7 @@ object Steganography {
             return isFirstMessageOfSplit
         }
 
-        Log.d("Stego", "got partial cipher bits: $partialCipherBits, expecting $startSignal")
+        Log.d(TAG, "got partial cipher bits: $partialCipherBits, expecting $startSignal")
 
         // Invert step 2
         val partialPlainBits = Crypto.decrypt(partialCipherBits)
@@ -216,19 +218,19 @@ object Steganography {
         // Save ctx for decoding
         LlamaCpp.setDecodeCtx(decodeCtx = LlamaCpp.getCtx())
 
-        Log.d("Stego", "decoded cipher bits: $cipherBits")
+        Log.d(TAG, "decoded cipher bits: $cipherBits")
 
         // Invert step 2
         val preparedPlainBits = Crypto.decrypt(cipherBits)
-        Log.d("Stego", "plaintext bits: $preparedPlainBits")
+        Log.d(TAG, "plaintext bits: $preparedPlainBits")
 
         // Invert step 1
         val compressedPlainBits = unprepare(preparedPlainBits)
-        Log.d("Stego", "stripped bits: $compressedPlainBits")
+        Log.d(TAG, "stripped bits: $compressedPlainBits")
 
         // Invert step 0
         val secretMessage = Compression.decompress(compressedPlainBits, compressionMode)
-        Log.d("Stego", "decompressed message using $compressionMode: $secretMessage")
+        Log.d(TAG, "decompressed message using $compressionMode: $secretMessage")
 
         return secretMessage
     }
@@ -266,10 +268,10 @@ object Steganography {
         if(matchIndex == -1)
             throw Exception("no stop signal found")
 
-        Log.d("Stego", "found stop signal at bit-offset $matchIndex")
+        Log.d(TAG, "found stop signal at bit-offset $matchIndex")
 
         val payload = preparedPlainBits.take(matchIndex)
-        Log.d("Stego", "payload $payload, stop signal + tail: $preparedPlainBits")
+        Log.d(TAG, "payload $payload, stop signal + tail: $preparedPlainBits")
 
         // stop signal is trickier, ignore for now (:
 
