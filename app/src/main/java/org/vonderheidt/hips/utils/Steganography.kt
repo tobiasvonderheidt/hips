@@ -44,12 +44,12 @@ object Steganography {
         Log.d(TAG, "compressed using $compressionMode to: ${plainBits.bitLength()}b, took $compressTime")
 
         // Step 1: Prepare secret message by prepending start and appending stop signal
-        val preparedBits = prepare(plainBits)
+        val preparedPlainBits = prepare(plainBits)
 
-        Log.d(TAG, "padded with start, stop signals to: ${preparedBits.bitLength()}b")
+        Log.d(TAG, "padded with start, stop signals to: ${preparedPlainBits.bitLength()}b")
 
         // Step 2: Encrypt binary representation of secret message
-        val cipherBits = Crypto.encrypt(preparedBits)
+        val cipherBits = Crypto.encrypt(preparedPlainBits)
 
         Log.d(TAG, "encrypted, payload for stego: $cipherBits")
 
