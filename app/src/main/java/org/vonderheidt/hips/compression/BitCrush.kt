@@ -7,7 +7,6 @@ import org.vonderheidt.hips.bitmage.toUnicodeCodepoints
  * Object (i.e. singleton class) that represents BitCrush compression.
  */
 object BitCrush : CompressionProvider {
-
     private val firstStage = mapOf(
         'a'.code to 1,
         'b'.code to 2,
@@ -39,7 +38,7 @@ object BitCrush : CompressionProvider {
         '.'.code to 28,
         ','.code to 29,
         'z'.code to 30,
-        '?'.code to 31,
+        '?'.code to 31
     )
 
     private val secondStage = mapOf(
@@ -77,8 +76,9 @@ object BitCrush : CompressionProvider {
     )
 
     private val inverseFirstStage = firstStage.toList().associate { Pair(it.second, it.first) }
+
     private val inverseSecondStage = secondStage.toList().associate { Pair(it.second, it.first) }
-    
+
     /**
      * Function to compress a secret message from string to binary using BitCrush compression.
      *
@@ -90,56 +90,69 @@ object BitCrush : CompressionProvider {
 
         secretMessage.lowercase().toUnicodeCodepoints().forEach {
             val code = firstStage[it]
-            if(code != null)
+
+            if (code != null) {
                 plainBits.append(BitString.BitFragment(byteArrayOf((code shl 3).toByte()), 5))
+            }
             else {
                 when {
                     // common ascii character present in second stage
                     secondStage.containsKey(it) -> {
                         plainBits.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
+
                         val secondStageCode = secondStage[it]
                         plainBits.append(BitString.BitFragment(byteArrayOf((secondStageCode!! shl 3).toByte()), 5))
                     }
                     // latin script char not present in first or second stage
                     it in 0x000..0x02af -> {
                         plainBits.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
+
                         // top two bits get encoded into second stage code, remaining 8 follow
                         val bmpCode = 0xc0 or ((it shr 8) shl 3)
                         plainBits.append(BitString.BitFragment(byteArrayOf(bmpCode.toByte()), 5))
+
                         val remainder = it and 0xff
                         plainBits.append(BitString.BitFragment(byteArrayOf(remainder.toByte()), 8))
                     }
                     // support for Emoticons and Miscellaneous Symbols and Pictographs, main emoji blocks
                     it in 0x1F300..0x1F64F -> {
                         plainBits.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
+
                         // top two bits get encoded into second stage code, remaining 8 follow
                         val uniRefCode = (27 + ((it - 0x1F300) shr 8)) shl 3
-                        val codepoint = (it - 0x1F300).toByte()
                         plainBits.append(BitString.BitFragment(byteArrayOf(uniRefCode.toByte()), 5))
+
+                        val codepoint = (it - 0x1F300).toByte()
                         plainBits.append(BitString.BitFragment(byteArrayOf(codepoint), 8))
                     }
                     // support for Supplemental Symbols and Pictographs
                     it in 0x1F900..0x1F9FF -> {
                         plainBits.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
+
                         val uniRefCode = 22 shl 3
-                        val codepoint = (it - 0x1F900).toByte() // range can be encoded in 8b
                         plainBits.append(BitString.BitFragment(byteArrayOf(uniRefCode.toByte()), 5))
+
+                        val codepoint = (it - 0x1F900).toByte() // range can be encoded in 8b
                         plainBits.append(BitString.BitFragment(byteArrayOf(codepoint), 8))
                     }
                     // partial support for Dingbats block, covers all emoji in it
                     it in 0x2700..0x276F -> {
                         plainBits.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
+
                         val uniRefCode = 23 shl 3
-                        val codepoint = (it - 0x2700).toByte() // range can be encoded in 8b (will be 0x00-0x6F)
                         plainBits.append(BitString.BitFragment(byteArrayOf(uniRefCode.toByte()), 5))
+
+                        val codepoint = (it - 0x2700).toByte() // range can be encoded in 8b (will be 0x00-0x6F)
                         plainBits.append(BitString.BitFragment(byteArrayOf(codepoint), 8))
                     }
                     // support for Symbols and Pictographs Extended-A block, contains recent emoji
                     it in 0x1FA70..0x1FAFF -> {
                         plainBits.append(BitString.BitFragment(byteArrayOf(0.toByte()), 5))
+
                         val uniRefCode = 23 shl 3
-                        val codepoint = (it - 0x1FA00).toByte() // range can be encoded in 8b (will be 0x70-0xFF)
                         plainBits.append(BitString.BitFragment(byteArrayOf(uniRefCode.toByte()), 5))
+
+                        val codepoint = (it - 0x1FA00).toByte() // range can be encoded in 8b (will be 0x70-0xFF)
                         plainBits.append(BitString.BitFragment(byteArrayOf(codepoint), 8))
                     }
                     else -> {
@@ -160,42 +173,54 @@ object BitCrush : CompressionProvider {
      */
     override fun decompress(plainBits: BitString): String {
         var secretMessage = ""
-        while(plainBits.bitLength() > 0) {
+
+        while (plainBits.bitLength() > 0) {
             val codepoint = plainBits.takeFew(5).toUByte().toInt() shr 3
-            if(inverseFirstStage.containsKey(codepoint)) {
+
+            if (inverseFirstStage.containsKey(codepoint)) {
                 secretMessage += inverseFirstStage[codepoint]!!.toChar()
             }
             else {
                 val secondStage = plainBits.takeFew(5).toUByte().toInt() shr 3
+
                 when {
-                    inverseSecondStage.containsKey(secondStage) -> secretMessage += inverseSecondStage[secondStage]!!.toChar()
+                    inverseSecondStage.containsKey(secondStage) -> {
+                        secretMessage += inverseSecondStage[secondStage]!!.toChar()
+                    }
                     secondStage == 22 -> {
                         val unicodeBits = plainBits.takeFew(8).toUByte().toInt()
                         val unicodePoint = unicodeBits + 0x1F900
+
                         secretMessage += codepointToString(unicodePoint)
                     }
                     secondStage == 23 -> {
                         val unicodeBits = plainBits.takeFew(8).toUByte().toInt()
-                        val unicodePoint = if(unicodeBits < 0x70) unicodeBits + 0x2700 else unicodeBits + 0x1FA00
+                        val unicodePoint = if (unicodeBits < 0x70) unicodeBits + 0x2700 else unicodeBits + 0x1FA00
+
                         secretMessage += codepointToString(unicodePoint)
 
                         // special case for read heart with missing variant selector (we choose to support emoji hearts and not black text hearts)
-                        if(unicodePoint == 0x2764)
+                        if (unicodePoint == 0x2764) {
                             secretMessage += Char(0xFE0F)
+                        }
                     }
                     secondStage in 24..26 -> {
                         val topBits = (secondStage - 24) shl 8
                         val unicodeBits = plainBits.takeFew(8).toUByte().toInt()
                         val unicodePoint = 0x0000 + (topBits or unicodeBits)
+
                         secretMessage += codepointToString(unicodePoint)
                     }
                     secondStage in 27..30 -> {
                         val topBits = (secondStage - 27) shl 8
                         val unicodeBits = plainBits.takeFew(8).toUByte().toInt()
                         val unicodePoint = 0x1F300 + (topBits or unicodeBits)
+
                         secretMessage += codepointToString(unicodePoint)
                     }
-                    else -> println("unknown second stage payload: $secondStage")
+                    else -> {
+                        println("unknown second stage payload: $secondStage")
+                    }
                 }
             }
         }
@@ -211,13 +236,14 @@ object BitCrush : CompressionProvider {
      */
     private fun codepointToString(codepoint: Int): String {
         // single UTF-16 char
-        return if(codepoint < 65536)
+        return if (codepoint < 65536)
             codepoint.toChar().toString()
         // Surrogates
         else {
             val toEncode = codepoint - 0x10000
             val highSurrogate = 0xd800 + (toEncode shr 10)
             val lowSurrogate = 0xdc00 + (toEncode and 0x3FF)
+
             highSurrogate.toChar().toString() + lowSurrogate.toChar().toString()
         }
     }
