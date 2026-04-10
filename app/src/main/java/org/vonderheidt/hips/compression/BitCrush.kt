@@ -4,9 +4,7 @@ import org.vonderheidt.hips.bitmage.BitString
 import org.vonderheidt.hips.bitmage.toUnicodeCodepoints
 
 /**
- * Object (i.e. singleton class) that represents the binary conversion of the secret message using UTF-8 encoding.
- *
- * Renamed from `Unicode` in Stegasuras as UTF-8 is only one of many possible Unicode encodings.
+ * Object (i.e. singleton class) that represents BitCrush compression.
  */
 object BitCrush : CompressionProvider {
 
@@ -81,6 +79,12 @@ object BitCrush : CompressionProvider {
     private val inverseLookup = lookup.toList().associate { Pair(it.second, it.first) }
     private val inverseSecondLookup = secondStageLookup.toList().associate { Pair(it.second, it.first) }
     
+    /**
+     * Function to compress a secret message from string to binary using BitCrush compression.
+     *
+     * @param secretMessage The secret message to compress.
+     * @return The binary representation of the secret message.
+     */
     override fun compress(secretMessage: String): BitString {
         val plainBits = BitString(byteArrayOf(), 0)
 
@@ -148,6 +152,12 @@ object BitCrush : CompressionProvider {
         return plainBits
     }
 
+    /**
+     * Function to decompress a secret message from binary to string using BitCrush decompression.
+     *
+     * @param plainBits The binary representation of the secret message.
+     * @return The decompressed secret message.
+     */
     override fun decompress(plainBits: BitString): String {
         var secretMessage = ""
         while(plainBits.bitLength() > 0) {
@@ -193,6 +203,12 @@ object BitCrush : CompressionProvider {
         return secretMessage
     }
 
+    /**
+     * Function to convert a Unicode code point into a string.
+     *
+     * @param codepoint A Unicode code point.
+     * @return The string conversion of `codepoint`.
+     */
     private fun codepointToString(codepoint: Int): String {
         // single UTF-16 char
         return if(codepoint < 65536)
