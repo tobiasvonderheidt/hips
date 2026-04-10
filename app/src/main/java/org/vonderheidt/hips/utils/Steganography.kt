@@ -249,12 +249,12 @@ object Steganography {
 
 
     /**
-     * Function to unprepare a secret message after binary decoding.
+     * Function to unprepare plain bits after steganography decoding.
      *
-     * Strips the ASCII NUL character and everything after it. Therefore removes any artifacts from greedy sampling, rendering the original secret message.
+     * Strips both the start and the stop signal, and everything after the stop signal. Therefore removes any artefacts from greedy sampling, rendering the original plain bits.
      *
-     * @param preparedBits A prepared secret message.
-     * @return The secret message.
+     * @param preparedPlainBits The prepared plain bits.
+     * @return The original plain bits.
      */
     private fun unprepare(preparedPlainBits: BitString): BitString {
         // removing start marker is easy since it is always at the start
