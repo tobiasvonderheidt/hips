@@ -24,9 +24,6 @@ object LlamaCpp {
     private var decodeCtx = 0L
 
     @Volatile
-    private var decompressCtx = 0L
-
-    @Volatile
     private var smpl = 0L
 
     /**
@@ -118,7 +115,7 @@ object LlamaCpp {
     }
 
     // TODO Downward concat of split cover text
-    //  Functions set{Ctx,DecodeCtx,DecompressCtx} and get{DecodeCtx,DecompressCtx} are to manage separate ctx for resuming decoding and decompression
+    //  Functions setCtx and {get,set}DecodeCtx are to manage separate ctx for resuming decoding
     /**
      * Function to set the memory address of the context.
      *
@@ -144,24 +141,6 @@ object LlamaCpp {
      */
     fun setDecodeCtx(decodeCtx: Long = ctx) {
         this.decodeCtx = decodeCtx
-    }
-
-    /**
-     * Function to get the memory address of the context used for decompressing a secret message from its binary representation back into a string.
-     *
-     * @return Memory address of the context used for decompressing a secret message from its binary representation back into a string.
-     */
-    fun getDecompressCtx(): Long {
-        return decompressCtx
-    }
-
-    /**
-     * Function to set the memory address of the context used for decompressing a secret message from its binary representation back into a string.
-     *
-     * @param decompressCtx Memory address of the desired context used for decompressing a secret message from its binary representation back into a string. Defaults to current context of the llama.cpp instance.
-     */
-    fun setDecompressCtx(decompressCtx: Long = ctx) {
-        this.decompressCtx = decompressCtx
     }
 
     /**
