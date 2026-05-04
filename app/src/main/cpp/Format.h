@@ -21,16 +21,6 @@ public:
     static std::vector<bool> asBitVector(JNIEnv* env, jbyteArray jByteArray, int bitLength);
 
     /**
-     * Function to reverse formatting of a Java ByteArray as a bit vector (i.e. to reverse `Format::asBitVector(JNIEnv*, jbyteArray)`).
-     * Doesn't add any padding, assumes that length of bit vector already is multiple of 8.
-     *
-     * @param env The JNI environment.
-     * @param bitVector A bit vector.
-     * @return The Java ByteArray.
-     */
-    static jbyteArray asByteArray(JNIEnv* env, std::vector<bool> bitVector);
-
-    /**
      * Function to reverse formatting of a padded Java ByteArray as a bit vector (i.e. to reverse `Format::asBitVectorWithoutPadding(JNIEnv*, jbyteArray)`).
      * Adds 0-padding at the start so that length of bit vector is multiple of 8. Prepends a byte that stores length of padding in bits.
      *
