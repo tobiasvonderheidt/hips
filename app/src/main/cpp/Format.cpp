@@ -11,14 +11,16 @@ std::vector<bool> Format::asBitVector(JNIEnv* env, jbyteArray jByteArray, int bi
     // Loop over bytes in byte array
     int bitIndex = 0;
     int byteIndex = 0;
-    while(bitIndex < bitLength) {
+
+    while (bitIndex < bitLength) {
         byteIndex = bitIndex / 8;
+
         // Extract a bit from the byte:
         // Calculate position of the bit to retrieve with (7 - j), going from MSB to LSB
         // Shift right by this amount to make it the LSB
         // Use bitwise AND with bit mask 0000 0001 to isolate it (i.e. to set all more significant bits to 0)
-        bitVector[bitIndex] = jBytes[byteIndex] >> (7-(bitIndex % 8)) & 0b00000001;
-        bitIndex += 1;
+        bitVector[bitIndex] = jBytes[byteIndex] >> (7 - (bitIndex % 8)) & 0b00000001;
+        bitIndex++;
     }
 
     // Release buffer from memory
