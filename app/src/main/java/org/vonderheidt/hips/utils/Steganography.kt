@@ -163,9 +163,7 @@ object Steganography {
         val partialPlainBits = Crypto.decrypt(partialCipherBits)
 
         // Check for start signal
-        val firstBits = partialPlainBits.take(numberOfCipherBits)
-
-        isFirstMessageOfSplit = startSignal == firstBits.toBitFragment()
+        isFirstMessageOfSplit = startSignal == partialPlainBits.take(numberOfCipherBits).toBitFragment()
 
         return isFirstMessageOfSplit
     }
