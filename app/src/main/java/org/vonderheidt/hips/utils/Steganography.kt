@@ -268,12 +268,14 @@ object Steganography {
         // removing start signal is easy since it is always at the start
         val prefix = preparedPlainBits.take(startSignal.bitLength).toBitFragment()
 
-        check(prefix == startSignal) { "start signal should be $startSignal, got $prefix"}
+        if (prefix != startSignal) {
+            throw IllegalArgumentException("start signal should be $startSignal, got $prefix")
+        }
 
         val matchIndex = preparedPlainBits.firstSubsequenceMatchFromEnd(BitString(stopSignal))
 
         if (matchIndex == -1) {
-            throw Exception("no stop signal found")
+            throw IllegalArgumentException("no stop signal found")
         }
 
         Log.d(TAG, "found stop signal at bit-offset $matchIndex")
