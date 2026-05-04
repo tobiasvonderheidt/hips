@@ -272,7 +272,7 @@ object Steganography {
             throw IllegalArgumentException("start signal should be $startSignal, got $prefix")
         }
 
-        val suffixIndex = preparedPlainBits.firstSubsequenceMatchFromEnd(stopSignal)
+        val suffixIndex = preparedPlainBits.searchFromEnd(stopSignal)
 
         if (suffixIndex == -1) {
             throw IllegalArgumentException("no stop signal found")

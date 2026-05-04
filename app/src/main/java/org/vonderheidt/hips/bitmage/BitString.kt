@@ -235,7 +235,7 @@ class BitString(fragment: BitFragment) {
      * @param sequence Bit sequence to search for.
      * @return Index where first occurrence of `sequence` in bit string starts. `-1` if no occurrence is found.
      */
-    fun firstSubsequenceMatchFromEnd(sequence: BitFragment): Int {
+    fun searchFromEnd(sequence: BitFragment): Int {
         val haystackFragment = this.toBitFragment()
         val haystackSize = haystackFragment.bitLength
         val needleFragment = sequence
