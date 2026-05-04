@@ -272,15 +272,15 @@ object Steganography {
             throw IllegalArgumentException("start signal should be $startSignal, got $prefix")
         }
 
-        val matchIndex = preparedPlainBits.firstSubsequenceMatchFromEnd(BitString(stopSignal))
+        val suffixIndex = preparedPlainBits.firstSubsequenceMatchFromEnd(BitString(stopSignal))
 
-        if (matchIndex == -1) {
+        if (suffixIndex == -1) {
             throw IllegalArgumentException("no stop signal found")
         }
 
-        Log.d(TAG, "found stop signal at bit-offset $matchIndex")
+        Log.d(TAG, "found stop signal at bit-offset $suffixIndex")
 
-        val plainBits = preparedPlainBits.take(matchIndex)
+        val plainBits = preparedPlainBits.take(suffixIndex)
 
         Log.d(TAG, "payload $plainBits, stop signal + tail: $preparedPlainBits")
 
