@@ -266,9 +266,9 @@ object Steganography {
      */
     private fun unprepare(preparedPlainBits: BitString): BitString {
         // removing start signal is easy since it is always at the start
-        val firstBits = preparedPlainBits.take(startSignal.bitLength).toBitFragment()
+        val prefix = preparedPlainBits.take(startSignal.bitLength).toBitFragment()
 
-        check(firstBits == startSignal) { "start signal should be $startSignal, got $firstBits"}
+        check(prefix == startSignal) { "start signal should be $startSignal, got $prefix"}
 
         val matchIndex = preparedPlainBits.firstSubsequenceMatchFromEnd(BitString(stopSignal))
 
