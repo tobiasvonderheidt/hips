@@ -185,7 +185,7 @@ object Steganography {
 
     // TODO Downward concat of split cover text
     //  Parameter isResumed in decode function is to differentiate first from subsequent calls of decode
-    //  Save and restore of {decode,decompress}Ctx is to resume decoding from last call of decode
+    //  Save and restore of decodeCtx is to resume decoding from last call of decode
     /**
      * Function to decode secret message from cover text using given context.
      *
