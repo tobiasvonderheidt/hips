@@ -1,9 +1,6 @@
 #include "Format.h"
 
 std::vector<bool> Format::asBitVector(JNIEnv* env, jbyteArray jByteArray, int bitLength) {
-    // Number of bytes
-    jint jByteArrayLength = env->GetArrayLength(jByteArray);
-
     // Bit vector
     std::vector<bool> bitVector(bitLength);
 
