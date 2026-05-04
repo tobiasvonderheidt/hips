@@ -15,7 +15,7 @@ public:
      *
      * @param env The JNI environment.
      * @param byteArray A Java ByteArray.
-     * @param bitLength Number of bits in the ByteArray to pack into bit vector
+     * @param bitLength Desired number of bits in the ByteArray to put into the bit vector.
      * @return The bit vector.
      */
     static std::vector<bool> asBitVector(JNIEnv* env, jbyteArray jByteArray, int bitLength);
