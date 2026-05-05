@@ -50,7 +50,7 @@ bool LlamaCpp::isEndOfGeneration(llama_token token, const llama_model* model) {
 
 void LlamaCpp::suppressSpecialTokens(double* probabilities, const llama_model* model, bool isEogAllowed) {
     static bool specialTokenListInitialized = false;
-    static std::set<llama_token> specialTokens;
+    static std::set<llama_token> controlTokens;
     static std::set<llama_token> eogTokens;
 
     // loop over vocab once to find special tokens, then use cached set from there
@@ -62,18 +62,18 @@ void LlamaCpp::suppressSpecialTokens(double* probabilities, const llama_model* m
                 eogTokens.insert(token);
             }
             else if (llama_vocab_is_control(vocab, token)) {
-                specialTokens.insert(token);
+                controlTokens.insert(token);
             }
         }
 
         specialTokenListInitialized = true;
-        //__android_log_print(ANDROID_LOG_DEBUG, "LlamaCpp", "gathered %d special tokens, %d eog tokens", specialTokens.size(), eogTokens.size());
+        //__android_log_print(ANDROID_LOG_DEBUG, "LlamaCpp", "gathered %d control tokens, %d eog tokens", controlTokens.size(), eogTokens.size());
     }
 
-    // Suppress special tokens by setting their probabilities to 0
+    // Suppress control tokens by setting their probabilities to 0
     std::set<llama_token>::iterator itr;
 
-    for (itr = specialTokens.begin(); itr != specialTokens.end(); itr++){
+    for (itr = controlTokens.begin(); itr != controlTokens.end(); itr++){
         probabilities[*itr] = 0;
     }
 
