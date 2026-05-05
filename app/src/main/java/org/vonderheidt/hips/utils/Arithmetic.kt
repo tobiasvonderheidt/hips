@@ -18,15 +18,16 @@ object Arithmetic {
      * @return A cover text containing the secret message.
      */
     fun encode(context: String, cipherBits: BitString, isResumed: Boolean): String {
-        val bits = cipherBits.toBitFragment()
-        val coverTextBytes = encode(
-            context = context.encodeToByteArray(),
-            cipherBits = bits.bytes,
-            bitLength = bits.bitLength,
-            isResumed = isResumed
-        )
+        val cipherBitFragment = cipherBits.toBitFragment()
 
-        return coverTextBytes.decodeToString()
+        val coverText = encode(
+            context = context.encodeToByteArray(),
+            cipherBits = cipherBitFragment.bytes,
+            bitLength = cipherBitFragment.bitLength,
+            isResumed = isResumed
+        ).decodeToString()
+
+        return coverText
     }
 
     /**
