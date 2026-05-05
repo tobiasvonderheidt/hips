@@ -48,7 +48,7 @@ bool LlamaCpp::isEndOfGeneration(llama_token token, const llama_model* model) {
     return isEog;
 }
 
-void LlamaCpp::suppressSpecialTokens(double* probabilities, const llama_model* model, bool allowEoG) {
+void LlamaCpp::suppressSpecialTokens(double* probabilities, const llama_model* model, bool isEogAllowed) {
     static bool specialTokenListInitialized = false;
     static std::set<llama_token> specialTokens;
     static std::set<llama_token> eogTokens;
@@ -74,7 +74,7 @@ void LlamaCpp::suppressSpecialTokens(double* probabilities, const llama_model* m
     }
 
     // Suppress end of generation tokens if desired
-    if(!allowEoG) {
+    if(!isEogAllowed) {
         for (itr = eogTokens.begin(); itr != eogTokens.end(); itr++){
             probabilities[*itr] = 0;
         }

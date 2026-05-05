@@ -67,9 +67,9 @@ public:
      *
      * @param probabilities Probabilities for the last token of the prompt (= last row of logits matrix after normalization).
      * @param model Memory address of the LLM.
-     * @param allowEoG Suppress or allow end of generation tokens
+     * @param isEogAllowed Boolean that is true if eog tokens should be allowed, false otherwise.
      */
-    static void suppressSpecialTokens(double* probabilities, const llama_model* model, bool allowEoG);
+    static void suppressSpecialTokens(double* probabilities, const llama_model* model, bool isEogAllowed);
 
     /**
      * Function to check if a token is the end of a sentence. Needed to complete the last sentence of the cover text.
