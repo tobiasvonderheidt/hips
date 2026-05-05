@@ -21,7 +21,6 @@ private:
      */
     static std::string detokenize(const llama_tokens& tokens, const llama_context* ctx);
 
-
     /**
      * Wrapper for the `llama_vocab_is_eog` and `llama_vocab_is_control` functions of llama.cpp. Checks if a token is a special token.
      *
@@ -32,7 +31,6 @@ private:
     static bool isSpecial(llama_token token, const llama_model* model);
 
 public:
-
     /**
      * Wrapper for the `common_detokenize` function of llama.cpp. Detokenizes a token ID into a C++ string.
      *
@@ -154,14 +152,14 @@ public:
      */
     static float* getLogits(llama_token token, llama_context* ctx);
 
-/**
- * Wrapper for the `llama_vocab_is_eog` function of llama.cpp. Checks if a token is an end-of-generation (eog) token.
- *
- * @param token Token ID to check.
- * @param model Memory address of the LLM.
- * @return Boolean that is true if the token is an eog token, false otherwise.
- */
-static bool isEndOfGeneration(llama_token token, const llama_model* model);
+    /**
+     * Wrapper for the `llama_vocab_is_eog` function of llama.cpp. Checks if a token is an end-of-generation (eog) token.
+     *
+     * @param token Token ID to check.
+     * @param model Memory address of the LLM.
+     * @return Boolean that is true if the token is an eog token, false otherwise.
+     */
+    static bool isEndOfGeneration(llama_token token, const llama_model* model);
 };
 
 #endif
