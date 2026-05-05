@@ -49,11 +49,12 @@ bool LlamaCpp::isEndOfGeneration(llama_token token, const llama_model* model) {
 }
 
 void LlamaCpp::suppressSpecialTokens(double* probabilities, const llama_model* model, bool isEogAllowed) {
+    // Use "static" keyword to keep variables in memory for entire lifetime of the application
     static bool isCached = false;
     static llama_tokens controlTokens;
     static llama_tokens eogTokens;
 
-    // loop over vocab once to find special tokens, then use cached set from there
+    // Loop over vocab once to find special tokens, then use cached set from there
     if (!isCached) {
         const llama_vocab* vocab = llama_model_get_vocab(model);
 
@@ -75,7 +76,7 @@ void LlamaCpp::suppressSpecialTokens(double* probabilities, const llama_model* m
         probabilities[token] = 0;
     }
 
-    // Suppress end of generation tokens if desired
+    // Suppress eog tokens if desired
     if (!isEogAllowed) {
         for (llama_token token = 0; token < eogTokens.size(); token++) {
             probabilities[token] = 0;
