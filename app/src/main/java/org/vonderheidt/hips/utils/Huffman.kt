@@ -17,14 +17,15 @@ object Huffman {
      * @return A cover text containing the secret message.
      */
     fun encode(context: String, cipherBits: BitString): String {
-        val bits = cipherBits.toBitFragment()
-        val coverTextBytes = encode(
-            context = context.encodeToByteArray(),
-            cipherBits = bits.bytes,
-            bitLength = bits.bitLength
-        )
+        val cipherBitFragment = cipherBits.toBitFragment()
 
-        return coverTextBytes.decodeToString()
+        val coverText = encode(
+            context = context.encodeToByteArray(),
+            cipherBits = cipherBitFragment.bytes,
+            bitLength = cipherBitFragment.bitLength
+        ).decodeToString()
+
+        return coverText
     }
 
     // TODO Downward concat of split cover text
