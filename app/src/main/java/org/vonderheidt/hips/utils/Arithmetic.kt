@@ -66,7 +66,7 @@ object Arithmetic {
      *
      * @param context The context to encode the secret message with (byte array storing UTF-8 encoded string to bypass JNI errors).
      * @param cipherBits The encrypted binary representation of the secret message.
-     * @param bitLength Number of bits in the cipherBits byte array to encode.
+     * @param bitLength Number of cipher bits to encode.
      * @param temperature The temperature parameter for token sampling. Determined by Settings object.
      * @param topK Number of most likely tokens to consider. Must be less than or equal to the vocabulary size `n_vocab` of the LLM. Determined by Settings object.
      * @param precision Number of bits to encode the top k tokens with. Determined by Settings object.
