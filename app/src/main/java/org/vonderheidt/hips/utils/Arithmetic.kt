@@ -44,18 +44,17 @@ object Arithmetic {
      * @throws IllegalArgumentException If a cover text token could not be predicted (e.g. partial decoding with wrong context when trying to find start signal in split cover text).
      */
     fun decode(context: String, coverText: String, numberOfCipherBits: Int = -1, isResumed: Boolean = false): BitString {
-        val bytes = decode(
+        val cipherBits = decode(
             context = context.toByteArray(charset = Charsets.UTF_8),
             coverText = coverText.toByteArray(charset = Charsets.UTF_8),
             numberOfCipherBits = numberOfCipherBits,
             isResumed = isResumed
-        )
+        ).let { BitString(it, it.size * 8) }
 
-        val bits = BitString(bytes, bytes.size * 8)
-        val paddingLen = bits.takeFew(8).toInt()
-        bits.takeFew(paddingLen)
+        val paddingLength = cipherBits.takeFew(8).toInt()
+        cipherBits.takeFew(paddingLength)
 
-        return bits
+        return cipherBits
     }
 
     /**
