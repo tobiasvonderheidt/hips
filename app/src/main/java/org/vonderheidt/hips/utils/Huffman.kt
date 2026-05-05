@@ -64,7 +64,7 @@ object Huffman {
      *
      * @param context The context to encode the secret message with (byte array storing UTF-8 encoded string to bypass JNI errors).
      * @param cipherBits The encrypted binary representation of the secret message.
-     * @param bitLength Number of bits in the cipherBits byte array to encode.
+     * @param bitLength Number of cipher bits to encode.
      * @param bitsPerToken Number of bits to encode/decode per cover text token (= height of Huffman tree). Determined by Settings object.
      * @param ctx Memory address of the context.
      * @return A cover text containing the secret message (byte array storing UTF-8 encoded string to bypass JNI errors).
