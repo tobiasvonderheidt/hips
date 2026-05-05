@@ -37,10 +37,9 @@ object Huffman {
      *
      * @param context The context to decode the cover text with.
      * @param coverText The cover text containing a secret message.
-     * @param numberOfCipherBits Desired number of cipher bits to return. Only needed when searching for start signal in split cover text. Has to be multiple of 8 for decryption.
+     * @param numberOfCipherBits Desired number of cipher bits to return. Only needed when searching for start signal in split cover text.
      * @param isResumed Boolean that is true if this call of the `decode` function resumes where the last call terminated, false otherwise.
      * @return The encrypted binary representation of the secret message.
-     * @throws IllegalArgumentException If `numberOfCipherBits` is not a multiple of 8.
      */
     fun decode(context: String, coverText: String, numberOfCipherBits: Int = -1, isResumed: Boolean = false): BitString {
         val bytes = decode(
