@@ -9,14 +9,6 @@ std::string LlamaCpp::detokenize(const llama_tokens& tokens, const llama_context
     return string;
 }
 
-std::string LlamaCpp::detokenize(const llama_token& token, const llama_context* ctx) {
-    llama_tokens tokens = std::vector<llama_token>{token};
-
-    std::string string = LlamaCpp::detokenize(tokens, ctx);
-
-    return string;
-}
-
 bool LlamaCpp::isSpecial(llama_token token, const llama_model* model) {
     // Get vocabulary of the LLM
     const llama_vocab* vocab = llama_model_get_vocab(model);
@@ -27,12 +19,12 @@ bool LlamaCpp::isSpecial(llama_token token, const llama_model* model) {
     return isSpecial;
 }
 
-bool LlamaCpp::isEndOfGeneration(llama_token token, const llama_model* model) {
-    // Check if token is eog token
-    const llama_vocab* vocab = llama_model_get_vocab(model);
-    bool isEog = llama_vocab_is_eog(vocab, token);
+std::string LlamaCpp::detokenize(const llama_token& token, const llama_context* ctx) {
+    llama_tokens tokens = std::vector<llama_token>{token};
 
-    return isEog;
+    std::string string = LlamaCpp::detokenize(tokens, ctx);
+
+    return string;
 }
 
 jbyteArray LlamaCpp::detokenize(JNIEnv* env, const llama_tokens& tokens, const llama_context* ctx) {
@@ -46,6 +38,14 @@ jbyteArray LlamaCpp::detokenize(JNIEnv* env, const llama_tokens& tokens, const l
     env->SetByteArrayRegion(jByteArray, 0, (int32_t) cppString.size(), reinterpret_cast<const jbyte*>(cppString.data()));
 
     return jByteArray;
+}
+
+bool LlamaCpp::isEndOfGeneration(llama_token token, const llama_model* model) {
+    // Check if token is eog token
+    const llama_vocab* vocab = llama_model_get_vocab(model);
+    bool isEog = llama_vocab_is_eog(vocab, token);
+
+    return isEog;
 }
 
 void LlamaCpp::suppressSpecialTokens(double* probabilities, const llama_model* model, bool allowEoG) {

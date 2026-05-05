@@ -51,6 +51,15 @@ public:
     static jbyteArray detokenize(JNIEnv* env, const llama_tokens& tokens, const llama_context* ctx);
 
     /**
+     * Wrapper for the `llama_vocab_is_eog` function of llama.cpp. Checks if a token is an end-of-generation (eog) token.
+     *
+     * @param token Token ID to check.
+     * @param model Memory address of the LLM.
+     * @return Boolean that is true if the token is an eog token, false otherwise.
+     */
+    static bool isEndOfGeneration(llama_token token, const llama_model* model);
+
+    /**
      * Function to suppress special tokens, i.e. end-of-generation (eog) and control tokens.
      *
      * Suppressing eog tokens is needed to avoid early termination when generating a cover text.
@@ -119,15 +128,6 @@ public:
      * @return A vector of logits.
      */
     static float* getLogits(llama_token token, llama_context* ctx);
-
-    /**
-     * Wrapper for the `llama_vocab_is_eog` function of llama.cpp. Checks if a token is an end-of-generation (eog) token.
-     *
-     * @param token Token ID to check.
-     * @param model Memory address of the LLM.
-     * @return Boolean that is true if the token is an eog token, false otherwise.
-     */
-    static bool isEndOfGeneration(llama_token token, const llama_model* model);
 };
 
 #endif
