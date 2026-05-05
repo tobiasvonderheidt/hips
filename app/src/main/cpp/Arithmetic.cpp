@@ -286,7 +286,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
     return coverText;
 }
 
-extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_decode___3B_3BFIIJIZ(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCoverText, jfloat jTemperature, jint jTopK, jint jPrecision, jlong jCtx, jint jNumberOfCipherBits, jboolean jIsResumed) {
+extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmetic_decode(JNIEnv* env, jobject /* thiz */, jbyteArray jContext, jbyteArray jCoverText, jfloat jTemperature, jint jTopK, jint jPrecision, jlong jCtx, jint jNumberOfCipherBits, jboolean jIsResumed) {
     // TODO Abstract state management away in LlamaCpp.{h,cpp}
     auto cppCtx = reinterpret_cast<llama_context*>(jCtx);
     const llama_model* model = llama_get_model(cppCtx);
