@@ -3,7 +3,7 @@ package org.vonderheidt.hips
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
@@ -32,11 +32,11 @@ class MainActivity : ComponentActivity() {
             HiPSTheme {
                 // Scaffold arranges top bar/bottom bar/floating action buttons/etc. on screen
                 // innerPadding is necessary so that content and top bar/etc. don't overlap
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    val modifier: Modifier = Modifier.padding(innerPadding)
-
-                    // Initialize navigation
-                    NavGraph.Setup(modifier)
+                Scaffold { innerPadding ->
+                    Box(modifier = Modifier.padding(innerPadding)) {
+                        // Initialize navigation
+                        NavGraph.Setup(Modifier)
+                    }
                 }
             }
         }

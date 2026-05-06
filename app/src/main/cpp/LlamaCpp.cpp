@@ -1,17 +1,10 @@
 #include "LlamaCpp.h"
+#include <android/log.h>
 
 std::string LlamaCpp::detokenize(const llama_tokens& tokens, const llama_context* ctx) {
     // Detokenize vector of tokens to C++ string
     // See common.cpp: common_detokenize calls llama_detokenize, with parameters "remove_special = false" hard-coded and "unparse_special = special" passed through
     std::string string = common_detokenize(ctx, tokens, true);
-
-    return string;
-}
-
-std::string LlamaCpp::detokenize(const llama_token& token, const llama_context* ctx) {
-    llama_tokens tokens = std::vector<llama_token>{token};
-
-    std::string string = LlamaCpp::detokenize(tokens, ctx);
 
     return string;
 }
@@ -26,12 +19,12 @@ bool LlamaCpp::isSpecial(llama_token token, const llama_model* model) {
     return isSpecial;
 }
 
-bool LlamaCpp::isEndOfGeneration(llama_token token, const llama_model* model) {
-    // Check if token is eog token
-    const llama_vocab* vocab = llama_model_get_vocab(model);
-    bool isEog = llama_vocab_is_eog(vocab, token);
+std::string LlamaCpp::detokenize(const llama_token& token, const llama_context* ctx) {
+    llama_tokens tokens = std::vector<llama_token>{token};
 
-    return isEog;
+    std::string string = LlamaCpp::detokenize(tokens, ctx);
+
+    return string;
 }
 
 jbyteArray LlamaCpp::detokenize(JNIEnv* env, const llama_tokens& tokens, const llama_context* ctx) {
@@ -47,10 +40,45 @@ jbyteArray LlamaCpp::detokenize(JNIEnv* env, const llama_tokens& tokens, const l
     return jByteArray;
 }
 
-void LlamaCpp::suppressSpecialTokens(double* probabilities, const llama_model* model) {
-    // Suppress special tokens by setting their probabilities to 0
-    for (llama_token token = 0; token < LlamaCpp::getVocabSize(model); token++) {
-        if (LlamaCpp::isSpecial(token, model)) {
+bool LlamaCpp::isEndOfGeneration(llama_token token, const llama_model* model) {
+    // Check if token is eog token
+    const llama_vocab* vocab = llama_model_get_vocab(model);
+    bool isEog = llama_vocab_is_eog(vocab, token);
+
+    return isEog;
+}
+
+void LlamaCpp::suppressSpecialTokens(double* probabilities, const llama_model* model, bool isEogAllowed) {
+    // Use "static" keyword to keep variables in memory for entire lifetime of the application
+    static bool isCached = false;
+    static llama_tokens controlTokens;
+    static llama_tokens eogTokens;
+
+    // Loop over vocab once to find special tokens, then use cached set from there
+    if (!isCached) {
+        const llama_vocab* vocab = llama_model_get_vocab(model);
+
+        for (llama_token token = 0; token < LlamaCpp::getVocabSize(model); token++) {
+            if (llama_vocab_is_control(vocab, token)) {
+                controlTokens.push_back(token);
+            }
+            else if (llama_vocab_is_eog(vocab, token)) {
+                eogTokens.push_back(token);
+            }
+        }
+
+        isCached = true;
+        //__android_log_print(ANDROID_LOG_DEBUG, "LlamaCpp", "gathered %d control tokens, %d eog tokens", controlTokens.size(), eogTokens.size());
+    }
+
+    // Suppress control tokens by setting their probabilities to 0
+    for (llama_token token = 0; token < controlTokens.size(); token++) {
+        probabilities[token] = 0;
+    }
+
+    // Suppress eog tokens if desired
+    if (!isEogAllowed) {
+        for (llama_token token = 0; token < eogTokens.size(); token++) {
             probabilities[token] = 0;
         }
     }
@@ -67,51 +95,12 @@ bool LlamaCpp::isEndOfSentence(llama_token token, const llama_context* ctx) {
     return isSentenceFinished;
 }
 
+// TODO
+//  Implementation was changed in https://github.com/tobiasvonderheidt/hips/pull/29 to return end-of-sentence instead of end-of-generation token
+//  I think this conflicts with use of LlamaCpp::isEndOfGeneration in Arithmetic.cpp
 llama_token LlamaCpp::getEndOfGeneration(const llama_model* model) {
-    llama_tokens eogTokens;
-
-    for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
-        if (LlamaCpp::isEndOfGeneration(token, model)) {
-            eogTokens.push_back(token);
-        }
-    }
-
-    return eogTokens.front();
-}
-
-llama_token LlamaCpp::getAsciiNul(const llama_model* model, const llama_context* ctx) {
-    // Only checks if detokenization contains the ASCII NUL character
-    // Checking if it is equal to it would require constructing a string that only contains the NUL char, which conflicts with C/C++ strings being NUL-terminated
-    // TODO llama.cpp's common_detokenize seems to return a string that only contains the NUL char, figure out how they do it
-    for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
-        if (LlamaCpp::detokenize(token, ctx).find('\0') != std::string::npos) {
-            return token;
-        }
-    }
-
-    throw std::runtime_error("LLM vocabulary doesn't contain ASCII NUL character");
-}
-
-// TODO Downward concat of split cover text
-//  LlamaCpp::getAscii{Stx,Etx} are to get start and stop signal
-llama_token LlamaCpp::getAsciiStx(const llama_model* model, const llama_context* ctx) {
-    for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
-        if (LlamaCpp::detokenize(token, ctx) == "\x02") {
-            return token;
-        }
-    }
-
-    throw std::runtime_error("LLM vocabulary doesn't contain ASCII STX character");
-}
-
-llama_token LlamaCpp::getAsciiEtx(const llama_model* model, const llama_context* ctx) {
-    for (int32_t token = 0; token < LlamaCpp::getVocabSize(model); token++) {
-        if (LlamaCpp::detokenize(token, ctx) == "\x03") {
-            return token;
-        }
-    }
-
-    throw std::runtime_error("LLM vocabulary doesn't contain ASCII ETX character");
+    const llama_vocab* vocab = llama_model_get_vocab(model);
+    return llama_vocab_eos(vocab);
 }
 
 int32_t LlamaCpp::getVocabSize(const llama_model* model) {

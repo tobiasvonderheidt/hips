@@ -22,15 +22,6 @@ private:
     static std::string detokenize(const llama_tokens& tokens, const llama_context* ctx);
 
     /**
-     * Wrapper for the `common_detokenize` function of llama.cpp. Detokenizes a token ID into a C++ string.
-     *
-     * @param token A token ID.
-     * @param ctx Memory address of the context.
-     * @return Detokenization as a C++ string.
-     */
-    static std::string detokenize(const llama_token& token, const llama_context* ctx);
-
-    /**
      * Wrapper for the `llama_vocab_is_eog` and `llama_vocab_is_control` functions of llama.cpp. Checks if a token is a special token.
      *
      * @param token Token ID to check.
@@ -39,16 +30,16 @@ private:
      */
     static bool isSpecial(llama_token token, const llama_model* model);
 
-    /**
-     * Wrapper for the `llama_vocab_is_eog` function of llama.cpp. Checks if a token is an end-of-generation (eog) token.
-     *
-     * @param token Token ID to check.
-     * @param model Memory address of the LLM.
-     * @return Boolean that is true if the token is an eog token, false otherwise.
-     */
-    static bool isEndOfGeneration(llama_token token, const llama_model* model);
-
 public:
+    /**
+     * Wrapper for the `common_detokenize` function of llama.cpp. Detokenizes a token ID into a C++ string.
+     *
+     * @param token A token ID.
+     * @param ctx Memory address of the context.
+     * @return Detokenization as a C++ string.
+     */
+    static std::string detokenize(const llama_token& token, const llama_context* ctx);
+
     /**
      * Wrapper for the `common_detokenize` function of llama.cpp. Detokenizes a vector of token IDs into a Java string (byte array storing UTF-8 encoded string to bypass JNI errors).
      *
@@ -60,6 +51,15 @@ public:
     static jbyteArray detokenize(JNIEnv* env, const llama_tokens& tokens, const llama_context* ctx);
 
     /**
+     * Wrapper for the `llama_vocab_is_eog` function of llama.cpp. Checks if a token is an end-of-generation (eog) token.
+     *
+     * @param token Token ID to check.
+     * @param model Memory address of the LLM.
+     * @return Boolean that is true if the token is an eog token, false otherwise.
+     */
+    static bool isEndOfGeneration(llama_token token, const llama_model* model);
+
+    /**
      * Function to suppress special tokens, i.e. end-of-generation (eog) and control tokens.
      *
      * Suppressing eog tokens is needed to avoid early termination when generating a cover text.
@@ -67,8 +67,9 @@ public:
      *
      * @param probabilities Probabilities for the last token of the prompt (= last row of logits matrix after normalization).
      * @param model Memory address of the LLM.
+     * @param isEogAllowed Boolean that is true if eog tokens should be allowed, false otherwise.
      */
-    static void suppressSpecialTokens(double* probabilities, const llama_model* model);
+    static void suppressSpecialTokens(double* probabilities, const llama_model* model, bool isEogAllowed);
 
     /**
      * Function to check if a token is the end of a sentence. Needed to complete the last sentence of the cover text.
@@ -89,38 +90,6 @@ public:
      * @return ID of the eog token.
      */
     static llama_token getEndOfGeneration(const llama_model* model);
-
-    /**
-     * Function to get the token ID of the ASCII NUL character in the vocabulary of the LLM.
-     *
-     * @param model Memory address of the LLM.
-     * @param ctx Memory address of the context.
-     * @return Token ID of the ASCII NUL character.
-     * @throws std::runtime_error If the LLM vocabulary doesn't contain the ASCII NUL character.
-     */
-    static llama_token getAsciiNul(const llama_model* model, const llama_context* ctx);
-
-    // TODO Downward concat of split cover text
-    //  LlamaCpp::getAscii{Stx,Etx} are to get start and stop signal
-    /**
-     * Function to get the token ID of the ASCII STX (start-of-text) character in the vocabulary of the LLM.
-     *
-     * @param model Memory address of the LLM.
-     * @param ctx Memory address of the context.
-     * @return Token ID of the ASCII STX character.
-     * @throws std::runtime_error If the LLM vocabulary doesn't contain the ASCII STX character.
-     */
-    static llama_token getAsciiStx(const llama_model* model, const llama_context* ctx);
-
-    /**
-     * Function to get the token ID of the ASCII ETX (end-of-text) character in the vocabulary of the LLM.
-     *
-     * @param model Memory address of the LLM.
-     * @param ctx Memory address of the context.
-     * @return Token ID of the ASCII ETX character.
-     * @throws std::runtime_error If the LLM vocabulary doesn't contain the ASCII ETX character.
-     */
-    static llama_token getAsciiEtx(const llama_model* model, const llama_context* ctx);
 
     /**
      * Wrapper for the `llama_vocab_n_tokens` function of llama.cpp. Gets the vocabulary size `n_vocab` of the LLM (i.e. the number of available tokens).

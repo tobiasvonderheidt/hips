@@ -1,5 +1,6 @@
 package org.vonderheidt.hips.ui.screens
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -64,6 +65,8 @@ import org.vonderheidt.hips.navigation.Screen
 import org.vonderheidt.hips.utils.LlamaCpp
 import org.vonderheidt.hips.utils.Steganography
 import org.vonderheidt.hips.utils.SteganographyMode
+
+private const val TAG = "ConversationScreen.kt"
 
 /**
  * Function that defines the conversation screen.
@@ -261,6 +264,9 @@ fun ConversationScreen(navController: NavController, modifier: Modifier) {
                                     */
                                 }
                                 catch (exception: Exception) {
+                                    Log.e(TAG, exception.toString())
+                                    Log.e(TAG, exception.stackTraceToString())
+
                                     withContext(Dispatchers.Main) {
                                         Toast.makeText(currentLocalContext, "Message couldn't be decoded", Toast.LENGTH_LONG).show()
                                     }
