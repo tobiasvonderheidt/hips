@@ -6,6 +6,8 @@ import org.vonderheidt.hips.compression.ArithmeticCompression
 import org.vonderheidt.hips.compression.BitCrush
 import kotlin.math.roundToInt
 
+private const val TAG = "TestCompression.kt"
+
 class TestCompression {
 
     private val msgs = listOf(
@@ -23,49 +25,49 @@ class TestCompression {
     )
 
     fun runArithmetic() {
-        Log.i("CompTest", "TESTING ARITHMETIC COMPRESSION")
+        Log.i(TAG, "TESTING ARITHMETIC COMPRESSION")
         msgs.forEach {
             try {
                 val compressed = ArithmeticCompression.compress(it)
-                Log.d("CompTest", "compressed '$it' to $compressed (${((compressed.bitLength().toDouble() / (it.encodeToByteArray().size * 8))*100).roundToInt()}%)")
+                Log.d(TAG, "compressed '$it' to $compressed (${((compressed.bitLength().toDouble() / (it.encodeToByteArray().size * 8))*100).roundToInt()}%)")
                 val uncompressed = ArithmeticCompression.inflate(compressed)
-                Log.d("CompTest", "decompressed to '$uncompressed'")
+                Log.d(TAG, "decompressed to '$uncompressed'")
             }
             catch (e: Exception) {
-                Log.e("CompTest", e.toString())
-                Log.e("CompTest", e.stackTraceToString())
+                Log.e(TAG, e.toString())
+                Log.e(TAG, e.stackTraceToString())
             }
         }
     }
 
     fun runAdaptive() {
-        Log.i("CompTest", "TESTING ADAPTIVE COMPRESSION")
+        Log.i(TAG, "TESTING ADAPTIVE COMPRESSION")
         msgs.forEach {
             try {
                 val compressed = Adaptive.compress(it)
-                Log.d("CompTest", "compressed '$it' to $compressed (${((compressed.bitLength().toDouble() / (it.encodeToByteArray().size * 8))*100).roundToInt()}%)")
+                Log.d(TAG, "compressed '$it' to $compressed (${((compressed.bitLength().toDouble() / (it.encodeToByteArray().size * 8))*100).roundToInt()}%)")
                 val uncompressed = Adaptive.inflate(compressed)
-                Log.d("CompTest", "decompressed to '$uncompressed'")
+                Log.d(TAG, "decompressed to '$uncompressed'")
             }
             catch (e: Exception) {
-                Log.e("CompTest", e.toString())
-                Log.e("CompTest", e.stackTraceToString())
+                Log.e(TAG, e.toString())
+                Log.e(TAG, e.stackTraceToString())
             }
         }
     }
 
     fun runBitCrush() {
-        Log.i("CompTest", "TESTING BITCRUSH COMPRESSION")
+        Log.i(TAG, "TESTING BITCRUSH COMPRESSION")
         msgs.forEach {
             try {
                 val compressed = BitCrush.compress(it)
-                Log.d("CompTest", "compressed '$it' to $compressed (${((compressed.bitLength().toDouble() / (it.encodeToByteArray().size * 8))*100).roundToInt()}%)")
+                Log.d(TAG, "compressed '$it' to $compressed (${((compressed.bitLength().toDouble() / (it.encodeToByteArray().size * 8))*100).roundToInt()}%)")
                 val uncompressed = BitCrush.inflate(compressed)
-                Log.d("CompTest", "decompressed to '$uncompressed'")
+                Log.d(TAG, "decompressed to '$uncompressed'")
             }
             catch (e: Exception) {
-                Log.e("CompTest", e.toString())
-                Log.e("CompTest", e.stackTraceToString())
+                Log.e(TAG, e.toString())
+                Log.e(TAG, e.stackTraceToString())
             }
         }
     }
