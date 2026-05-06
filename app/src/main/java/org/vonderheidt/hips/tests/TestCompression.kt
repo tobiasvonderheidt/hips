@@ -8,6 +8,7 @@ import kotlin.math.roundToInt
 
 private const val TAG = "TestCompression.kt"
 
+// TODO Move to unit tests and add docs
 class TestCompression {
 
     private val msgs = listOf(
