@@ -30,6 +30,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
     // llama.cpp crashes with empty context anyway
     // UI doesn't allow empty context for steganography, so no collision possible when calling Arithmetic.{decode,encode} for compression
     bool isDecompression = contextTokens.empty();
+
     if (isDecompression) {
         contextTokens.push_back(LlamaCpp::getEndOfGeneration(model));
     }
@@ -223,12 +224,14 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
             // Therefore most significant bits are fixed first (~ numberOfSameBitsFromBeginning), determining the order of magnitude of the number, less significant bits are fixed later
             int numberOfEncodedBits = Arithmetic::numberOfSameBitsFromBeginning(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive);
 
+            /*
             // Deviation from Stegasuras:
             // For cases where the LLM is very confident about the next token, interval barely narrows and numberOfEncodedBits can be 0, so it would loop
             // Need to force 1 bit of progress during decompression to avoid this
             if (isDecompression && numberOfEncodedBits == 0) {
-                //numberOfEncodedBits = 1;
+                numberOfEncodedBits = 1;
             }
+            */
 
             i += numberOfEncodedBits;
 
@@ -423,12 +426,14 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         // Determine rank of predicted token amongst all tokens based on its probability
         // Optimization: For sampling eog tokens, we just use the highest-ranking of multiple different eog tokens
         int rank;
-        if(LlamaCpp::isEndOfGeneration(coverTextTokens[i], model)) {
+
+        if (LlamaCpp::isEndOfGeneration(coverTextTokens[i], model)) {
             auto iterator = std::find_if(
                     scaledProbabilities.begin(),
                     scaledProbabilities.end(),
                     [coverTextTokens, i, &model](const std::pair<llama_token, float>& pair) { return LlamaCpp::isEndOfGeneration(pair.first, model); }
             );
+
             rank = std::distance(scaledProbabilities.begin(), iterator);
         }
         else {
@@ -437,6 +442,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
                     scaledProbabilities.end(),
                     [coverTextTokens, i](const std::pair<llama_token, float>& pair) { return pair.first == coverTextTokens[i]; }
             );
+
             rank = std::distance(scaledProbabilities.begin(), iterator);
         }
 
