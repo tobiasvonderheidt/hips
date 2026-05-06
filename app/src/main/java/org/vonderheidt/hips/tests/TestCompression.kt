@@ -30,7 +30,7 @@ class TestCompression {
             try {
                 val compressed = ArithmeticCompression.compress(it)
                 Log.d(TAG, "compressed '$it' to $compressed (${((compressed.bitLength().toDouble() / (it.encodeToByteArray().size * 8))*100).roundToInt()}%)")
-                val uncompressed = ArithmeticCompression.inflate(compressed)
+                val uncompressed = ArithmeticCompression.decompress(compressed)
                 Log.d(TAG, "decompressed to '$uncompressed'")
             }
             catch (e: Exception) {
@@ -46,7 +46,7 @@ class TestCompression {
             try {
                 val compressed = Adaptive.compress(it)
                 Log.d(TAG, "compressed '$it' to $compressed (${((compressed.bitLength().toDouble() / (it.encodeToByteArray().size * 8))*100).roundToInt()}%)")
-                val uncompressed = Adaptive.inflate(compressed)
+                val uncompressed = Adaptive.decompress(compressed)
                 Log.d(TAG, "decompressed to '$uncompressed'")
             }
             catch (e: Exception) {
@@ -62,7 +62,7 @@ class TestCompression {
             try {
                 val compressed = BitCrush.compress(it)
                 Log.d(TAG, "compressed '$it' to $compressed (${((compressed.bitLength().toDouble() / (it.encodeToByteArray().size * 8))*100).roundToInt()}%)")
-                val uncompressed = BitCrush.inflate(compressed)
+                val uncompressed = BitCrush.decompress(compressed)
                 Log.d(TAG, "decompressed to '$uncompressed'")
             }
             catch (e: Exception) {
