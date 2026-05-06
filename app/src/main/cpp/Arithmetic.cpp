@@ -7,6 +7,12 @@
 #include "LlamaCpp.h"
 #include "Statistics.h"
 
+#define TAG "Arithmetic.cpp"                                                        // Logcat tag
+#define LOGi(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)           // Log info message
+#define LOGw(...) __android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__)           // Log warning message
+#define LOGe(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)          // Log error message
+#define LOGd(...) __android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__)          // Log debug message
+
 // TODO Downward concat of split cover text
 //  Parameter isResumed in all subsequent functions is to differentiate first from subsequent calls
 //  Assignment of ASCII {STX,ETX} to {first,last} sub-interval caused crash last time I tried it
@@ -52,7 +58,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
     // But only finish last sentence during encoding, not during decompression, to avoid infinite loop
     // Our use of isDecompression here matches control flow of Stegasuras with its finish_sent parameter
     while (i < cppCipherBits.size() || (!isDecompression && !isLastSentenceFinished)) {
-        //__android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "encoded %d of %d bits", i, cppCipherBits.size());
+        LOGd("Encoded %d of %d bits", i, cppCipherBits.size());
 
         // Call llama.cpp to calculate the logit matrix similar to https://github.com/ggml-org/llama.cpp/blob/master/examples/simple/simple.cpp:
         // Needs only next tokens to be processed to store in a batch, i.e. contextTokens in first run and last sampled token in subsequent runs, rest is managed internally in ctx
@@ -250,7 +256,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
             // Sample token as determined above
             sampledToken = cumulatedProbabilities[selectedSubinterval].first;
 
-            __android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "sampled: %s (%d bits)", LlamaCpp::detokenize(sampledToken, cppCtx).c_str(), numberOfEncodedBits);
+            LOGd("Sampled: %s (%d bits)", LlamaCpp::detokenize(sampledToken, cppCtx).c_str(), numberOfEncodedBits);
 
             // </Logic specific to arithmetic coding>
 
@@ -262,11 +268,12 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         else {
             // Get most likely token
             sampledToken = Arithmetic::getTopProbability(probabilities, model);
-            __android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "greedy: %s", LlamaCpp::detokenize(sampledToken, cppCtx).c_str());
 
             // Update flag
             isLastSentenceFinished = LlamaCpp::isEndOfSentence(sampledToken, cppCtx);
-            __android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "sentence finished? %d", isLastSentenceFinished);
+
+            LOGd("Greedy: %s", LlamaCpp::detokenize(sampledToken, cppCtx).c_str());
+            LOGd("Sentence finished? %d", isLastSentenceFinished);
         }
 
         // Free allocated memory
@@ -323,7 +330,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
     bool isFirstRun = !jIsResumed;
     llama_token coverTextToken = -1;
 
-    //__android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "decoding %d tokens", coverTextTokens.size());
+    LOGd("Decoding %d tokens", coverTextTokens.size());
 
     // Decode every cover text token
     while (i < coverTextTokens.size()) {
@@ -446,7 +453,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
             rank = std::distance(scaledProbabilities.begin(), iterator);
         }
 
-        //__android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "token %s has rank %d", LlamaCpp::detokenize(coverTextTokens[i], cppCtx).c_str(), rank);
+        LOGd("Token %s has rank %d", LlamaCpp::detokenize(coverTextTokens[i], cppCtx).c_str(), rank);
 
         // Deviation from Stegasuras:
         // Error handling for if the token isn't found in the valid range
@@ -479,7 +486,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         // Inline += operation to eliminate newBits variable
         int numberOfEncodedBits = Arithmetic::numberOfSameBitsFromBeginning(newIntervalBottomBitsInclusive, newIntervalTopBitsInclusive);
 
-        //__android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "decoded %d bits from token %s", numberOfEncodedBits, LlamaCpp::detokenize(coverTextTokens[i], cppCtx).c_str());
+        LOGd("Decoded %d bits from token %s", numberOfEncodedBits, LlamaCpp::detokenize(coverTextTokens[i], cppCtx).c_str());
 
         // TODO We do not need to encode the entire newIntervalBottomBitsInclusive, topBitsInclusive + encodedBits + 1 seems to be enough. Why?
         if (i == coverTextTokens.size() - 1) {
@@ -497,7 +504,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
             );
         }
 
-        //__android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "cppCipherBits size now %d", cppCipherBits.size());
+        LOGd("cppCipherBits.size() = %d", cppCipherBits.size());
 
         std::vector<bool> newIntervalBottomBits = std::vector<bool>(newIntervalBottomBitsInclusive.begin() + numberOfEncodedBits, newIntervalBottomBitsInclusive.end());
         newIntervalBottomBits.resize(newIntervalBottomBits.size() + numberOfEncodedBits, false);
