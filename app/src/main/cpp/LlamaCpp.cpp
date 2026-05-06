@@ -95,6 +95,9 @@ bool LlamaCpp::isEndOfSentence(llama_token token, const llama_context* ctx) {
     return isSentenceFinished;
 }
 
+// TODO
+//  Implementation was changed in https://github.com/tobiasvonderheidt/hips/pull/29 to return end-of-sentence instead of end-of-generation token
+//  I think this conflicts with use of LlamaCpp::isEndOfGeneration in Arithmetic.cpp
 llama_token LlamaCpp::getEndOfGeneration(const llama_model* model) {
     const llama_vocab* vocab = llama_model_get_vocab(model);
     return llama_vocab_eos(vocab);
