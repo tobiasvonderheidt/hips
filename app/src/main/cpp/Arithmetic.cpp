@@ -26,9 +26,9 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
 
     // <Logic specific to arithmetic coding>
 
-    // Stegasuras paper says that binary conversion happens with empty context, but code actually uses a single end-of-generation (eog) token as context
+    // Stegasuras paper says that compression happens with empty context, but code actually uses a single end-of-generation (eog) token as context
     // llama.cpp crashes with empty context anyway
-    // UI doesn't allow empty context for steganography, so no collision possible when calling Arithmetic.{decode,encode} for binary conversion
+    // UI doesn't allow empty context for steganography, so no collision possible when calling Arithmetic.{decode,encode} for compression
     bool isDecompression = contextTokens.empty();
     if (isDecompression) {
         contextTokens.push_back(LlamaCpp::getEndOfGeneration(model));
