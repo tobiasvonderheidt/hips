@@ -62,7 +62,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         double* probabilities = Statistics::softmax(logits, model);
 
         // Suppress special tokens to avoid early termination before all bits of secret message are encoded
-        // (allow EoG in decompression)
+        // Allow eog tokens in decompression
         LlamaCpp::suppressSpecialTokens(probabilities, model, isDecompression);
 
         // Arithmetic sampling to encode bits of secret message into tokens
@@ -275,7 +275,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         // Stegasuras: "For text->bits->text"
         // Variable "partial" not needed here as cover text isn't appended to context
         if (LlamaCpp::isEndOfGeneration(coverTextTokens.back(), model)) {
-            coverTextTokens.pop_back(); // remove EoG token from output
+            coverTextTokens.pop_back(); // Remove eog token from output
             break;
         }
     }
@@ -330,7 +330,8 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
         // Normalize logits to probabilities
         double* probabilities = Statistics::softmax(logits, model);
 
-        // Suppress special tokens (allow EoG in compression, suppress otherwise)
+        // Suppress special tokens
+        // Allow eog tokens in compression
         LlamaCpp::suppressSpecialTokens(probabilities, model, isCompression);
 
         // <Logic specific to arithmetic coding>
@@ -420,7 +421,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
 
         // Stegasuras: n/a
         // Determine rank of predicted token amongst all tokens based on its probability
-        // optimization: for sampling end-of-generation tokens, we just use the highest-ranking token of multiple different EoG tokens
+        // Optimization: For sampling eog tokens, we just use the highest-ranking of multiple different eog tokens
         int rank;
         if(LlamaCpp::isEndOfGeneration(coverTextTokens[i], model)) {
             auto iterator = std::find_if(
@@ -474,12 +475,12 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_org_vonderheidt_hips_utils_Arithmet
 
         //__android_log_print(ANDROID_LOG_DEBUG, "Arithmetic", "decoded %d bits from token %s", numberOfEncodedBits, LlamaCpp::detokenize(coverTextTokens[i], cppCtx).c_str());
 
-        // TODO: we do not need to encode the entire newIntervalBottomBitsInclusive - topBitsInclusive + encodedBits + 1 seems to be enough. Why?
+        // TODO We do not need to encode the entire newIntervalBottomBitsInclusive, topBitsInclusive + encodedBits + 1 seems to be enough. Why?
         if (i == coverTextTokens.size() - 1) {
             cppCipherBits.insert(
                 cppCipherBits.end(),
-                newIntervalTopBitsInclusive.begin(), //newIntervalBottomBitsInclusive.begin(),
-                newIntervalTopBitsInclusive.begin() + numberOfEncodedBits + 1//newIntervalBottomBitsInclusive.end()
+                newIntervalTopBitsInclusive.begin(),                            // newIntervalBottomBitsInclusive.begin(),
+                newIntervalTopBitsInclusive.begin() + numberOfEncodedBits + 1   // newIntervalBottomBitsInclusive.end()
             );
         }
         else {
